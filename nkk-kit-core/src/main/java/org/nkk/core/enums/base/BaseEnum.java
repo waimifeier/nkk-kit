@@ -2,7 +2,7 @@ package org.nkk.core.enums.base;
 
 import org.nkk.core.beans.common.EnumResp;
 import org.nkk.core.beans.exception.EnumIllegalArgumentException;
-import org.nkk.enums.fail.EnumErrorCodeEnum;
+import org.nkk.core.enums.fail.EnumErrorCodeEnum;
 
 import java.util.Objects;
 

@@ -1,4 +1,4 @@
-package org.nkk.beans.verify;
+package org.nkk.core.beans.verify;
 
 /**
  * 校验分组

@@ -1,7 +1,7 @@
 package org.nkk.core.beans.exception;
 
 import lombok.Getter;
-import org.nkk.enums.fail.EnumErrorCodeEnum;
+import org.nkk.core.enums.fail.EnumErrorCodeEnum;
 
 /**
 *  枚举参数异常
