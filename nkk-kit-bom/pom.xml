@@ -10,11 +10,13 @@
         <groupId>org.nkk</groupId>
         <artifactId>nkk-kit</artifactId>
         <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>nkk-kit-bom</artifactId>
     <name>${project.artifactId}</name>
     <description>统一版本管理模块</description>
+
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -23,7 +25,7 @@
 
     <dependencyManagement>
         <dependencies>
-            <!--     <dependency>
+                 <dependency>
                    <groupId>org.nkk</groupId>
                    <artifactId>nkk-kit-core</artifactId>
                    <version>${project.parent.version}</version>
@@ -39,7 +41,7 @@
                    <groupId>org.nkk</groupId>
                    <artifactId>nkk-kit-mp</artifactId>
                    <version>${project.parent.version}</version>
-               </dependency>-->
+               </dependency>
         </dependencies>
 
     </dependencyManagement>

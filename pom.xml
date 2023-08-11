@@ -7,7 +7,7 @@
     <groupId>org.nkk</groupId>
     <artifactId>nkk-kit</artifactId>
     <packaging>pom</packaging>
-    <version>${revision}</version>
+    <version>1.0.0</version>
     <description>nkk工具包是总结了工作中常用的工具包和实体类</description>
 
     <modules>
