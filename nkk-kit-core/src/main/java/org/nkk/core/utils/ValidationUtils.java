@@ -2,6 +2,7 @@ package org.nkk.core.utils;
 
 
 
+import lombok.experimental.UtilityClass;
 import org.nkk.core.beans.exception.BusinessException;
 import org.nkk.core.beans.exception.ValidationException;
 
@@ -17,6 +18,7 @@ import java.util.Set;
  * @author Nkks
  *
  */
+@UtilityClass
 public class ValidationUtils {
 
     private static final Validator VALIDATOR = Validation.buildDefaultValidatorFactory().getValidator();
@@ -47,7 +49,7 @@ public class ValidationUtils {
     }
 
     /**
-     * 验证数据中的某个字段(分组)
+     * 验证数据中的某个字段(默认分组)
      * @param object 数据
      * @param propertyName 字段名称
      */
