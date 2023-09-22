@@ -34,7 +34,6 @@
         <revision>1.0.0</revision>
         <lombok.version>1.18.26</lombok.version>
         <hutool.version>5.8.16</hutool.version>
-        <lombok.version>1.18.24</lombok.version>
         <streamex.version>0.7.2</streamex.version>
         <spring-boot.version>2.7.3</spring-boot.version>
         <servlet-api.version>4.0.1</servlet-api.version>
