@@ -33,7 +33,8 @@ public class HolidaysUtils {
     /**
      *
      * @param date 指定日期,格式为： <b>yyyy-MM-dd</b>, 不传默认是今天
-     * @return 返回指定日期具体信息 {@link Pair} 0=工作日 2=节假日 3=值班
+     * @return 返回指定日期具体信息 {@link Pair}
+     * key:日期类型(0=工作日 1=周末 2=节假日 3=调班),value：日期描述
      */
     public Pair<Integer,String> asDay(String date){
 
@@ -77,7 +78,7 @@ public class HolidaysUtils {
     }
 
     /**
-     * <p>判断指定日期是否是值班</p>
+     * <p>判断指定日期是否是调班</p>
      *
      * @param date 指定日期,格式为： <b>yyyy-MM-dd</b>, 不传默认是今天
      * @return 返回指定日期是否是调班日

@@ -6,7 +6,7 @@ import lombok.Data;
 public class CalendarHolidayResp {
 
     /**
-     * 分类：0=工作日 2=节假日 3=值班
+     * 分类：0=工作日 1=周末 2=节假日 3=值班
      */
     private Integer type;
     /**
