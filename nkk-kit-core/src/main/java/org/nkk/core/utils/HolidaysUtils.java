@@ -67,7 +67,7 @@ public class HolidaysUtils {
     }
 
     /**
-     * <p>判断指定日期是否是节假日</p>
+     * <p>判断指定日期是否是节假日(法定节假日，不是周末假期)</p>
      *
      * @param date 指定日期,格式为： <b>yyyy-MM-dd</b>, 不传默认是今天
      * @return 返回指定日期是否是节假日
