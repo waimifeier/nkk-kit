@@ -30,20 +30,21 @@ public class HolidaysUtils {
 
     private final String requestURl = "http://api.moonapi.com/154";
 
+
     /**
      *
      * @param date 指定日期,格式为： <b>yyyy-MM-dd</b>, 不传默认是今天
      * @return 返回指定日期具体信息 {@link Pair}
      * key:日期类型(0=工作日 1=周末 2=节假日 3=调班),value：日期描述
      */
-    public Pair<Integer,String> asDay(String date){
+    public CalendarHolidayResp asDay(String date){
 
         String responseBody = HttpRequest.get(requestURl)
-                            .form("sign",sign)
-                            .form("keyid",keyId)
-                            .form("date", StrUtil.isEmpty(date) ? DateUtil.formatDate(new Date()): date)
-                            .execute()
-                            .body();
+                .form("sign",sign)
+                .form("keyid",keyId)
+                .form("date", StrUtil.isEmpty(date) ? DateUtil.formatDate(new Date()): date)
+                .execute()
+                .body();
 
         JSONObject json = JSON.parseObject(responseBody);
         String status = json.getString("status");
@@ -52,7 +53,7 @@ public class HolidaysUtils {
             return null;
         }
         JSONObject data = json.getJSONObject("data");
-        return Pair.of(data.getInteger("type"),data.getString("name"));
+        return data.toJavaObject(CalendarHolidayResp.class);
     }
 
     /**
@@ -62,8 +63,8 @@ public class HolidaysUtils {
      * @return 返回指定日期是否是工作日
      */
     public Boolean isWork(String date) {
-        Pair<Integer, String> hx = asDay(date);
-        return !Objects.isNull(hx) && Objects.equals(hx.getKey(), 0);
+        CalendarHolidayResp hx = asDay(date);
+        return !Objects.isNull(hx) && Objects.equals(hx.getType(), 0);
     }
 
     /**
@@ -73,8 +74,8 @@ public class HolidaysUtils {
      * @return 返回指定日期是否是节假日
      */
     public Boolean isHoliday(String date) {
-        Pair<Integer, String> hx = asDay(date);
-        return !Objects.isNull(hx) && Objects.equals(hx.getKey(), 2);
+        CalendarHolidayResp hx = asDay(date);
+        return !Objects.isNull(hx) && Objects.equals(hx.getType(), 2);
     }
 
     /**
@@ -84,8 +85,8 @@ public class HolidaysUtils {
      * @return 返回指定日期是否是调班日
      */
     public Boolean isShift(String date) {
-        Pair<Integer, String> hx = asDay(date);
-        return !Objects.isNull(hx) && Objects.equals(hx.getKey(), 3);
+        CalendarHolidayResp hx = asDay(date);
+        return !Objects.isNull(hx) && Objects.equals(hx.getType(), 3);
     }
 
 
