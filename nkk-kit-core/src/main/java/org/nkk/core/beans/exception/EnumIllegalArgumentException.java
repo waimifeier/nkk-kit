@@ -21,13 +21,13 @@ public class EnumIllegalArgumentException extends IllegalArgumentException{
     private EnumIllegalArgumentException(EnumErrorCodeEnum enumErrorCodeEnum, String reasonPhrase) {
         super(reasonPhrase);
         this.enumErrorCodeEnum = enumErrorCodeEnum;
-        this.code =enumErrorCodeEnum.value();
+        this.code = enumErrorCodeEnum.value();
     }
 
     private EnumIllegalArgumentException(EnumErrorCodeEnum enumErrorCodeEnum) {
-        super(enumErrorCodeEnum.getText());
+        super(enumErrorCodeEnum.label());
         this.enumErrorCodeEnum = enumErrorCodeEnum;
-        this.code =enumErrorCodeEnum.value();
+        this.code =enumErrorCodeEnum.label();
     }
 
 

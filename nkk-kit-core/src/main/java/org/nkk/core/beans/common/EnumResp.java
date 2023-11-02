@@ -25,6 +25,6 @@ public class EnumResp {
     /**
      *  描述
      */
-    private String text;
+    private String label;
 
 }

@@ -43,7 +43,6 @@
                    <version>${project.parent.version}</version>
                </dependency>
         </dependencies>
-
     </dependencyManagement>
 
 </project>

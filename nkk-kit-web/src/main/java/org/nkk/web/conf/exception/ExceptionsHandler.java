@@ -66,7 +66,7 @@ public class ExceptionsHandler {
     @ExceptionHandler({MissingServletRequestParameterException.class})
     public Result<Object> missingServletRequestParameterException(MissingServletRequestParameterException e) {
         log.error("缺少Query参数异常：{}",e.getMessage());
-        return Result.fail(SysStatusEnum.NOT_FOUND,String.format("缺少参数:%s %s",e.getParameterType(),e.getParameterName()));
+        return Result.fail(SysStatusEnum.BAD_REQUEST,String.format("缺少参数:%s %s",e.getParameterType(),e.getParameterName()));
     }
 
 
@@ -78,7 +78,7 @@ public class ExceptionsHandler {
     @ExceptionHandler({MethodArgumentTypeMismatchException.class})
     public Result<Object> missingServletRequestParameterException(MethodArgumentTypeMismatchException e) {
         log.error("参数类型有误：{}",e.getMessage());
-        return Result.fail(SysStatusEnum.NOT_FOUND,String.format("%s参数类型错误",e.getName()));
+        return Result.fail(SysStatusEnum.BAD_REQUEST,String.format("%s参数类型错误",e.getName()));
     }
 
     /**

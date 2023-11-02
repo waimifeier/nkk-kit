@@ -1,6 +1,7 @@
 package org.nkk.core.enums.fail;
 
 
+import org.nkk.core.beans.common.EnumResp;
 import org.nkk.core.enums.common.BaseEnum;
 
 /**
@@ -24,13 +25,15 @@ public enum EnumErrorCodeEnum implements BaseEnum {
         this.reason = reason;
     }
 
+
     @Override
     public String value() {
         return this.value;
     }
 
     @Override
-    public String getText() {
+    public String label() {
         return this.reason;
     }
+
 }

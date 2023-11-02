@@ -32,7 +32,7 @@ public interface BaseEnum {
      * @return 枚举信息
      * @since 1.1.0.211021
      */
-    String getText();
+    String label();
 
     /**
      * 解析枚举参数值
@@ -86,7 +86,7 @@ public interface BaseEnum {
     default EnumResp getEnumResp(){
         return EnumResp.builder()
                 .value(value())
-                .text(getText())
+                .label(label())
                 .build();
     }
 }

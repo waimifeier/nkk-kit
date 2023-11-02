@@ -29,7 +29,7 @@ public class BusinessException extends RuntimeException{
      * @author Nkks
      * @time 2021/11/18 10:04
      */
-    protected BusinessException(){
+    public BusinessException(){
         super(SysStatusEnum.INTERNAL_SERVER_ERROR.getReason());
         this.errorCode = SysStatusEnum.INTERNAL_SERVER_ERROR;
     }
@@ -40,7 +40,7 @@ public class BusinessException extends RuntimeException{
      * @time 2021/11/18 10:05
      * @param errorCode 错误码
      */
-    protected BusinessException(final SysStatusEnum errorCode) {
+    public BusinessException(final SysStatusEnum errorCode) {
         super(errorCode.getReason());
         this.errorCode = errorCode;
     }
@@ -51,7 +51,7 @@ public class BusinessException extends RuntimeException{
      * @time 2021/11/18 10:07
      * @param detailedMessage 错误信息
      */
-    protected BusinessException(final String detailedMessage) {
+    public BusinessException(final String detailedMessage) {
         super(detailedMessage);
         this.errorCode = SysStatusEnum.INTERNAL_SERVER_ERROR;
     }
@@ -62,7 +62,7 @@ public class BusinessException extends RuntimeException{
      * @time 2021/11/18 10:08
      * @param t 导火索
      */
-    protected BusinessException(final Throwable t) {
+    public BusinessException(final Throwable t) {
         super(t);
         this.errorCode = SysStatusEnum.INTERNAL_SERVER_ERROR;
     }
@@ -74,7 +74,7 @@ public class BusinessException extends RuntimeException{
      * @param errorCode 错误码
      * @param detailedMessage 错误消息
      */
-    protected BusinessException(final SysStatusEnum errorCode, final String detailedMessage) {
+    public BusinessException(final SysStatusEnum errorCode, final String detailedMessage) {
         super(detailedMessage);
         this.errorCode = errorCode;
     }
@@ -86,7 +86,7 @@ public class BusinessException extends RuntimeException{
      * @param errorCode 错误码
      * @param t 导火索
      */
-    protected BusinessException(final SysStatusEnum errorCode, final Throwable t) {
+    public BusinessException(final SysStatusEnum errorCode, final Throwable t) {
         super(errorCode.getReason(), t);
         this.errorCode = errorCode;
     }
@@ -98,7 +98,7 @@ public class BusinessException extends RuntimeException{
      * @param detailedMessage 错误消息
      * @param t 导火索
      */
-    protected BusinessException(final String detailedMessage, final Throwable t) {
+    public BusinessException(final String detailedMessage, final Throwable t) {
         super(detailedMessage, t);
         this.errorCode = SysStatusEnum.INTERNAL_SERVER_ERROR;
     }
@@ -111,7 +111,7 @@ public class BusinessException extends RuntimeException{
      * @param detailedMessage detailedMessage
      * @param t t
      */
-    protected BusinessException(final SysStatusEnum errorCode, final String detailedMessage, final Throwable t) {
+    public BusinessException(final SysStatusEnum errorCode, final String detailedMessage, final Throwable t) {
         super(detailedMessage, t);
         this.errorCode = errorCode;
     }
