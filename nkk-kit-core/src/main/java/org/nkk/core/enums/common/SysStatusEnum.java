@@ -1,14 +1,14 @@
-package org.nkk.core.enums.fail;
+package org.nkk.core.enums.common;
 
 
 /**
- * 错误码枚举
+ * 系統错误码枚举
  *
  * @author Nkks
- * @class ErrorCodeEnum
+ * @class SysStatusEnum
  * @time 2022/1/26 11:12
  */
-public enum FailCodeEnum {
+public enum SysStatusEnum {
 
     // --- 2xx Success ---
     /**
@@ -78,7 +78,7 @@ public enum FailCodeEnum {
      * @author Nkks
      * @time 2021/4/26 23:15
      */
-    FailCodeEnum(int value, String reason) {
+    SysStatusEnum(int value, String reason) {
         this.value = value;
         this.reason = reason;
     }

@@ -1,7 +1,7 @@
 package org.nkk.core.beans.exception;
 
 
-import org.nkk.core.enums.fail.FailCodeEnum;
+import org.nkk.core.enums.common.SysStatusEnum;
 
 /**
 *   应用全局异常
@@ -14,9 +14,9 @@ public class BusinessException extends RuntimeException{
     private static final long serialVersionUID = -8626647865331982731L;
 
     /** 错误码 */
-    protected final FailCodeEnum errorCode;
+    protected final SysStatusEnum errorCode;
 
-    public FailCodeEnum getErrorCode() {
+    public SysStatusEnum getErrorCode() {
         return errorCode;
     }
 
@@ -30,8 +30,8 @@ public class BusinessException extends RuntimeException{
      * @time 2021/11/18 10:04
      */
     protected BusinessException(){
-        super(FailCodeEnum.INTERNAL_SERVER_ERROR.getReason());
-        this.errorCode = FailCodeEnum.INTERNAL_SERVER_ERROR;
+        super(SysStatusEnum.INTERNAL_SERVER_ERROR.getReason());
+        this.errorCode = SysStatusEnum.INTERNAL_SERVER_ERROR;
     }
 
     /**
@@ -40,7 +40,7 @@ public class BusinessException extends RuntimeException{
      * @time 2021/11/18 10:05
      * @param errorCode 错误码
      */
-    protected BusinessException(final FailCodeEnum errorCode) {
+    protected BusinessException(final SysStatusEnum errorCode) {
         super(errorCode.getReason());
         this.errorCode = errorCode;
     }
@@ -53,7 +53,7 @@ public class BusinessException extends RuntimeException{
      */
     protected BusinessException(final String detailedMessage) {
         super(detailedMessage);
-        this.errorCode = FailCodeEnum.INTERNAL_SERVER_ERROR;
+        this.errorCode = SysStatusEnum.INTERNAL_SERVER_ERROR;
     }
 
     /**
@@ -64,7 +64,7 @@ public class BusinessException extends RuntimeException{
      */
     protected BusinessException(final Throwable t) {
         super(t);
-        this.errorCode = FailCodeEnum.INTERNAL_SERVER_ERROR;
+        this.errorCode = SysStatusEnum.INTERNAL_SERVER_ERROR;
     }
 
     /**
@@ -74,7 +74,7 @@ public class BusinessException extends RuntimeException{
      * @param errorCode 错误码
      * @param detailedMessage 错误消息
      */
-    protected BusinessException(final FailCodeEnum errorCode, final String detailedMessage) {
+    protected BusinessException(final SysStatusEnum errorCode, final String detailedMessage) {
         super(detailedMessage);
         this.errorCode = errorCode;
     }
@@ -86,7 +86,7 @@ public class BusinessException extends RuntimeException{
      * @param errorCode 错误码
      * @param t 导火索
      */
-    protected BusinessException(final FailCodeEnum errorCode, final Throwable t) {
+    protected BusinessException(final SysStatusEnum errorCode, final Throwable t) {
         super(errorCode.getReason(), t);
         this.errorCode = errorCode;
     }
@@ -100,7 +100,7 @@ public class BusinessException extends RuntimeException{
      */
     protected BusinessException(final String detailedMessage, final Throwable t) {
         super(detailedMessage, t);
-        this.errorCode = FailCodeEnum.INTERNAL_SERVER_ERROR;
+        this.errorCode = SysStatusEnum.INTERNAL_SERVER_ERROR;
     }
 
     /**
@@ -111,7 +111,7 @@ public class BusinessException extends RuntimeException{
      * @param detailedMessage detailedMessage
      * @param t t
      */
-    protected BusinessException(final FailCodeEnum errorCode, final String detailedMessage, final Throwable t) {
+    protected BusinessException(final SysStatusEnum errorCode, final String detailedMessage, final Throwable t) {
         super(detailedMessage, t);
         this.errorCode = errorCode;
     }
@@ -133,7 +133,7 @@ public class BusinessException extends RuntimeException{
      * @param errorCode 错误码
      * @return {@link BusinessException}
      */
-    public static BusinessException fail(final FailCodeEnum errorCode) {
+    public static BusinessException fail(final SysStatusEnum errorCode) {
         return new BusinessException(errorCode);
     }
 
@@ -167,7 +167,7 @@ public class BusinessException extends RuntimeException{
      * @param detailedMessage 详细描述
      * @return {@link BusinessException}
      */
-    public static BusinessException fail(final FailCodeEnum errorCode, final String detailedMessage) {
+    public static BusinessException fail(final SysStatusEnum errorCode, final String detailedMessage) {
         return new BusinessException(errorCode,detailedMessage);
     }
     

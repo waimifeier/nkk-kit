@@ -15,7 +15,7 @@
 
     <artifactId>nkk-kit-bom</artifactId>
     <name>${project.artifactId}</name>
-    <description>统一版本管理模块</description>
+    <description>nkk工具包统一版本管理模块</description>
 
 
     <properties>
@@ -25,7 +25,7 @@
 
     <dependencyManagement>
         <dependencies>
-                 <dependency>
+               <dependency>
                    <groupId>org.nkk</groupId>
                    <artifactId>nkk-kit-core</artifactId>
                    <version>${project.parent.version}</version>

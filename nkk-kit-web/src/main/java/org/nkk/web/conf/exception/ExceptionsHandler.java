@@ -3,7 +3,7 @@ package org.nkk.web.conf.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.nkk.core.beans.common.Result;
 import org.nkk.core.beans.exception.BusinessException;
-import org.nkk.core.enums.fail.FailCodeEnum;
+import org.nkk.core.enums.common.SysStatusEnum;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -45,7 +45,7 @@ public class ExceptionsHandler {
     @ExceptionHandler(NoHandlerFoundException.class)
     public Result<Object> handlerNoFoundException(NoHandlerFoundException e) {
         log.error("路径不存在异常：{}",e.getMessage());
-        return Result.fail(FailCodeEnum.NOT_FOUND);
+        return Result.fail(SysStatusEnum.NOT_FOUND);
     }
 
     /**
@@ -54,7 +54,7 @@ public class ExceptionsHandler {
     @ExceptionHandler({HttpRequestMethodNotSupportedException.class})
     public Result<Object> httpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException e) {
         log.error("请求方式不支持异常：{}",e.getMessage());
-        return Result.fail(FailCodeEnum.NOT_SUPPORT_METHODS,String.format("请求方式有误，不支持%s请求",e.getMethod()));
+        return Result.fail(SysStatusEnum.NOT_SUPPORT_METHODS,String.format("请求方式有误，不支持%s请求",e.getMethod()));
     }
 
     /**
@@ -65,8 +65,8 @@ public class ExceptionsHandler {
      */
     @ExceptionHandler({MissingServletRequestParameterException.class})
     public Result<Object> missingServletRequestParameterException(MissingServletRequestParameterException e) {
-        log.error("缺少Parameter参数异常：{}",e.getMessage());
-        return Result.fail(FailCodeEnum.NOT_FOUND,String.format("缺少参数:%s %s",e.getParameterType(),e.getParameterName()));
+        log.error("缺少Query参数异常：{}",e.getMessage());
+        return Result.fail(SysStatusEnum.NOT_FOUND,String.format("缺少参数:%s %s",e.getParameterType(),e.getParameterName()));
     }
 
 
@@ -77,8 +77,8 @@ public class ExceptionsHandler {
      */
     @ExceptionHandler({MethodArgumentTypeMismatchException.class})
     public Result<Object> missingServletRequestParameterException(MethodArgumentTypeMismatchException e) {
-        log.error("Parameter参数类型有误：{}",e.getMessage());
-        return Result.fail(FailCodeEnum.NOT_FOUND,String.format("%s参数类型错误",e.getName()));
+        log.error("参数类型有误：{}",e.getMessage());
+        return Result.fail(SysStatusEnum.NOT_FOUND,String.format("%s参数类型错误",e.getName()));
     }
 
     /**
@@ -94,7 +94,7 @@ public class ExceptionsHandler {
                 .stream()
                 .map(ConstraintViolation::getMessage)
                 .collect(Collectors.toList());
-        return Result.fail(FailCodeEnum.BAD_REQUEST,defaultMsg.get(0));
+        return Result.fail(SysStatusEnum.BAD_REQUEST,defaultMsg.get(0));
     }
 
 
@@ -120,11 +120,11 @@ public class ExceptionsHandler {
     @ExceptionHandler({IllegalArgumentException.class})
     public Result<Object> illegalArgumentException(IllegalArgumentException  e){
         log.error("JSON参数绑定失败异常：{}", e.getMessage());
-        return Result.fail(FailCodeEnum.BAD_REQUEST, e.getMessage());
+        return Result.fail(SysStatusEnum.BAD_REQUEST, e.getMessage());
     }
 
     private Result<Object> getJsonReturn(BindingResult bindingResult) {
-        return Result.fail(FailCodeEnum.BAD_REQUEST, Objects.requireNonNull(bindingResult.getFieldError()).getDefaultMessage());
+        return Result.fail(SysStatusEnum.BAD_REQUEST, Objects.requireNonNull(bindingResult.getFieldError()).getDefaultMessage());
     }
 
     /**
@@ -133,7 +133,7 @@ public class ExceptionsHandler {
     @ExceptionHandler({HttpMessageNotReadableException.class})
     public Result<Object> httpMessageNotReadableException(HttpMessageNotReadableException e) {
         log.error("JSON 转换异常：{}", e.getMessage());
-        return Result.fail(FailCodeEnum.BAD_REQUEST,"参数转换失败,请检查JSON格式或类型是否正确");
+        return Result.fail(SysStatusEnum.BAD_REQUEST,"参数转换失败,请检查JSON格式或类型是否正确");
     }
 
     /**
@@ -142,7 +142,7 @@ public class ExceptionsHandler {
     @ExceptionHandler({HttpMediaTypeNotSupportedException.class})
     public Result<Object> httpMediaTypeNotSupportedException(HttpMediaTypeNotSupportedException e) {
         log.error("http媒体类型不支持异常：{}", e.getMessage());
-        return Result.fail(FailCodeEnum.BAD_REQUEST,"参数媒体类型不支持");
+        return Result.fail(SysStatusEnum.BAD_REQUEST,"参数媒体类型不支持");
     }
 
 
@@ -152,7 +152,7 @@ public class ExceptionsHandler {
     @ExceptionHandler({ValidationException.class})
     public Result<Object> validationExceptionException(ValidationException e) {
         log.error("参数验证失败：{}", e.getMessage());
-        return Result.fail(FailCodeEnum.BAD_REQUEST,e.getMessage());
+        return Result.fail(SysStatusEnum.BAD_REQUEST,e.getMessage());
     }
 
     /**

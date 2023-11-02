@@ -25,7 +25,7 @@ public class EnumIllegalArgumentException extends IllegalArgumentException{
     }
 
     private EnumIllegalArgumentException(EnumErrorCodeEnum enumErrorCodeEnum) {
-        super(enumErrorCodeEnum.getReasonPhrase());
+        super(enumErrorCodeEnum.getText());
         this.enumErrorCodeEnum = enumErrorCodeEnum;
         this.code =enumErrorCodeEnum.value();
     }

@@ -1,7 +1,7 @@
 package org.nkk.core.enums.fail;
 
 
-import org.nkk.core.enums.base.BaseEnum;
+import org.nkk.core.enums.common.BaseEnum;
 
 /**
 *   枚举错误码
@@ -30,7 +30,7 @@ public enum EnumErrorCodeEnum implements BaseEnum {
     }
 
     @Override
-    public String getReasonPhrase() {
+    public String getText() {
         return this.reason;
     }
 }

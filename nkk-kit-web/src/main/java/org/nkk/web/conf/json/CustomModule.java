@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.cfg.PackageVersion;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.nkk.web.conf.deSerializer.JacksonEnumDeSerializer;
 import org.nkk.web.conf.serializer.JacksonEnumSerializer;
-import org.nkk.core.enums.base.BaseEnum;
+import org.nkk.core.enums.common.BaseEnum;
 
 /**
  * 添加 {@link BaseEnum} 的序列化和返序列化模块。

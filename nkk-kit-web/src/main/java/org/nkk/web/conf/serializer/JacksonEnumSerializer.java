@@ -3,7 +3,7 @@ package org.nkk.web.conf.serializer;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import org.nkk.core.enums.base.BaseEnum;
+import org.nkk.core.enums.common.BaseEnum;
 
 import java.io.IOException;
 

@@ -1,4 +1,4 @@
-package org.nkk.core.enums.base;
+package org.nkk.core.enums.common;
 
 import org.nkk.core.beans.common.EnumResp;
 import org.nkk.core.beans.exception.EnumIllegalArgumentException;
@@ -32,7 +32,7 @@ public interface BaseEnum {
      * @return 枚举信息
      * @since 1.1.0.211021
      */
-    String getReasonPhrase();
+    String getText();
 
     /**
      * 解析枚举参数值
@@ -86,7 +86,7 @@ public interface BaseEnum {
     default EnumResp getEnumResp(){
         return EnumResp.builder()
                 .value(value())
-                .text(getReasonPhrase())
+                .text(getText())
                 .build();
     }
 }

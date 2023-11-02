@@ -7,7 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.nkk.core.enums.fail.FailCodeEnum;
+import org.nkk.core.enums.common.SysStatusEnum;
 
 import java.io.Serializable;
 
@@ -44,14 +44,14 @@ public class Result<T> implements Serializable {
      *	返回成功
      * @author Nkks
      * @time :2021/4/26 23:22
-     * @param msg 错误描述,如果为空则返回{@link FailCodeEnum#getReason()}
+     * @param msg 错误描述,如果为空则返回{@link SysStatusEnum#getReason()}
      * @return {@link Result<T>}
      */
     public static <T> Result<T> ok(String msg) {
         return Result.<T>builder()
-                .code(FailCodeEnum.OK.value())
+                .code(SysStatusEnum.OK.value())
                 .data(null)
-                .msg(StrUtil.isBlank(msg) ? FailCodeEnum.OK.getReason() : msg)
+                .msg(StrUtil.isBlank(msg) ? SysStatusEnum.OK.getReason() : msg)
                 .build();
     }
 
@@ -59,14 +59,14 @@ public class Result<T> implements Serializable {
      *	返回服务器错误
      * @author Nkks
      * @time :2021/4/26 23:22
-     * @param msg 错误描述,如果为空则返回{@link FailCodeEnum#getReason()}
+     * @param msg 错误描述,如果为空则返回{@link SysStatusEnum#getReason()}
      * @return {@link Result<T>}
      */
     public static <T> Result<T> serverError(String msg) {
         return Result.<T>builder()
-                .code(FailCodeEnum.INTERNAL_SERVER_ERROR.value())
+                .code(SysStatusEnum.INTERNAL_SERVER_ERROR.value())
                 .data(null)
-                .msg(StrUtil.isBlank(msg) ? FailCodeEnum.INTERNAL_SERVER_ERROR.getReason() : msg)
+                .msg(StrUtil.isBlank(msg) ? SysStatusEnum.INTERNAL_SERVER_ERROR.getReason() : msg)
                 .build();
     }
 
@@ -74,11 +74,11 @@ public class Result<T> implements Serializable {
      *	返回失败
      * @author Nkks
      * @time :2021/4/26 23:22
-     * @param baseEnum 错误码 {@link FailCodeEnum}枚举常量
-     * @param msg 错误描述,如果为空则返回{@link FailCodeEnum#getReason()} ()}
+     * @param baseEnum 错误码 {@link SysStatusEnum}枚举常量
+     * @param msg 错误描述,如果为空则返回{@link SysStatusEnum#getReason()} ()}
      * @return {@link Result<T>}
      */
-    public static <T> Result<T> fail(FailCodeEnum baseEnum, String msg) {
+    public static <T> Result<T> fail(SysStatusEnum baseEnum, String msg) {
         return Result.<T>builder()
                 .code(baseEnum.value())
                 .data(null)
@@ -90,10 +90,10 @@ public class Result<T> implements Serializable {
      *	返回失败
      * @author Nkks
      * @time :2021/4/26 23:22
-     * @param baseEnum 错误码 {@link FailCodeEnum}枚举常量
+     * @param baseEnum 错误码 {@link SysStatusEnum}枚举常量
      * @return {@link Result<T>}
      */
-    public static <T> Result<T> fail(FailCodeEnum baseEnum) {
+    public static <T> Result<T> fail(SysStatusEnum baseEnum) {
         return fail(baseEnum,null);
     }
 
@@ -104,7 +104,7 @@ public class Result<T> implements Serializable {
      * @return {@link Result<T>}
      */
     public static <T> Result<T> fail(String message) {
-        return fail(FailCodeEnum.INTERNAL_SERVER_ERROR,message);
+        return fail(SysStatusEnum.INTERNAL_SERVER_ERROR,message);
     }
 
 
@@ -123,15 +123,15 @@ public class Result<T> implements Serializable {
      *	返回成功
      * @author Nkks
      * @time :2021/4/26 23:22
-     * @param msg 错误描述,如果为空则返回{@link FailCodeEnum#getReason()} ()}
+     * @param msg 错误描述,如果为空则返回{@link SysStatusEnum#getReason()} ()}
      * @param data msg
      * @return {@link Result<T>}
      */
     public static <T> Result<T> ok(T data,String msg) {
         return Result.<T>builder()
-                .code(FailCodeEnum.OK.value())
+                .code(SysStatusEnum.OK.value())
                 .data(data)
-                .msg(StrUtil.isBlank(msg) ? FailCodeEnum.OK.getReason() : msg)
+                .msg(StrUtil.isBlank(msg) ? SysStatusEnum.OK.getReason() : msg)
                 .build();
     }
 
@@ -139,10 +139,10 @@ public class Result<T> implements Serializable {
      *	返回指定错误码Result
      * @author Nkks
      * @time :2021/4/26 23:24
-     * @param baseEnum 错误码 {@link FailCodeEnum}枚举常量
+     * @param baseEnum 错误码 {@link SysStatusEnum}枚举常量
      * @return {@link Result<T>}
      */
-    public static <T> Result<T> result(FailCodeEnum baseEnum) {
+    public static <T> Result<T> result(SysStatusEnum baseEnum) {
         return result(baseEnum,null,null);
     }
 
@@ -150,12 +150,12 @@ public class Result<T> implements Serializable {
      *	返回自定义的Result
      * @author Nkks
      * @time :2021/4/26 23:34
-     * @param baseEnum 错误码 {@link FailCodeEnum}枚举常量
-     * @param msg 错误描述,如果为空则返回{@link FailCodeEnum#getReason()} ()}
+     * @param baseEnum 错误码 {@link SysStatusEnum}枚举常量
+     * @param msg 错误描述,如果为空则返回{@link SysStatusEnum#getReason()} ()}
      * @param data {@code <T>}类型的data
      * @return {@link Result<T>}
      */
-    public static <T> Result<T> result(FailCodeEnum baseEnum, String msg, T data) {
+    public static <T> Result<T> result(SysStatusEnum baseEnum, String msg, T data) {
         return Result.<T>builder()
                 .code(baseEnum.value())
                 .data(data)
@@ -167,11 +167,11 @@ public class Result<T> implements Serializable {
      *	返回自定义的Result
      * @author Nkks
      * @time :2021/4/26 23:34
-     * @param baseEnum 错误码 {@link FailCodeEnum}枚举常量
+     * @param baseEnum 错误码 {@link SysStatusEnum}枚举常量
      * @param data {@code <T>}类型的data
      * @return {@link Result<T>}
      */
-    public static <T> Result<T> result(FailCodeEnum baseEnum, T data) {
+    public static <T> Result<T> result(SysStatusEnum baseEnum, T data) {
         return result(baseEnum,null,data);
     }
 
@@ -179,10 +179,10 @@ public class Result<T> implements Serializable {
      *	返回自定义的Result
      * @author Nkks
      * @time :2021/4/26 23:34
-     * @param baseEnum 错误码 {@link FailCodeEnum}枚举常量
+     * @param baseEnum 错误码 {@link SysStatusEnum}枚举常量
      * @return {@link Result<T>}
      */
-    public static <T> Result<T> result(FailCodeEnum baseEnum, String msg) {
+    public static <T> Result<T> result(SysStatusEnum baseEnum, String msg) {
         return result(baseEnum,msg,null);
     }
 
