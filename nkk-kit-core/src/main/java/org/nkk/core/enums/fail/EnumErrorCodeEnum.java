@@ -1,7 +1,6 @@
 package org.nkk.core.enums.fail;
 
 
-import org.nkk.core.beans.common.EnumResp;
 import org.nkk.core.enums.common.BaseEnum;
 
 /**
