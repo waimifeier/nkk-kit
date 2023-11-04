@@ -72,9 +72,8 @@ public enum SysStatusEnum {
     /**
      * 构造方法
      *
-     * @param value          value
-     * @param failSeriesEnum series
-     * @param reasonPhrase   reasonPhrase
+     * @param value          状态码
+     * @param reason         原因
      * @author Nkks
      * @time 2021/4/26 23:15
      */

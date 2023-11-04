@@ -9,11 +9,10 @@ import java.io.IOException;
 
 
 /**
-*   枚举{@link BaseEnum} 的jackson序列化实现
-* @author Nkks
-* @class JacksonEnumSerializer
-* @time 2022/1/27 13:56
-*/
+ * <p>描述: 枚举{@link BaseEnum} 的jackson序列化实现
+ * <p>开发者: dlj 
+ * <p>时间: 2022/1/27 13:56
+ **/
 public class JacksonEnumSerializer extends JsonSerializer<BaseEnum> {
 
     @Override

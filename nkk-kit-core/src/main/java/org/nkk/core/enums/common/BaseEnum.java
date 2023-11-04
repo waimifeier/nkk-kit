@@ -1,20 +1,16 @@
 package org.nkk.core.enums.common;
 
+import one.util.streamex.StreamEx;
 import org.nkk.core.beans.common.EnumResp;
-import org.nkk.core.beans.exception.EnumIllegalArgumentException;
-import org.nkk.core.enums.fail.EnumErrorCodeEnum;
-
+import java.util.List;
 import java.util.Objects;
 
 
 /**
-*   公共枚举
-*
-* @author nkk
-* @class BaseEnum
-* @time 2022/1/27 9:50
-*/
-
+ * <p>描述: 枚举抽象类
+ * <p>开发者: dlj
+ * <p>时间 2022/6/14 3:29 下午
+ */
 public interface BaseEnum {
 
     /**
@@ -23,7 +19,6 @@ public interface BaseEnum {
      * @return 枚举值
      * @since 1.1.0.211021
      */
-
     String value();
 
     /**
@@ -34,53 +29,70 @@ public interface BaseEnum {
      */
     String label();
 
+
     /**
-     * 解析枚举参数值
+     * <p>描述: 查找枚举key 是否存在
+     * <p>开发者: dlj
+     * <p>时间: 2022/6/14 6:01 下午
      *
-     * @param value     参数值
-     * @param enumClass 需要解析的枚举类
-     * @param <E>       继承 {@link BaseEnum} 的枚举类型
-     * @return 解析后的枚举对象
-     * @throws EnumIllegalArgumentException 解析异常
-     * @since 1.1.0.211021
+     * @param value: 枚举的value
+     * @return java.lang.Boolean
+     **/
+    static <E extends BaseEnum> Boolean existsKey(Class<E> enumClass, String value) {
+        return Objects.nonNull(resolveKeyOfNullable(enumClass, value));
+    }
+
+
+    /**
+     * 根据key 获取指定的枚举类型
+     *
+     * @param enumClass 枚举类型
+     * @param value     枚举value
+     * @param <E>       枚举泛型
+     * @return 返回枚举
+     * @throws NullPointerException 不存在抛出空指针
      */
-    static <E extends BaseEnum> E resolve(String value, Class<E> enumClass) throws EnumIllegalArgumentException {
-        E e = resolveNullAble(value, enumClass);
-        if (e == null) {
-            throw EnumIllegalArgumentException.resolveEnumFail(EnumErrorCodeEnum.ENUM_CAN_NOT_MATCH,"[" + value + "]无法匹配为枚举类型");
+    static <E extends BaseEnum> BaseEnum resolveKey(Class<E> enumClass, String value) throws NullPointerException {
+        BaseEnum tBaseEnum = resolveKeyOfNullable(enumClass, value);
+        Objects.requireNonNull(tBaseEnum, String.format("枚举值[%s]不存在", value));
+        return tBaseEnum;
+    }
+
+
+    /**
+     * <p>描述: 根据枚举key 解析出枚举
+     * <p>开发者: dlj
+     * <p>时间: 2022/6/20 11:55 上午
+     *
+     * @param value: 枚举值
+     * @return com.nk.enums.BaseEnum<Key>
+     **/
+    static <E extends BaseEnum> BaseEnum resolveKeyOfNullable(Class<E> enumClass, String value) {
+
+        if (!enumClass.isEnum() || !enumClass.isAssignableFrom(BaseEnum.class)) {
+            return null;
         }
-        return e;
+
+        E[] enumConstants = enumClass.getEnumConstants();
+        return StreamEx.of(enumConstants)
+                .findFirst(it -> Objects.equals(it.value(), value))
+                .orElse(null);
     }
 
     /**
-     * 解析枚举参数值
+     * 获取所有的枚举key
      *
-     * @param value     参数值
-     * @param enumClass 需要解析的枚举类
-     * @param <E>       继承 {@link BaseEnum} 的枚举类型
-     * @return 解析后的枚举对象
-     * @throws EnumIllegalArgumentException 解析异常
-     * @since 1.1.0.211021
+     * @param enumClass 枚举类
+     * @return 返回枚举key的集合
      */
-    static <E extends BaseEnum> E resolveNullAble(String value, Class<E> enumClass) throws EnumIllegalArgumentException {
-        if (!enumClass.isEnum()) {
-            throw EnumIllegalArgumentException.notAnEnumError(EnumErrorCodeEnum.NOT_AN_ENUM);
-        }
-        E enumValue = null;
+    static <E extends BaseEnum> List<String> getKeys(Class<E> enumClass) {
         E[] enumConstants = enumClass.getEnumConstants();
-        for (E enumConstant : enumConstants) {
-            if (Objects.equals(enumConstant.value(), value)) {
-                enumValue = enumConstant;
-                break;
-            }
-        }
-        return enumValue;
+        return StreamEx.of(enumConstants).map(BaseEnum::value).toList();
     }
 
     /**
     *   获取返回值
     * @author nkk
-    * @time 2022/3/7 10:26
     * @return {@link EnumResp}
     */
     default EnumResp getEnumResp(){
