@@ -2,6 +2,7 @@ package org.nkk.core.enums.common;
 
 import one.util.streamex.StreamEx;
 import org.nkk.core.beans.common.EnumResp;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -68,14 +69,13 @@ public interface BaseEnum {
      * @return com.nk.enums.BaseEnum<Key>
      **/
     static <E extends BaseEnum> BaseEnum resolveKeyOfNullable(Class<E> enumClass, String value) {
-
-        if (!enumClass.isEnum() || !enumClass.isAssignableFrom(BaseEnum.class)) {
+        if (!enumClass.isEnum() || !BaseEnum.class.isAssignableFrom(enumClass)) {
             return null;
         }
 
         E[] enumConstants = enumClass.getEnumConstants();
         return StreamEx.of(enumConstants)
-                .findFirst(it -> Objects.equals(it.value(), value))
+                .findFirst(it ->Objects.equals(it.value(), value))
                 .orElse(null);
     }
 

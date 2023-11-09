@@ -22,6 +22,7 @@ public class JacksonEnumDeSerializer extends JsonDeserializer<BaseEnum> {
         JsonNode node = jsonParser.getCodec().readTree(jsonParser);
         Object currentValue = jsonParser.getCurrentValue();
         Class<?> propertyType = ObjectUtil.getTypeArgument(currentValue);
+        System.out.println("......");
         if(BaseEnum.class.isAssignableFrom(propertyType)){
             Class<BaseEnum> clazz = (Class<BaseEnum>) propertyType;
             String text = node.asText();

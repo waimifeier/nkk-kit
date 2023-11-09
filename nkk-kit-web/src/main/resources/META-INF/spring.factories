@@ -1,1 +1,3 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=org.nkk.web.conf.exception.ExceptionsHandler,org.nkk.web.conf.json.JacksonConfig
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=org.nkk.web.conf.exception.ExceptionsHandler,\
+  org.nkk.web.conf.json.JacksonConfig,\
+  org.nkk.web.conf.json.EnumQuery
