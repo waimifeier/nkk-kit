@@ -6,6 +6,11 @@ import org.nkk.core.beans.common.EnumResp;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * 参考文档：https://www.cnblogs.com/kelelipeng/p/13972138.html
+ *
+ * https://blog.csdn.net/XY1790026787/article/details/107768555
+ */
 
 /**
  * <p>描述: 枚举抽象类
@@ -101,4 +106,5 @@ public interface BaseEnum {
                 .label(label())
                 .build();
     }
+
 }

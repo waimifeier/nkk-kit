@@ -10,16 +10,15 @@ import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
 import java.util.Objects;
-import java.util.stream.Stream;
 
 
 /**
- * <p>描述: 处理Query参数和Form-Data参数枚举类型转换
+ * <p>描述: 处理Query参数 【使用EnumsConvertorFactory代替】
  * <p>开发者: dlj
  * <p>时间 2022/6/21 9:29 上午
  */
 
-public class EnumQuery implements HandlerMethodArgumentResolver {
+public class EnumQueryResolver implements HandlerMethodArgumentResolver {
 
     @Override
     public boolean supportsParameter(MethodParameter methodParameter) {
