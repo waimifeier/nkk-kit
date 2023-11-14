@@ -14,7 +14,6 @@
     </parent>
 
     <artifactId>nkk-kit-bom</artifactId>
-    <name>${project.artifactId}</name>
     <description>nkk工具包统一版本管理模块</description>
 
 
@@ -26,22 +25,17 @@
     <dependencyManagement>
         <dependencies>
                <dependency>
-                   <groupId>org.nkk</groupId>
+                   <groupId>com.github.waimifeier.nkk-kit</groupId>
                    <artifactId>nkk-kit-core</artifactId>
-                   <version>${project.parent.version}</version>
+                   <version>${project.version}</version>
                </dependency>
 
                <dependency>
-                   <groupId>org.nkk</groupId>
+                   <groupId>com.github.waimifeier.nkk-kit</groupId>
                    <artifactId>nkk-kit-web</artifactId>
-                   <version>${project.parent.version}</version>
+                   <version>${project.version}</version>
                </dependency>
 
-             <dependency>
-                   <groupId>org.nkk</groupId>
-                   <artifactId>nkk-kit-mp</artifactId>
-                   <version>${project.parent.version}</version>
-               </dependency>
         </dependencies>
     </dependencyManagement>
 
