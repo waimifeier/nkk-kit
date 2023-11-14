@@ -11,8 +11,9 @@ import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import one.util.streamex.StreamEx;
 import org.apache.commons.lang3.StringUtils;
-import org.nkk.web.annotations.MaskingFormat;
 import org.nkk.core.enums.verify.MaskingMethod;
+import org.nkk.web.annotations.MaskingFormat;
+import org.springframework.boot.jackson.JsonComponent;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -26,6 +27,7 @@ import java.util.Objects;
  */
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonComponent
 public class JacksonMaskingSerializer extends JsonSerializer<String> implements ContextualSerializer {
 
     /**

@@ -17,7 +17,6 @@ public class EnumsConvertorFactory implements ConverterFactory<String, BaseEnum>
 
     @Override
     public <T extends BaseEnum> Converter<String, T> getConverter(Class<T> targetType) {
-
         if (!BaseEnum.class.isAssignableFrom(targetType)) {
             return null;
         }

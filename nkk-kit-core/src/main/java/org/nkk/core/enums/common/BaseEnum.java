@@ -1,5 +1,6 @@
 package org.nkk.core.enums.common;
 
+import com.alibaba.fastjson2.annotation.JSONCreator;
 import one.util.streamex.StreamEx;
 import org.nkk.core.beans.common.EnumResp;
 
@@ -17,6 +18,7 @@ import java.util.Objects;
  * <p>开发者: dlj
  * <p>时间 2022/6/14 3:29 下午
  */
+
 public interface BaseEnum {
 
     /**
