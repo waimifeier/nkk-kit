@@ -8,7 +8,7 @@ package org.nkk.core.enums.common;
  * @class SysStatusEnum
  * @time 2022/1/26 11:12
  */
-public enum SysStatusEnum {
+public enum SysStatusEnum implements BaseEnum {
 
     // --- 2xx Success ---
     /**
@@ -102,6 +102,11 @@ public enum SysStatusEnum {
      */
     public String value() {
         return String.valueOf(this.value);
+    }
+
+    @Override
+    public String label() {
+        return this.reason;
     }
 
     /**
