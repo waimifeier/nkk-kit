@@ -1,7 +1,7 @@
 package org.nkk.core.beans.exception;
 
 
-import org.nkk.core.enums.common.BaseEnum;
+import org.nkk.core.enums.common.SysFailEnum;
 import org.nkk.core.enums.common.SysStatusEnum;
 
 /**
@@ -15,14 +15,14 @@ public class BusinessException extends RuntimeException{
     private static final long serialVersionUID = -8626647865331982731L;
 
     /** 错误码 */
-    protected final BaseEnum errorCode;
+    protected final SysFailEnum errorCode;
 
-    public BaseEnum getErrorCode() {
+    public SysFailEnum getErrorCode() {
         return errorCode;
     }
 
-    public String getCode() {
-        return errorCode.value();
+    public Integer getCode() {
+        return errorCode.code();
     }
 
     /**
@@ -41,8 +41,8 @@ public class BusinessException extends RuntimeException{
      * @time 2021/11/18 10:05
      * @param errorCode 错误码
      */
-    public BusinessException(final BaseEnum errorCode) {
-        super(errorCode.label());
+    public BusinessException(final SysFailEnum errorCode) {
+        super(errorCode.message());
         this.errorCode = errorCode;
     }
 
@@ -75,7 +75,7 @@ public class BusinessException extends RuntimeException{
      * @param errorCode 错误码
      * @param detailedMessage 错误消息
      */
-    public BusinessException(final BaseEnum errorCode, final String detailedMessage) {
+    public BusinessException(final SysFailEnum errorCode, final String detailedMessage) {
         super(detailedMessage);
         this.errorCode = errorCode;
     }
@@ -87,8 +87,8 @@ public class BusinessException extends RuntimeException{
      * @param errorCode 错误码
      * @param t 导火索
      */
-    public BusinessException(final BaseEnum errorCode, final Throwable t) {
-        super(errorCode.label(), t);
+    public BusinessException(final SysFailEnum errorCode, final Throwable t) {
+        super(errorCode.message(), t);
         this.errorCode = errorCode;
     }
 
@@ -112,7 +112,7 @@ public class BusinessException extends RuntimeException{
      * @param detailedMessage detailedMessage
      * @param t t
      */
-    public BusinessException(final BaseEnum errorCode, final String detailedMessage, final Throwable t) {
+    public BusinessException(final SysFailEnum errorCode, final String detailedMessage, final Throwable t) {
         super(detailedMessage, t);
         this.errorCode = errorCode;
     }
@@ -134,7 +134,7 @@ public class BusinessException extends RuntimeException{
      * @param errorCode 错误码
      * @return {@link BusinessException}
      */
-    public static BusinessException fail(final BaseEnum errorCode) {
+    public static BusinessException fail(final SysFailEnum errorCode) {
         return new BusinessException(errorCode);
     }
 
@@ -168,7 +168,7 @@ public class BusinessException extends RuntimeException{
      * @param detailedMessage 详细描述
      * @return {@link BusinessException}
      */
-    public static BusinessException fail(final BaseEnum errorCode, final String detailedMessage) {
+    public static BusinessException fail(final SysFailEnum errorCode, final String detailedMessage) {
         return new BusinessException(errorCode,detailedMessage);
     }
     

@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.nkk.core.enums.common.SysFailEnum;
 import org.nkk.core.enums.common.SysStatusEnum;
 
 import java.io.Serializable;
@@ -28,7 +29,7 @@ public class Result<T> implements Serializable {
     /**
      * 	错误码
      */
-    private String code;
+    private Integer code;
 
     /**
      * 	描述
@@ -49,7 +50,7 @@ public class Result<T> implements Serializable {
      */
     public static <T> Result<T> ok(String msg) {
         return Result.<T>builder()
-                .code(SysStatusEnum.OK.value())
+                .code(SysStatusEnum.OK.code())
                 .data(null)
                 .msg(StrUtil.isBlank(msg) ? SysStatusEnum.OK.getReason() : msg)
                 .build();
@@ -64,7 +65,7 @@ public class Result<T> implements Serializable {
      */
     public static <T> Result<T> serverError(String msg) {
         return Result.<T>builder()
-                .code(SysStatusEnum.INTERNAL_SERVER_ERROR.value())
+                .code(SysStatusEnum.INTERNAL_SERVER_ERROR.code())
                 .data(null)
                 .msg(StrUtil.isBlank(msg) ? SysStatusEnum.INTERNAL_SERVER_ERROR.getReason() : msg)
                 .build();
@@ -78,11 +79,11 @@ public class Result<T> implements Serializable {
      * @param msg 错误描述,如果为空则返回{@link SysStatusEnum#getReason()} ()}
      * @return {@link Result<T>}
      */
-    public static <T> Result<T> fail(SysStatusEnum baseEnum, String msg) {
+    public static <T> Result<T> fail(SysFailEnum baseEnum, String msg) {
         return Result.<T>builder()
-                .code(baseEnum.value())
+                .code(baseEnum.code())
                 .data(null)
-                .msg(StrUtil.isBlank(msg) ? baseEnum.getReason() : msg)
+                .msg(StrUtil.isBlank(msg) ? baseEnum.message() : msg)
                 .build();
     }
 
@@ -93,7 +94,7 @@ public class Result<T> implements Serializable {
      * @param baseEnum 错误码 {@link SysStatusEnum}枚举常量
      * @return {@link Result<T>}
      */
-    public static <T> Result<T> fail(SysStatusEnum baseEnum) {
+    public static <T> Result<T> fail(SysFailEnum baseEnum) {
         return fail(baseEnum,null);
     }
 
@@ -129,7 +130,7 @@ public class Result<T> implements Serializable {
      */
     public static <T> Result<T> ok(T data,String msg) {
         return Result.<T>builder()
-                .code(SysStatusEnum.OK.value())
+                .code(SysStatusEnum.OK.code())
                 .data(data)
                 .msg(StrUtil.isBlank(msg) ? SysStatusEnum.OK.getReason() : msg)
                 .build();
@@ -157,7 +158,7 @@ public class Result<T> implements Serializable {
      */
     public static <T> Result<T> result(SysStatusEnum baseEnum, String msg, T data) {
         return Result.<T>builder()
-                .code(baseEnum.value())
+                .code(baseEnum.code())
                 .data(data)
                 .msg(StrUtil.isBlank(msg) ? baseEnum.getReason() : msg)
                 .build();

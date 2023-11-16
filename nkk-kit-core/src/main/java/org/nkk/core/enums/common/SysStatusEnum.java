@@ -8,7 +8,7 @@ package org.nkk.core.enums.common;
  * @class SysStatusEnum
  * @time 2022/1/26 11:12
  */
-public enum SysStatusEnum implements BaseEnum {
+public enum SysStatusEnum implements SysFailEnum {
 
     // --- 2xx Success ---
     /**
@@ -93,21 +93,7 @@ public enum SysStatusEnum implements BaseEnum {
         return this.value;
     }
 
-    /**
-     * 返回错误码的值
-     *
-     * @return {@code int}
-     * @author Nkks
-     * @time 2021/4/26 23:02
-     */
-    public String value() {
-        return String.valueOf(this.value);
-    }
 
-    @Override
-    public String label() {
-        return this.reason;
-    }
 
     /**
      * 返回错误码的描述
@@ -121,5 +107,13 @@ public enum SysStatusEnum implements BaseEnum {
     }
 
 
+    @Override
+    public Integer code() {
+        return this.value;
+    }
 
+    @Override
+    public String message() {
+        return this.reason;
+    }
 }
