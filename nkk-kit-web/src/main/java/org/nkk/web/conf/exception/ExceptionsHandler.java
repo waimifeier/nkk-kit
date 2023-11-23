@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
  */
 @RestControllerAdvice
 @ResponseStatus(HttpStatus.OK)
-@Order(value = Ordered.HIGHEST_PRECEDENCE)
+@Order(value = Ordered.LOWEST_PRECEDENCE)
 @Slf4j
 public class ExceptionsHandler {
 
