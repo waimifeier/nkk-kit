@@ -3,6 +3,7 @@ package org.nkk.web.conf.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.nkk.core.beans.common.Result;
 import org.nkk.core.beans.exception.BusinessException;
+import org.nkk.core.beans.exception.EnumIllegalArgumentException;
 import org.nkk.core.enums.common.SysStatusEnum;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -127,6 +128,20 @@ public class ExceptionsHandler {
         return Result.fail(SysStatusEnum.BAD_REQUEST, Objects.requireNonNull(bindingResult.getFieldError()).getDefaultMessage());
     }
 
+
+    /**
+     * Enum非法参数异常
+     *
+     * @param e e
+     * @return {@link Result}<{@link Object}>
+     */
+    @ExceptionHandler({EnumIllegalArgumentException.class})
+    public Result<Object> enumIllegalArgumentException(EnumIllegalArgumentException e) {
+        log.error("枚举不匹配：{}", e.getMessage());
+        return Result.fail(SysStatusEnum.BAD_REQUEST,e.getMessage());
+    }
+
+
     /**
      * Json转换异常【JSON格式不对,或数据类型转换失败】
      */
@@ -144,6 +159,7 @@ public class ExceptionsHandler {
         log.error("http媒体类型不支持异常：{}", e.getMessage());
         return Result.fail(SysStatusEnum.BAD_REQUEST,"参数媒体类型不支持");
     }
+
 
 
         /**

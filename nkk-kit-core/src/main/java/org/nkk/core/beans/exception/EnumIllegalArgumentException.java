@@ -18,13 +18,13 @@ public class EnumIllegalArgumentException extends IllegalArgumentException{
 
     private final EnumErrorCodeEnum enumErrorCodeEnum;
 
-    private EnumIllegalArgumentException(EnumErrorCodeEnum enumErrorCodeEnum, String reasonPhrase) {
+    public EnumIllegalArgumentException(EnumErrorCodeEnum enumErrorCodeEnum, String reasonPhrase) {
         super(reasonPhrase);
         this.enumErrorCodeEnum = enumErrorCodeEnum;
         this.code = enumErrorCodeEnum.value();
     }
 
-    private EnumIllegalArgumentException(EnumErrorCodeEnum enumErrorCodeEnum) {
+    public EnumIllegalArgumentException(EnumErrorCodeEnum enumErrorCodeEnum) {
         super(enumErrorCodeEnum.label());
         this.enumErrorCodeEnum = enumErrorCodeEnum;
         this.code =enumErrorCodeEnum.label();

@@ -8,12 +8,12 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.ContextualSerializer;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import one.util.streamex.StreamEx;
 import org.apache.commons.lang3.StringUtils;
 import org.nkk.core.enums.verify.MaskingMethod;
 import org.nkk.web.annotations.MaskingFormat;
-import org.springframework.boot.jackson.JsonComponent;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -27,8 +27,7 @@ import java.util.Objects;
  */
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonComponent
-public class JacksonMaskingSerializer extends JsonSerializer<String> implements ContextualSerializer {
+public class JacksonMaskingSerializer extends JsonSerializer<String> implements ContextualSerializer  {
 
     /**
      * 屏蔽方法
@@ -38,6 +37,7 @@ public class JacksonMaskingSerializer extends JsonSerializer<String> implements 
     /**
      * 隐藏字符串
      */
+    @Getter
     private String symbol;
 
 
@@ -61,17 +61,16 @@ public class JacksonMaskingSerializer extends JsonSerializer<String> implements 
 
         if (Objects.equals(property.getType().getRawClass(),String.class)){
             MaskingFormat annotation = property.getAnnotation(MaskingFormat.class);
+            if (annotation == null) {
+                annotation = property.getContextAnnotation(MaskingFormat.class);
+            }
             if (annotation != null){
                 MaskingMethod method = annotation.method();
                 String symbol = annotation.symbol();
                 return new JacksonMaskingSerializer(method,symbol);
             }
         }
-        return prov.findValueSerializer (property.getType (), property);
+        return prov.findValueSerializer(String.class, property);
     }
 
-    @Override
-    public Class<String> handledType() {
-        return String.class;
-    }
 }

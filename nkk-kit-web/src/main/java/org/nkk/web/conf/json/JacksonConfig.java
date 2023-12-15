@@ -14,8 +14,8 @@ public class JacksonConfig {
     @Bean
     public Jackson2ObjectMapperBuilderCustomizer customizer() {
         return builder -> {
-          builder.deserializerByType(Enum.class, new JacksonEnumDeserializer());
-          builder.serializerByType(BaseEnum.class, new JacksonEnumSerializer());
+            builder.deserializerByType(Enum.class, new JacksonEnumDeserializer());
+            builder.serializerByType(BaseEnum.class, new JacksonEnumSerializer());
         };
     }
 

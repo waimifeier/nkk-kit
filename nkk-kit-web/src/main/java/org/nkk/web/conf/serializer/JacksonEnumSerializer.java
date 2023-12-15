@@ -7,18 +7,11 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import lombok.NoArgsConstructor;
 import org.nkk.core.enums.common.BaseEnum;
-import org.springframework.boot.jackson.JsonComponent;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
 
 
-/**
- * <p>描述: 枚举{@link BaseEnum} 的jackson序列化实现
- * <p>开发者: dlj 
- * <p>时间: 2022/1/27 13:56
- **/
-@JsonComponent
 @NoArgsConstructor
 public class JacksonEnumSerializer extends JsonSerializer<BaseEnum> {
 
