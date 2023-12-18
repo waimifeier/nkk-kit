@@ -120,7 +120,7 @@ public class ExceptionsHandler {
 
     @ExceptionHandler({IllegalArgumentException.class})
     public Result<Object> illegalArgumentException(IllegalArgumentException  e){
-        log.error("JSON参数绑定失败异常：{}", e.getMessage());
+        log.error("非法参数：{}", e.getMessage());
         return Result.fail(SysStatusEnum.BAD_REQUEST, e.getMessage());
     }
 
