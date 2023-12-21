@@ -35,7 +35,7 @@
         <lombok.version>1.18.26</lombok.version>
         <hutool.version>5.8.16</hutool.version>
         <streamex.version>0.8.2</streamex.version>
-        <jooq.version>3.19.0</jooq.version>
+        <jool.version>0.9.15</jool.version>
         <spring-boot.version>2.7.3</spring-boot.version>
         <servlet-api.version>4.0.1</servlet-api.version>
         <jackson.version>2.13.3</jackson.version>
@@ -83,7 +83,7 @@
             <dependency>
                 <groupId>org.jooq</groupId>
                 <artifactId>jool</artifactId>
-                <version>${jooq.version}</version>
+                <version>${jool.version}</version>
             </dependency>
 
               <dependency>
