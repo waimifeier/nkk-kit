@@ -12,15 +12,13 @@ public class EncryptProperties {
 
 
     /**
-     * <a href="http://tool.zaonao.cn/password/">秘钥key</a></br>
-     *
-     *
+     * <a href="http://tool.zaonao.cn/password/">生成秘钥key</a></br>
      */
     private String key = "0CoJUm6Qyw8W8ju=";
 
     /**
      * 偏移Iv
      */
-    private String iv = "SoC2uTD4Mj7bJdGa" ;
+    private String iv = "zvckzf823j6hkr8t";
 
 }
