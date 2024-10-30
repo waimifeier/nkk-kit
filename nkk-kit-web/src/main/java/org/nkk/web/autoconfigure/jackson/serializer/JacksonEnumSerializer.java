@@ -1,4 +1,4 @@
-package org.nkk.web.conf.serializer;
+package org.nkk.web.autoconfigure.jackson.serializer;
 
 import cn.hutool.core.util.ReflectUtil;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -12,6 +12,9 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 
 
+/**
+ * 对base枚举进行序列化操作
+ */
 @NoArgsConstructor
 public class JacksonEnumSerializer extends JsonSerializer<BaseEnum> {
 

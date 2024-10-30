@@ -1,4 +1,4 @@
-package org.nkk.web.conf.json;
+package org.nkk.web.autoconfigure.jackson.factory;
 
 import org.nkk.core.enums.common.BaseEnum;
 import org.springframework.core.convert.converter.Converter;
@@ -8,6 +8,7 @@ import java.util.Objects;
 
 /**
  * 枚举转换工厂：可以处理query 枚举参数、 formData 对象参数
+ *
  */
 public class EnumsConvertorFactory implements ConverterFactory<String, BaseEnum> {
 

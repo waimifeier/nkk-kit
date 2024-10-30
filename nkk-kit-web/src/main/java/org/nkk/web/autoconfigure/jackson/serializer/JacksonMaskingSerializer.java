@@ -1,4 +1,4 @@
-package org.nkk.web.conf.serializer;
+package org.nkk.web.autoconfigure.jackson.serializer;
 
 import cn.hutool.core.util.DesensitizedUtil;
 import com.fasterxml.jackson.core.JsonGenerator;

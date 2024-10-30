@@ -1,4 +1,4 @@
-package org.nkk.web.conf.deSerializer;
+package org.nkk.web.autoconfigure.jackson.deSerializer;
 
 import cn.hutool.core.util.ReflectUtil;
 import com.fasterxml.jackson.core.JacksonException;
@@ -16,6 +16,9 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Objects;
 
+/**
+ *  base枚举反序列化处理程序
+ */
 @Setter
 @Slf4j
 @NoArgsConstructor

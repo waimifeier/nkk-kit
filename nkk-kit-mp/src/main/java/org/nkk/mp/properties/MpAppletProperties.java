@@ -5,7 +5,7 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Data
-@ConfigurationProperties(prefix = "mp.applet")
+@ConfigurationProperties(prefix = "wx.applet")
 public class MpAppletProperties {
 
     /**

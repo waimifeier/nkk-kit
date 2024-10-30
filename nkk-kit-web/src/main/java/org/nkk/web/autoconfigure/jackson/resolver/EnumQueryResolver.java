@@ -1,4 +1,4 @@
-package org.nkk.web.conf.json;
+package org.nkk.web.autoconfigure.jackson.resolver;
 
 import one.util.streamex.StreamEx;
 import org.nkk.core.enums.common.BaseEnum;

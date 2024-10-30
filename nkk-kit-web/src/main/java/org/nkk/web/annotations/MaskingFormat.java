@@ -3,7 +3,7 @@ package org.nkk.web.annotations;
 import com.fasterxml.jackson.annotation.JacksonAnnotationsInside;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.nkk.core.enums.verify.MaskingMethod;
-import org.nkk.web.conf.serializer.JacksonMaskingSerializer;
+import org.nkk.web.autoconfigure.jackson.serializer.JacksonMaskingSerializer;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
