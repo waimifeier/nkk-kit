@@ -16,17 +16,19 @@ public class SM4Encryptor implements Encryptor {
     /**
      * key建议：秘钥为16位</br>
      */
-    private final EncryptProperties encryptProperties;
+    private final EncryptProperties config;
 
     @Override
-    public String encryptHex(String data) {
-        SM4 sm4 = new SM4(Mode.CBC, Padding.PKCS5Padding, encryptProperties.getKey().getBytes(), encryptProperties.getIv().getBytes());
-        return sm4.encryptHex(data);
+    public String encryptBase64(String data) {
+        String key = config.getKey(), iv = config.getIv();
+        SM4 sm4 = new SM4(Mode.CBC, Padding.PKCS5Padding, key.getBytes(), iv.getBytes());
+        return sm4.encryptBase64(data, CharsetUtil.CHARSET_UTF_8);
     }
 
     @Override
     public String decryptStr(String data) {
-        SM4 sm4 = new SM4(Mode.CBC, Padding.PKCS5Padding, encryptProperties.getKey().getBytes(), encryptProperties.getIv().getBytes());
+        String key = config.getKey(), iv = config.getIv();
+        SM4 sm4 = new SM4(Mode.CBC, Padding.PKCS5Padding, key.getBytes(), iv.getBytes());
         return sm4.decryptStr(data, CharsetUtil.CHARSET_UTF_8);
     }
 

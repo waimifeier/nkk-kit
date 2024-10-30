@@ -19,17 +19,19 @@ public class AESEncryptor implements Encryptor {
      * 秘钥为16/24/32位
      */
 
-    private final EncryptProperties encryptProperties;
+    private final EncryptProperties config;
 
     @Override
-    public String encryptHex(String data) {
-        AES aes = new AES(Mode.ECB.name(), "PKCS7Padding", encryptProperties.getKey().getBytes());
-        return aes.encryptHex(data);
+    public String encryptBase64(String data) {
+        String key = config.getKey(), iv = config.getIv();
+        AES aes = new AES(Mode.CBC.name(), "PKCS7Padding", key.getBytes(), iv.getBytes());
+        return aes.encryptBase64(data, CharsetUtil.CHARSET_UTF_8);
     }
 
     @Override
     public String decryptStr(String data) {
-        AES aes = new AES(Mode.ECB.name(), "PKCS7Padding", encryptProperties.getKey().getBytes());
+        String key = config.getKey(), iv = config.getIv();
+        AES aes = new AES(Mode.CBC.name(), "PKCS7Padding", key.getBytes(), iv.getBytes());
         return aes.decryptStr(data, CharsetUtil.CHARSET_UTF_8);
     }
 

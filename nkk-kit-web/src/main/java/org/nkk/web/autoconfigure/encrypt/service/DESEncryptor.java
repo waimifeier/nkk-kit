@@ -16,17 +16,19 @@ public class DESEncryptor implements Encryptor {
      * 建议：秘钥为8位
      */
 
-    private final EncryptProperties encryptProperties;
+    private final EncryptProperties config;
 
     @Override
-    public String encryptHex(String data) {
-        DES aes = new DES(Mode.ECB.name(), "PKCS7Padding", encryptProperties.getKey().getBytes());
-        return aes.encryptHex(data);
+    public String encryptBase64(String data) {
+        String key = config.getKey(), iv = config.getIv();
+        DES aes = new DES(Mode.CBC.name(), "PKCS7Padding", key.getBytes(), iv.getBytes());
+        return aes.encryptBase64(data, CharsetUtil.CHARSET_UTF_8);
     }
 
     @Override
     public String decryptStr(String data) {
-        DES aes = new DES(Mode.ECB.name(), "PKCS7Padding", encryptProperties.getKey().getBytes());
+        String key = config.getKey(), iv = config.getIv();
+        DES aes = new DES(Mode.CBC.name(), "PKCS7Padding", key.getBytes(), iv.getBytes());
         return aes.decryptStr(data, CharsetUtil.CHARSET_UTF_8);
     }
 

@@ -11,7 +11,7 @@ public interface Encryptor {
      * @param data 数据
      * @return {@link String}
      */
-    String encryptHex(String data);
+    String encryptBase64(String data);
 
     /**
      * 解密str

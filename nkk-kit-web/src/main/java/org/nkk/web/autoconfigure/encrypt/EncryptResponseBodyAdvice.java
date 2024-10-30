@@ -1,7 +1,10 @@
 package org.nkk.web.autoconfigure.encrypt;
 
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.nkk.core.beans.common.Result;
 import org.nkk.web.autoconfigure.encrypt.annotations.EncryptIgnore;
 import org.nkk.web.autoconfigure.encrypt.service.Encryptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,16 +83,16 @@ public class EncryptResponseBodyAdvice implements ResponseBodyAdvice<Object> {
                 String json = objectMapper.writeValueAsString(body);
                 // 如果需要可以按照原本数据格式，将加密后封装进去的数据返回
                 // Object encryptData = objectMapper.readValue("{\"code\":200,\"msg\":\"成功\",\"data\":\"机密数据..\"}", methodParameter.getParameterType());
-                String enx = encryptor.encryptHex(json);
-                log.info("解密后：{}",encryptor.decryptStr(enx));
-                return enx;
+                String enx = encryptor.encryptBase64(json);
+                return Result.ok(enx, "OK");
             } catch (Exception ex) {
                 log.error("encryptor处理失败：{}", ex.getMessage());
+                return Result.fail(ex.getMessage());
             }
         }
         // 文本
         else if (mediaType.includes(MediaType.TEXT_PLAIN)) {
-            return encryptor.encryptHex(body.toString());
+            return encryptor.encryptBase64(body.toString());
         }
         return body;
     }
