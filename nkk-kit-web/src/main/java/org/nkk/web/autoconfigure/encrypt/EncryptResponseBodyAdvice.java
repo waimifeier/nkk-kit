@@ -1,15 +1,20 @@
 package org.nkk.web.autoconfigure.encrypt;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.nkk.core.beans.common.Result;
+import org.nkk.web.autoconfigure.encrypt.annotations.EnableEncrypt;
 import org.nkk.web.autoconfigure.encrypt.annotations.EncryptIgnore;
+import org.nkk.web.autoconfigure.encrypt.condition.EncryptorPresentCondition;
 import org.nkk.web.autoconfigure.encrypt.service.Encryptor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.core.MethodParameter;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.core.annotation.Order;
+import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.server.ServerHttpRequest;
@@ -24,26 +29,28 @@ import java.lang.reflect.Method;
 /**
  * 响应数据的加密处理<br>
  */
-@ControllerAdvice
 @Slf4j
-@EnableConfigurationProperties(EncryptProperties.class)
+@Order(Ordered.LOWEST_PRECEDENCE)
+@Conditional(EncryptorPresentCondition.class)
+@ControllerAdvice
+@RequiredArgsConstructor
 public class EncryptResponseBodyAdvice implements ResponseBodyAdvice<Object> {
 
-    private final ObjectMapper objectMapper;
+   private final ObjectMapper objectMapper;
+
     private final Encryptor encryptor;
 
-    @Autowired
-    public EncryptResponseBodyAdvice(ObjectMapper objectMapper,
-                                     EncryptProperties encryptProperties,
-                                     Encryptor encryptor) {
-        this.objectMapper = objectMapper;
-        this.encryptor = encryptor;
-    }
+    private final Environment environment;
 
 
     @Override
     public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
-        Class<?> declaringClass = returnType.getDeclaringClass();
+
+       log.info("当前环境：{}", environment.getActiveProfiles());
+
+       Class<?> declaringClass = returnType.getDeclaringClass();
+       AnnotationUtils.isCandidateClass(declaringClass, EnableEncrypt.class);
+       AnnotationUtils.findAnnotation(declaringClass, EnableEncrypt.class);
         if (this.hasIgnoreAnnotation(declaringClass)) {
             return false;
         }
@@ -51,15 +58,16 @@ public class EncryptResponseBodyAdvice implements ResponseBodyAdvice<Object> {
         if (method != null) {
             Class<?> returnValueType = method.getReturnType();
             boolean ignore = this.hasIgnoreAnnotation(method) || this.hasIgnoreAnnotation(returnValueType);
-            if (ignore) {
-                return false;
-            }
+            return !ignore;
         }
         return true;
     }
 
     /**
-     * 是否有忽略加密的注解
+     * 判断给定的注解元素是否有忽略加密的注解
+     *
+     * @param annotatedElement 注解元素
+     * @return 如果注解元素上有 {@link EncryptIgnore} 注解，则返回 true；否则返回 false
      */
     private boolean hasIgnoreAnnotation(AnnotatedElement annotatedElement) {
         if (annotatedElement == null) {
@@ -68,6 +76,7 @@ public class EncryptResponseBodyAdvice implements ResponseBodyAdvice<Object> {
         return annotatedElement.isAnnotationPresent(EncryptIgnore.class);
     }
 
+
     @Override
     public Object beforeBodyWrite(Object body,
                                   MethodParameter methodParameter,
@@ -75,7 +84,7 @@ public class EncryptResponseBodyAdvice implements ResponseBodyAdvice<Object> {
                                   Class<? extends HttpMessageConverter<?>> selectedConverterType,
                                   ServerHttpRequest request,
                                   ServerHttpResponse response) {
-
+        log.info("=====>beforeBodyWrite");
         // JSON
         if (mediaType.includes(MediaType.APPLICATION_JSON)) {
             try {
@@ -96,6 +105,7 @@ public class EncryptResponseBodyAdvice implements ResponseBodyAdvice<Object> {
         }
         return body;
     }
+
 
 
 }

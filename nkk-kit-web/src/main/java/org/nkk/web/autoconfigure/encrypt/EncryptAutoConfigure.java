@@ -1,49 +1,47 @@
 package org.nkk.web.autoconfigure.encrypt;
 
+import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 import one.util.streamex.StreamEx;
 import org.nkk.web.autoconfigure.encrypt.annotations.EnableEncrypt;
 import org.nkk.web.autoconfigure.encrypt.enums.EncryptMethod;
-import org.nkk.web.autoconfigure.encrypt.service.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.nkk.web.autoconfigure.encrypt.service.AESEncryptor;
+import org.nkk.web.autoconfigure.encrypt.service.DESEncryptor;
+import org.nkk.web.autoconfigure.encrypt.service.SM4Encryptor;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
-import org.springframework.context.annotation.Bean;
+import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.env.Environment;
 import org.springframework.core.type.AnnotationMetadata;
 
+import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 
 @Slf4j
-public class EncryptAutoConfigure implements ImportBeanDefinitionRegistrar {
+public class EncryptAutoConfigure implements ImportBeanDefinitionRegistrar, EnvironmentAware {
 
-    private final Environment environment;
+    private Environment environment;
 
-    public EncryptAutoConfigure(Environment environment) {
+    @Override
+    public void setEnvironment(Environment environment) {
         this.environment = environment;
-    }
-
-    @Bean
-    public Encryptor encryptor() {
-        // 可添加更多加密方式判断
-        return null;
     }
 
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
         Map<String, Object> ans = importingClassMetadata.getAnnotationAttributes(EnableEncrypt.class.getName(), false);
-        assert ans != null;
-        if (ans.isEmpty()) {
+        if (Objects.isNull(ans) || ans.isEmpty()) {
             return;
         }
         String[] profiles = (String[]) ans.get("profile");
-
-
+        log.info("已启用{}", Arrays.toString(profiles));
         boolean hasProfiles = StreamEx.of(profiles)
                 .anyMatch(environment::acceptsProfiles);
-
         if (!hasProfiles) {
             return;
         }
@@ -51,29 +49,42 @@ public class EncryptAutoConfigure implements ImportBeanDefinitionRegistrar {
         EncryptMethod encrypt = (EncryptMethod) ans.get("value");
         log.info("已启用[{}]数据加密,", encrypt.name());
 
-        // 注册bean定义信息
-        BeanDefinition erb = new GenericBeanDefinition();
-        erb.setBeanClassName(EncryptResponseBodyAdvice.class.getName());
-        erb.setScope(BeanDefinition.SCOPE_SINGLETON);
-        registry.registerBeanDefinition("encryptResponseBodyAdvice", erb);
+
+        String iv = environment.getProperty("encrypt.iv");
+        String key = environment.getProperty("encrypt.key");
+        EncryptProperties ep = new EncryptProperties();
+        ep.setKey(StrUtil.isNotEmpty(key) ? key : ep.getKey());
+        ep.setIv(StrUtil.isNotEmpty(iv) ? iv : ep.getIv());
 
         // 注册加密器
-        BeanDefinition bd = new GenericBeanDefinition();
-        bd.setScope(BeanDefinition.SCOPE_SINGLETON);
+        AbstractBeanDefinition beanDefinition = null;
         if(encrypt == EncryptMethod.AES){
-            bd.setBeanClassName(AESEncryptor.class.getName());
-            registry.registerBeanDefinition("aESEncryptor", bd);
+            beanDefinition = BeanDefinitionBuilder
+                    .genericBeanDefinition(AESEncryptor.class)
+                    .addConstructorArgValue(ep)
+                    .getBeanDefinition();
+            registry.registerBeanDefinition("aESEncryptor",beanDefinition );
         }
         else if(encrypt == EncryptMethod.DES){
-            bd.setBeanClassName(DESEncryptor.class.getName());
-            registry.registerBeanDefinition("dESEncryptor", bd);
+            registry.registerBeanDefinition("dESEncryptor", BeanDefinitionBuilder
+                    .genericBeanDefinition(DESEncryptor.class)
+                    .addConstructorArgValue(ep)
+                    .getBeanDefinition());
         }
         else if(encrypt == EncryptMethod.SM4){
-            bd.setBeanClassName(SM4Encryptor.class.getName());
-            registry.registerBeanDefinition("sM4Encryptor", bd);
+            registry.registerBeanDefinition("sM4Encryptor", BeanDefinitionBuilder
+                    .genericBeanDefinition(SM4Encryptor.class)
+                    .addConstructorArgValue(ep)
+                    .getBeanDefinition());
         }
+        registry.registerBeanDefinition("encryptResponseBodyAdvice", BeanDefinitionBuilder
+                .genericBeanDefinition(EncryptResponseBodyAdvice.class)
+                .addConstructorArgValue(beanDefinition)
+                .getBeanDefinition());
 
+       log.info("====>");
     }
+
 
 
 }

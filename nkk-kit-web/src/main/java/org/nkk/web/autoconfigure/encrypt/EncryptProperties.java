@@ -1,6 +1,7 @@
 package org.nkk.web.autoconfigure.encrypt;
 
 import lombok.Data;
+import org.nkk.web.autoconfigure.encrypt.enums.EncryptMethod;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -9,6 +10,17 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Data
 @ConfigurationProperties(prefix = "encrypt")
 public class EncryptProperties {
+
+    /**
+     * 配置文件
+     */
+    private String [] profiles = { "default" };
+
+    /**
+     * 加密方法
+     * AES, DES, SM4, RSA
+     */
+    private EncryptMethod encrypt = EncryptMethod.AES;
 
 
     /**
