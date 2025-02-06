@@ -1,6 +1,6 @@
 package org.nkk.web.autoconfigure.encrypt.annotations;
 
-import org.nkk.web.autoconfigure.encrypt.EncryptAutoConfigure2;
+import org.nkk.web.autoconfigure.encrypt.EncryptAutoConfigure;
 import org.springframework.context.annotation.Import;
 
 import java.lang.annotation.*;
@@ -14,7 +14,7 @@ import java.lang.annotation.*;
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
-@Import({EncryptAutoConfigure2.class})
+@Import({EncryptAutoConfigure.class})
 public @interface EnableEncrypt {
 
 

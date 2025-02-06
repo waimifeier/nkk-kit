@@ -12,9 +12,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class EncryptProperties {
 
     /**
-     * 配置文件
+     * 作用环境，默认作用与default环境
      */
-    private String [] profiles = { "default" };
+    private String[] profiles = { "default" };
 
     /**
      * 加密方法
@@ -24,7 +24,8 @@ public class EncryptProperties {
 
 
     /**
-     * <a href="http://tool.zaonao.cn/password/">生成秘钥key</a></br>
+     *不同加密方式，key长度略有不同 <a href="http://tool.zaonao.cn/password/">生成秘钥key</a></br>
+     * @see org.nkk.web.autoconfigure.encrypt.enums.EncryptMethod
      */
     private String key = "0CoJUm6Qyw8W8ju=";
 

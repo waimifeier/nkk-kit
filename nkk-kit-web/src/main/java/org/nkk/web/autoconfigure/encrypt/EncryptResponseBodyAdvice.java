@@ -1,19 +1,13 @@
 package org.nkk.web.autoconfigure.encrypt;
 
+import cn.hutool.core.util.ArrayUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.nkk.core.beans.common.Result;
-import org.nkk.web.autoconfigure.encrypt.annotations.EnableEncrypt;
 import org.nkk.web.autoconfigure.encrypt.annotations.EncryptIgnore;
-import org.nkk.web.autoconfigure.encrypt.condition.EncryptorPresentCondition;
 import org.nkk.web.autoconfigure.encrypt.service.Encryptor;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.context.annotation.Conditional;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.MethodParameter;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -24,33 +18,47 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
+import java.util.Objects;
 
 
 /**
  * 响应数据的加密处理<br>
  */
 @Slf4j
-@Order(Ordered.LOWEST_PRECEDENCE)
-@Conditional(EncryptorPresentCondition.class)
 @ControllerAdvice
-@RequiredArgsConstructor
 public class EncryptResponseBodyAdvice implements ResponseBodyAdvice<Object> {
-
-   private final ObjectMapper objectMapper;
-
+    private final ObjectMapper objectMapper;
+    private final EncryptProperties encryptProperties;
     private final Encryptor encryptor;
-
     private final Environment environment;
 
+    public EncryptResponseBodyAdvice(ObjectMapper objectMapper,
+                                     Environment environment,
+                                     @Autowired(required = false) EncryptProperties encryptProperties,
+                                     @Autowired(required = false) Encryptor encryptor) {
+        this.objectMapper = objectMapper;
+        this.encryptProperties = encryptProperties;
+        this.encryptor = encryptor;
+        this.environment = environment;
+    }
 
     @Override
     public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
+        if (Objects.isNull(encryptor) || Objects.isNull(encryptProperties)) {
+            return false;
+        }
+        String[] scopeProfiles = encryptProperties.getProfiles();
+        if (scopeProfiles.length == 0) {
+            return false;
+        }
 
-       log.info("当前环境：{}", environment.getActiveProfiles());
+        String[] activeProfiles = environment.getActiveProfiles();
+        boolean exists = ArrayUtil.containsAny(scopeProfiles, activeProfiles);
+        if (!exists) {
+            return false;
+        }
 
-       Class<?> declaringClass = returnType.getDeclaringClass();
-       AnnotationUtils.isCandidateClass(declaringClass, EnableEncrypt.class);
-       AnnotationUtils.findAnnotation(declaringClass, EnableEncrypt.class);
+        Class<?> declaringClass = returnType.getDeclaringClass();
         if (this.hasIgnoreAnnotation(declaringClass)) {
             return false;
         }
@@ -84,7 +92,6 @@ public class EncryptResponseBodyAdvice implements ResponseBodyAdvice<Object> {
                                   Class<? extends HttpMessageConverter<?>> selectedConverterType,
                                   ServerHttpRequest request,
                                   ServerHttpResponse response) {
-        log.info("=====>beforeBodyWrite");
         // JSON
         if (mediaType.includes(MediaType.APPLICATION_JSON)) {
             try {
@@ -105,7 +112,4 @@ public class EncryptResponseBodyAdvice implements ResponseBodyAdvice<Object> {
         }
         return body;
     }
-
-
-
 }
