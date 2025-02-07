@@ -6,19 +6,20 @@ package org.nkk.web.autoconfigure.encrypt.enums;
 public enum EncryptMethod {
 
     /**
-     * 国密算法 SM4 (对称加密)
+     *
+     * <a href="https://tool.hiofd.com/sm4-encrypt-online/">SM4(对称加密)在线测试工具</a>
      */
     SM4,
 
     /**
      *
-     * <a href="https://tool.lvtao.net/des">DES在线测试工具</a>
+     * <a href="https://tool.lvtao.net/des">DES(对称加密)在线测试工具</a>
      */
     DES,
 
     /**
      *
-     * <a href="https://tool.lvtao.net/aes">AES在线测试工具</a>
+     * <a href="https://tool.lvtao.net/aes">AES(对称加密)在线测试工具</a>
      */
     AES,
 

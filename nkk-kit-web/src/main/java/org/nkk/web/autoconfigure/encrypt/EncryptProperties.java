@@ -12,7 +12,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class EncryptProperties {
 
     /**
-     * 作用环境，默认作用与default环境
+     * 作用环境，默认作用于default环境
      */
     private String[] profiles = { "default" };
 
