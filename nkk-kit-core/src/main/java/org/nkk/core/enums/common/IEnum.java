@@ -18,7 +18,7 @@ import java.util.Objects;
  * <p>时间 2022/6/14 3:29 下午
  */
 
-public interface IEnum {
+public interface IEnum<T> {
 
     /**
      * 获取枚举值
@@ -26,7 +26,7 @@ public interface IEnum {
      * @return 枚举值
      * @since 1.1.0.211021
      */
-    String value();
+    T value();
 
     /**
      * 获取枚举信息
@@ -36,7 +36,6 @@ public interface IEnum {
      */
     String label();
 
-
     /**
      * <p>描述: 查找枚举key 是否存在
      * <p>开发者: dlj
@@ -45,7 +44,7 @@ public interface IEnum {
      * @param value: 枚举的value
      * @return java.lang.Boolean
      **/
-    static <E extends IEnum> Boolean existsKey(Class<E> enumClass, String value) {
+    static <T, E extends IEnum<T>> Boolean existsKey(Class<E> enumClass, T value) {
         return Objects.nonNull(resolveKeyOfNullable(enumClass, value));
     }
 
@@ -59,8 +58,8 @@ public interface IEnum {
      * @return 返回枚举
      * @throws NullPointerException 不存在抛出空指针
      */
-    static <E extends IEnum> IEnum resolveKey(Class<E> enumClass, String value) throws EnumIllegalArgumentException {
-        IEnum tIEnum = resolveKeyOfNullable(enumClass, value);
+    static <T, E extends IEnum<T>> E resolveKey(Class<E> enumClass, T value) throws EnumIllegalArgumentException {
+        E tIEnum = resolveKeyOfNullable(enumClass, value);
 
         if(Objects.isNull(tIEnum)) {
            throw new EnumIllegalArgumentException(EnumErrorCodeEnum.ENUM_CAN_NOT_MATCH, String.format("枚举值[%s]不存在", value));
@@ -77,7 +76,7 @@ public interface IEnum {
      * @param value: 枚举值
      * @return com.nk.enums.BaseEnum<Key>
      **/
-    static <E extends IEnum> IEnum resolveKeyOfNullable(Class<E> enumClass, String value) {
+    static <T, E extends IEnum<T>> E resolveKeyOfNullable(Class<E> enumClass, T value) {
         if (!enumClass.isEnum() || !IEnum.class.isAssignableFrom(enumClass)) {
             return null;
         }
@@ -94,7 +93,7 @@ public interface IEnum {
      * @param enumClass 枚举类
      * @return 返回枚举key的集合
      */
-    static <E extends IEnum> List<String> getKeys(Class<E> enumClass) {
+    static <T, E extends IEnum<T>> List<T> getKeys(Class<E> enumClass) {
         E[] enumConstants = enumClass.getEnumConstants();
         return StreamEx.of(enumConstants).map(IEnum::value).toList();
     }
@@ -106,7 +105,7 @@ public interface IEnum {
     */
     default EnumResp getEnumResp(){
         return EnumResp.builder()
-                .value(value())
+                .value(String.valueOf(value()))
                 .label(label())
                 .build();
     }

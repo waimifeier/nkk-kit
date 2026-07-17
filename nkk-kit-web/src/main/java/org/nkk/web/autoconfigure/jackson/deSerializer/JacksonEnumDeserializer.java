@@ -61,7 +61,7 @@ public class JacksonEnumDeserializer extends JsonDeserializer<Enum<?>> implement
 
 
     @Override
-    public Class<IEnum> handledType() {
+    public Class<?> handledType() {
         return IEnum.class;
     }
 

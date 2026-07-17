@@ -9,7 +9,7 @@ import org.nkk.core.enums.common.IEnum;
 * @class EnumErrorCodeEnum
 * @time 2022/1/26 11:13
 */
-public enum EnumErrorCodeEnum implements IEnum {
+public enum EnumErrorCodeEnum implements IEnum<String> {
 
     ENUM_CAN_NOT_MATCH("E100","枚举类型无法匹配"),
     NOT_AN_ENUM("E200","不是枚举类型")

@@ -16,10 +16,10 @@ import java.lang.reflect.Field;
  * 对base枚举进行序列化操作
  */
 @NoArgsConstructor
-public class JacksonEnumSerializer extends JsonSerializer<IEnum> {
+public class JacksonEnumSerializer extends JsonSerializer<IEnum<?>> {
 
     @Override
-    public void serialize(IEnum iEnum, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+    public void serialize(IEnum<?> iEnum, JsonGenerator gen, SerializerProvider serializers) throws IOException {
         Field[] fields = ReflectUtil.getFieldsDirectly(iEnum.getClass(),false);
         for (Field field : fields) {
             JsonValue annotation = field.getAnnotation(JsonValue.class);
@@ -32,8 +32,9 @@ public class JacksonEnumSerializer extends JsonSerializer<IEnum> {
     }
 
     @Override
-    public Class<IEnum> handledType() {
-        return IEnum.class;
+    @SuppressWarnings("unchecked")
+    public Class<IEnum<?>> handledType() {
+        return (Class<IEnum<?>>) (Class<?>) IEnum.class;
     }
 
 }

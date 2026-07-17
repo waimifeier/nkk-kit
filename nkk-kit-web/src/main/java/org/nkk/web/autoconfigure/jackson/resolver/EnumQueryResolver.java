@@ -37,7 +37,7 @@ public class EnumQueryResolver implements HandlerMethodArgumentResolver {
         }
 
         String parameterValue = webRequest.getParameter(parameterName);
-        IEnum[] enumConstants = (IEnum[]) parameterClass.getEnumConstants();
+        IEnum<?>[] enumConstants = (IEnum<?>[]) parameterClass.getEnumConstants();
         return StreamEx.of(enumConstants)
                 .findFirst(item -> Objects.equals(String.valueOf(item.value()), parameterValue))
                 .orElse(null);
