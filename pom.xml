@@ -14,7 +14,6 @@
         <module>nkk-kit-bom</module>
         <module>nkk-kit-core</module>
         <module>nkk-kit-web</module>
-        <module>nkk-kit-mp</module>
     </modules>
 
     <!-- 开源协议 apache 2.0 -->
