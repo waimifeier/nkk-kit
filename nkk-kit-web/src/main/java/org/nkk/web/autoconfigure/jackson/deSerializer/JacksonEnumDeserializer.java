@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.nkk.core.enums.common.BaseEnum;
+import org.nkk.core.enums.common.IEnum;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -37,7 +37,7 @@ public class JacksonEnumDeserializer extends JsonDeserializer<Enum<?>> implement
 
         String text = parser.getText();
         Enum<?>[] enumConstants = (Enum<?>[]) enumType.getEnumConstants();
-        if (BaseEnum.class.isAssignableFrom(enumType) && StringUtils.isNotBlank(text)) {
+        if (IEnum.class.isAssignableFrom(enumType) && StringUtils.isNotBlank(text)) {
             Method method = ReflectUtil.getMethod(enumType, "value");
             for (Enum<?> e : enumConstants) {
                 try {
@@ -61,8 +61,8 @@ public class JacksonEnumDeserializer extends JsonDeserializer<Enum<?>> implement
 
 
     @Override
-    public Class<BaseEnum> handledType() {
-        return BaseEnum.class;
+    public Class<IEnum> handledType() {
+        return IEnum.class;
     }
 
 

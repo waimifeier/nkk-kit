@@ -1,6 +1,6 @@
 package org.nkk.web.autoconfigure.jackson;
 
-import org.nkk.core.enums.common.BaseEnum;
+import org.nkk.core.enums.common.IEnum;
 import org.nkk.web.autoconfigure.jackson.deSerializer.JacksonDateDeSerializer;
 import org.nkk.web.autoconfigure.jackson.deSerializer.JacksonEnumDeserializer;
 import org.nkk.web.autoconfigure.jackson.serializer.JacksonEnumSerializer;
@@ -25,7 +25,7 @@ public class JacksonConfig {
             builder.deserializerByType(Date.class, new JacksonDateDeSerializer());
 
             // 序列化
-            builder.serializerByType(BaseEnum.class, new JacksonEnumSerializer());
+            builder.serializerByType(IEnum.class, new JacksonEnumSerializer());
         };
     }
 

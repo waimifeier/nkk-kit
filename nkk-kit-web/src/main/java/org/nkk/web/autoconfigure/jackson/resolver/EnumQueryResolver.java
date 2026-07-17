@@ -1,7 +1,7 @@
 package org.nkk.web.autoconfigure.jackson.resolver;
 
 import one.util.streamex.StreamEx;
-import org.nkk.core.enums.common.BaseEnum;
+import org.nkk.core.enums.common.IEnum;
 import org.springframework.core.MethodParameter;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -23,7 +23,7 @@ public class EnumQueryResolver implements HandlerMethodArgumentResolver {
     @Override
     public boolean supportsParameter(MethodParameter methodParameter) {
         Class<?> parameterType = methodParameter.getParameterType();
-        return parameterType.isEnum() && BaseEnum.class.isAssignableFrom(parameterType);
+        return parameterType.isEnum() && IEnum.class.isAssignableFrom(parameterType);
     }
 
     @Override
@@ -37,7 +37,7 @@ public class EnumQueryResolver implements HandlerMethodArgumentResolver {
         }
 
         String parameterValue = webRequest.getParameter(parameterName);
-        BaseEnum[] enumConstants = (BaseEnum[]) parameterClass.getEnumConstants();
+        IEnum[] enumConstants = (IEnum[]) parameterClass.getEnumConstants();
         return StreamEx.of(enumConstants)
                 .findFirst(item -> Objects.equals(String.valueOf(item.value()), parameterValue))
                 .orElse(null);

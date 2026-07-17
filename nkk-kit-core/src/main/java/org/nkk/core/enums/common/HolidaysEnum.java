@@ -7,7 +7,7 @@ import lombok.AllArgsConstructor;
  * 0=工作日 1=周末 2=节假日 3=值班
  */
 @AllArgsConstructor
-public enum HolidaysEnum implements BaseEnum{
+public enum HolidaysEnum implements IEnum {
     work(0,  "工作日"),
     weekend(1,  "周末"),
     holidays(2,  "节假日"),

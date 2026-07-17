@@ -6,7 +6,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import lombok.NoArgsConstructor;
-import org.nkk.core.enums.common.BaseEnum;
+import org.nkk.core.enums.common.IEnum;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -16,24 +16,24 @@ import java.lang.reflect.Field;
  * 对base枚举进行序列化操作
  */
 @NoArgsConstructor
-public class JacksonEnumSerializer extends JsonSerializer<BaseEnum> {
+public class JacksonEnumSerializer extends JsonSerializer<IEnum> {
 
     @Override
-    public void serialize(BaseEnum baseEnum, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-        Field[] fields = ReflectUtil.getFieldsDirectly(baseEnum.getClass(),false);
+    public void serialize(IEnum iEnum, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+        Field[] fields = ReflectUtil.getFieldsDirectly(iEnum.getClass(),false);
         for (Field field : fields) {
             JsonValue annotation = field.getAnnotation(JsonValue.class);
             if(annotation != null) {
-                gen.writeObject(ReflectUtil.getFieldValue(baseEnum,field.getName()));
+                gen.writeObject(ReflectUtil.getFieldValue(iEnum,field.getName()));
                 return;
             }
         }
-        gen.writeObject(baseEnum.getEnumResp());
+        gen.writeObject(iEnum.getEnumResp());
     }
 
     @Override
-    public Class<BaseEnum> handledType() {
-        return BaseEnum.class;
+    public Class<IEnum> handledType() {
+        return IEnum.class;
     }
 
 }

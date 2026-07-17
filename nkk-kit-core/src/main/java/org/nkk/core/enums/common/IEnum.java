@@ -18,7 +18,7 @@ import java.util.Objects;
  * <p>时间 2022/6/14 3:29 下午
  */
 
-public interface BaseEnum {
+public interface IEnum {
 
     /**
      * 获取枚举值
@@ -45,7 +45,7 @@ public interface BaseEnum {
      * @param value: 枚举的value
      * @return java.lang.Boolean
      **/
-    static <E extends BaseEnum> Boolean existsKey(Class<E> enumClass, String value) {
+    static <E extends IEnum> Boolean existsKey(Class<E> enumClass, String value) {
         return Objects.nonNull(resolveKeyOfNullable(enumClass, value));
     }
 
@@ -59,13 +59,13 @@ public interface BaseEnum {
      * @return 返回枚举
      * @throws NullPointerException 不存在抛出空指针
      */
-    static <E extends BaseEnum> BaseEnum resolveKey(Class<E> enumClass, String value) throws EnumIllegalArgumentException {
-        BaseEnum tBaseEnum = resolveKeyOfNullable(enumClass, value);
+    static <E extends IEnum> IEnum resolveKey(Class<E> enumClass, String value) throws EnumIllegalArgumentException {
+        IEnum tIEnum = resolveKeyOfNullable(enumClass, value);
 
-        if(Objects.isNull(tBaseEnum)) {
+        if(Objects.isNull(tIEnum)) {
            throw new EnumIllegalArgumentException(EnumErrorCodeEnum.ENUM_CAN_NOT_MATCH, String.format("枚举值[%s]不存在", value));
         }
-        return tBaseEnum;
+        return tIEnum;
     }
 
 
@@ -77,8 +77,8 @@ public interface BaseEnum {
      * @param value: 枚举值
      * @return com.nk.enums.BaseEnum<Key>
      **/
-    static <E extends BaseEnum> BaseEnum resolveKeyOfNullable(Class<E> enumClass, String value) {
-        if (!enumClass.isEnum() || !BaseEnum.class.isAssignableFrom(enumClass)) {
+    static <E extends IEnum> IEnum resolveKeyOfNullable(Class<E> enumClass, String value) {
+        if (!enumClass.isEnum() || !IEnum.class.isAssignableFrom(enumClass)) {
             return null;
         }
 
@@ -94,9 +94,9 @@ public interface BaseEnum {
      * @param enumClass 枚举类
      * @return 返回枚举key的集合
      */
-    static <E extends BaseEnum> List<String> getKeys(Class<E> enumClass) {
+    static <E extends IEnum> List<String> getKeys(Class<E> enumClass) {
         E[] enumConstants = enumClass.getEnumConstants();
-        return StreamEx.of(enumConstants).map(BaseEnum::value).toList();
+        return StreamEx.of(enumConstants).map(IEnum::value).toList();
     }
 
     /**

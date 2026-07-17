@@ -9,9 +9,8 @@ import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
-import one.util.streamex.StreamEx;
 import org.nkk.core.beans.calendar.CalendarHolidayResp;
-import org.nkk.core.enums.common.BaseEnum;
+import org.nkk.core.enums.common.IEnum;
 import org.nkk.core.enums.common.HolidaysEnum;
 
 import java.util.*;
@@ -80,7 +79,7 @@ public class HolidaysUtils {
         int type = status == 1 ? (Objects.nonNull(badDay) && badDay == 1 ? 3 : 0) : (Objects.nonNull(statutory) && statutory == 1 ? 2 : 1);
 
         resp.setType(type);
-        resp.setName(StrUtil.isEmpty(resp.getName()) ? BaseEnum.resolveKey(HolidaysEnum.class,String.valueOf(type)).label() : resp.getName());
+        resp.setName(StrUtil.isEmpty(resp.getName()) ? IEnum.resolveKey(HolidaysEnum.class,String.valueOf(type)).label() : resp.getName());
         resp.setWeekDay(object.getInteger("weekDay"));
         resp.setDate(object.getString("date"));
         resp.setLunarDate(object.getString("lunarDate"));

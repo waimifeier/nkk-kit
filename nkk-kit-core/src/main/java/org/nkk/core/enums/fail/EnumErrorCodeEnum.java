@@ -1,7 +1,7 @@
 package org.nkk.core.enums.fail;
 
 
-import org.nkk.core.enums.common.BaseEnum;
+import org.nkk.core.enums.common.IEnum;
 
 /**
 *   枚举错误码
@@ -9,7 +9,7 @@ import org.nkk.core.enums.common.BaseEnum;
 * @class EnumErrorCodeEnum
 * @time 2022/1/26 11:13
 */
-public enum EnumErrorCodeEnum implements BaseEnum {
+public enum EnumErrorCodeEnum implements IEnum {
 
     ENUM_CAN_NOT_MATCH("E100","枚举类型无法匹配"),
     NOT_AN_ENUM("E200","不是枚举类型")
