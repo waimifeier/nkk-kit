@@ -1,6 +1,7 @@
 package org.nkk.web.beans.vos;
 
 import cn.hutool.core.bean.BeanUtil;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.github.pagehelper.PageInfo;
 import lombok.Data;
 import org.springframework.util.CollectionUtils;
@@ -39,6 +40,12 @@ public class PageResult<T> implements Serializable {
      * 结果记录
      */
     private List<T> records;
+
+    /**
+     * 扩展字段
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Map<String,Object> ext;
 
     public PageResult(PageInfo<T> pageInfo) {
         this.total = pageInfo.getTotal();
