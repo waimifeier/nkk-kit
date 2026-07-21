@@ -3,11 +3,14 @@ package org.nkk.web.autoconfigure.jackson;
 import org.nkk.core.enums.common.IEnum;
 import org.nkk.web.autoconfigure.jackson.deSerializer.JacksonDateDeSerializer;
 import org.nkk.web.autoconfigure.jackson.deSerializer.JacksonEnumDeserializer;
+import org.nkk.web.autoconfigure.jackson.factory.DateConverter;
 import org.nkk.web.autoconfigure.jackson.serializer.JacksonEnumSerializer;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.format.FormatterRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.Date;
 
@@ -26,6 +29,16 @@ public class JacksonConfig {
 
             // 序列化
             builder.serializerByType(IEnum.class, new JacksonEnumSerializer());
+        };
+    }
+
+    @Bean
+    public WebMvcConfigurer dateConverterWebMvcConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addFormatters(FormatterRegistry registry) {
+                registry.addConverter(new DateConverter());
+            }
         };
     }
 

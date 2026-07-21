@@ -18,8 +18,8 @@ import java.util.Date;
 
 /**
  * 日期反序列规则
- * <p>根据来自前端的参数个是自动匹配，如：yyy-mm 能自动解析成日期对象</p>
- * 可继续改造...
+ * <p>根据来自前端的JSON参数个是自动匹配，如：yyy-mm 能自动解析成日期对象</p>
+ *
  *
  */
 public class JacksonDateDeSerializer extends JsonDeserializer<Date> implements ContextualDeserializer {
@@ -43,26 +43,16 @@ public class JacksonDateDeSerializer extends JsonDeserializer<Date> implements C
 
     @Override
     public Date deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
-        Date targetDate = null;
         String text = p.getText();
-        if(!StringUtils.isBlank(text)){
-            if (StringUtils.isNotBlank(pattern)) {
-                return parseDateByPattern(text, pattern);
-            }
-
-            try {
-                targetDate = this.parseDateWithException(text);
-            }catch (ParseException pe) {
-                try {
-                    long longDate = Long.parseLong(text.trim());
-                    targetDate = new Date(longDate);
-                } catch (NumberFormatException e) {
-                    String errorMsg = String.format("'%s' 不能转换为类型 'java.util.Date', 只支持时间戳和以下类型 【'%s'】", text, StringUtils.join(parsePatterns, ","));
-                    throw new BusinessException(SysStatusEnum.BAD_REQUEST,errorMsg);
-                }
-            }
+        if (StringUtils.isBlank(text)) {
+            return null;
         }
-        return targetDate;
+
+        if (StringUtils.isNotBlank(pattern)) {
+            return parseDate(text, pattern);
+        }
+
+        return parseDate(text);
     }
 
     @Override
@@ -88,7 +78,7 @@ public class JacksonDateDeSerializer extends JsonDeserializer<Date> implements C
         return new JacksonDateDeSerializer(dateTimeFormat.pattern());
     }
 
-    private Date parseDateByPattern(String text, String pattern) {
+    public static Date parseDate(String text, String pattern) {
         try {
             return DateUtils.parseDate(text, pattern);
         } catch (ParseException e) {
@@ -97,10 +87,21 @@ public class JacksonDateDeSerializer extends JsonDeserializer<Date> implements C
         }
     }
 
-    private Date parseDateWithException(Object str) throws ParseException {
-        if (str == null){
+    public static Date parseDate(String text) {
+        if (StringUtils.isBlank(text)) {
             return null;
         }
-        return DateUtils.parseDate(str.toString(), parsePatterns);
+
+        try {
+            return DateUtils.parseDate(text, parsePatterns);
+        } catch (ParseException pe) {
+            try {
+                long longDate = Long.parseLong(text.trim());
+                return new Date(longDate);
+            } catch (NumberFormatException e) {
+                String errorMsg = String.format("'%s' 不能转换为类型 'java.util.Date', 只支持时间戳和以下类型 【'%s'】", text, StringUtils.join(parsePatterns, ","));
+                throw new BusinessException(SysStatusEnum.BAD_REQUEST, errorMsg);
+            }
+        }
     }
 }
