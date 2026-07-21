@@ -7,13 +7,14 @@
     <packaging>pom</packaging>
 
     <parent>
-        <groupId>org.nkk</groupId>
+        <groupId>io.github.waimifeier</groupId>
         <artifactId>nkk-kit</artifactId>
         <version>1.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>nkk-kit-bom</artifactId>
+    <name>${project.artifactId}</name>
     <description>nkk工具包统一版本管理模块</description>
 
 
@@ -25,13 +26,13 @@
     <dependencyManagement>
         <dependencies>
                <dependency>
-                   <groupId>com.github.waimifeier.nkk-kit</groupId>
+                   <groupId>${project.groupId}</groupId>
                    <artifactId>nkk-kit-core</artifactId>
                    <version>${project.version}</version>
                </dependency>
 
                <dependency>
-                   <groupId>com.github.waimifeier.nkk-kit</groupId>
+                   <groupId>${project.groupId}</groupId>
                    <artifactId>nkk-kit-web</artifactId>
                    <version>${project.version}</version>
                </dependency>

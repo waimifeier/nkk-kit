@@ -4,13 +4,15 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>nkk-kit</artifactId>
-        <groupId>org.nkk</groupId>
+        <groupId>io.github.waimifeier</groupId>
         <version>1.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <packaging>jar</packaging>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>nkk-kit-web</artifactId>
+    <name>${project.artifactId}</name>
+    <description>Web自动配置与常用Web工具包</description>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -20,7 +22,7 @@
     <dependencies>
 
         <dependency>
-            <groupId>org.nkk</groupId>
+            <groupId>io.github.waimifeier</groupId>
             <artifactId>nkk-kit-core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
