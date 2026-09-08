@@ -63,6 +63,17 @@ public class FlowFormFieldDaoMybatisPlusImpl implements FlowFormFieldDao {
     }
 
     @Override
+    public boolean deleteByFormKeyAndVersion(String tenantId, String formKey, Integer formVersion) {
+        QueryWrapper<FlowFormField> wrapper = new QueryWrapper<>();
+        appendTenantCondition(wrapper, tenantId);
+        wrapper.eq("form_key", normalize(formKey));
+        if (formVersion != null) {
+            wrapper.eq("form_version", formVersion);
+        }
+        return mapper.delete(wrapper) >= 0;
+    }
+
+    @Override
     public boolean deleteByFormKeyAndVersion(String tenantId, String formKey, Integer formVersion, String sourceType) {
         QueryWrapper<FlowFormField> wrapper = new QueryWrapper<>();
         appendTenantCondition(wrapper, tenantId);

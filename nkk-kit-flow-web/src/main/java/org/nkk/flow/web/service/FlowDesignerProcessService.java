@@ -29,9 +29,13 @@ public class FlowDesignerProcessService {
 
     private final FlowCreatorProvider creatorProvider;
 
-    public FlowDesignerProcessService(NkkFlowEngine flowEngine, FlowCreatorProvider creatorProvider) {
+    private final FlowDesignerFormService formService;
+
+    public FlowDesignerProcessService(NkkFlowEngine flowEngine, FlowCreatorProvider creatorProvider,
+                                      FlowDesignerFormService formService) {
         this.flowEngine = flowEngine;
         this.creatorProvider = creatorProvider;
+        this.formService = formService;
     }
 
     /**
@@ -52,6 +56,7 @@ public class FlowDesignerProcessService {
         model.setName(StrUtil.trim(request.getProcessName()));
         model.setInstanceUrl(StrUtil.trimToNull(request.getInstanceUrl()));
         applyFormBinding(model, request.getFormBinding());
+        syncFormFields(request.getFormBinding());
 
         FlowCreator creator = currentCreator();
         Long processId = flowEngine.processService().deploy(
@@ -264,6 +269,16 @@ public class FlowDesignerProcessService {
             model.setExtendConfig(new LinkedHashMap<String, Object>());
         }
         model.getExtendConfig().put("formBinding", formBinding);
+    }
+
+    private void syncFormFields(FlowFormBindingRequest formBinding) {
+        if (formBinding == null || formService == null) {
+            return;
+        }
+        if (formBinding.getFormKey() == null || formBinding.getFields() == null) {
+            return;
+        }
+        formService.saveByBinding(formBinding);
     }
 
     private FlowProcessModel resolveProcessModel(String modelContent) {

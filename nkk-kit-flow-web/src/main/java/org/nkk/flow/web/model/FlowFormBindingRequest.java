@@ -3,6 +3,7 @@ package org.nkk.flow.web.model;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * 流程表单绑定请求。
@@ -36,4 +37,11 @@ public class FlowFormBindingRequest implements Serializable {
      * 表单名称。
      */
     private String formName;
+
+    /**
+     * 字段列表。
+     *
+     * <p>流程发布时如果携带该字段，会同步写入 {@code flow_form_field}。</p>
+     */
+    private List<FlowFormFieldSaveItemRequest> fields;
 }

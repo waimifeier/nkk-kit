@@ -66,6 +66,14 @@ public class FlowProcessServiceImpl implements FlowProcessService {
         }
 
         if (latest != null && !repeat) {
+            FlowProcess update = new FlowProcess();
+            update.setId(latest.getId());
+            update.setProcessName(model.getName());
+            update.setInstanceUrl(model.getInstanceUrl());
+            update.setModelContent(FlowContext.toJson(model.cleanParentNode()));
+            if (!processDao.updateById(update)) {
+                throw new IllegalStateException("更新流程定义失败");
+            }
             return latest.getId();
         }
 

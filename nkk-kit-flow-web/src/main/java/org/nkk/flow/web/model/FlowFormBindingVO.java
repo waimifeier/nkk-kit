@@ -4,6 +4,7 @@ import lombok.Data;
 import org.nkk.flow.core.context.FlowContext;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * 流程表单绑定展示对象。
@@ -23,6 +24,8 @@ public class FlowFormBindingVO implements Serializable {
 
     private String formName;
 
+    private List<FlowFormFieldSaveItemRequest> fields;
+
     public static FlowFormBindingVO of(Object value) {
         if (value == null) {
             return null;
@@ -38,6 +41,7 @@ public class FlowFormBindingVO implements Serializable {
             vo.setFormKey(request.getFormKey());
             vo.setFormVersion(request.getFormVersion());
             vo.setFormName(request.getFormName());
+            vo.setFields(request.getFields());
             return vo;
         }
         return FlowContext.fromJson(FlowContext.toJson(value), FlowFormBindingVO.class);

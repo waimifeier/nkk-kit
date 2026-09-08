@@ -72,8 +72,9 @@ public class NkkFlowWebAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public FlowDesignerProcessService flowDesignerProcessService(NkkFlowEngine flowEngine,
-                                                                 ObjectProvider<FlowCreatorProvider> creatorProvider) {
-        return new FlowDesignerProcessService(flowEngine, creatorProvider.getIfAvailable());
+                                                                 ObjectProvider<FlowCreatorProvider> creatorProvider,
+                                                                 FlowDesignerFormService formService) {
+        return new FlowDesignerProcessService(flowEngine, creatorProvider.getIfAvailable(), formService);
     }
 
     @Bean

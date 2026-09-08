@@ -21,5 +21,7 @@ public interface FlowFormFieldDao {
 
     List<FlowFormField> selectListByFormKeyAndVersion(String tenantId, String formKey, Integer formVersion, String sourceType);
 
+    boolean deleteByFormKeyAndVersion(String tenantId, String formKey, Integer formVersion);
+
     boolean deleteByFormKeyAndVersion(String tenantId, String formKey, Integer formVersion, String sourceType);
 }

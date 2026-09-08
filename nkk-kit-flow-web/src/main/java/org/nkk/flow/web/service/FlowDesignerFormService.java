@@ -8,6 +8,7 @@ import org.nkk.flow.core.extension.identity.FlowCreatorProvider;
 import org.nkk.flow.dao.FlowFormFieldDao;
 import org.nkk.flow.entity.FlowFormField;
 import org.nkk.flow.enums.core.FlowFormFieldEnum;
+import org.nkk.flow.web.model.FlowFormBindingRequest;
 import org.nkk.flow.web.model.FlowFormFieldSaveItemRequest;
 import org.nkk.flow.web.model.FlowFormFieldSaveRequest;
 import org.nkk.flow.web.model.FlowFormFieldVO;
@@ -123,11 +124,67 @@ public class FlowDesignerFormService {
         return result;
     }
 
+    /**
+     * 保存表单绑定内携带的字段元数据。
+     *
+     * @param binding 表单绑定信息
+     * @return 保存后的字段元数据
+     */
+    public List<FlowFormFieldVO> saveByBinding(FlowFormBindingRequest binding) {
+        if (binding == null) {
+            return Collections.emptyList();
+        }
+        FlowFormFieldSaveRequest request = new FlowFormFieldSaveRequest();
+        request.setTenantId(null);
+        request.setFormId(binding.getFormId());
+        request.setFormVersion(binding.getFormVersion());
+        request.setSourceType(binding.getSourceType());
+        request.setFields(binding.getFields());
+        return saveBindingFields(binding.getFormKey(), request);
+    }
+
     private List<FlowFormField> sortFields(List<FlowFormField> fields) {
         fields.sort(Comparator
                 .comparing(FlowFormField::getSort, Comparator.nullsLast(Integer::compareTo))
                 .thenComparing(FlowFormField::getFieldKey, Comparator.nullsLast(String::compareTo)));
         return fields;
+    }
+
+    private List<FlowFormFieldVO> saveBindingFields(String formKey, FlowFormFieldSaveRequest request) {
+        FlowCreator creator = currentCreator();
+        if (StrUtil.isBlank(formKey)) {
+            throw new IllegalArgumentException("表单编码不能为空");
+        }
+        if (request == null) {
+            throw new IllegalArgumentException("表单字段保存请求不能为空");
+        }
+        Integer formVersion = request.getFormVersion();
+        if (formVersion == null) {
+            throw new IllegalArgumentException("表单版本号不能为空");
+        }
+        String actualTenantId = resolveTenantId(request.getTenantId());
+        String actualFormKey = StrUtil.trim(formKey);
+        formFieldDao.deleteByFormKeyAndVersion(actualTenantId, actualFormKey, formVersion);
+
+        List<FlowFormFieldSaveItemRequest> items = request.getFields();
+        if (CollUtil.isEmpty(items)) {
+            return Collections.emptyList();
+        }
+        List<FlowFormFieldVO> result = new ArrayList<>();
+        int index = 0;
+        for (FlowFormFieldSaveItemRequest item : items) {
+            index++;
+            FlowFormField field = toEntity(actualTenantId, actualFormKey, formVersion, request.getFormId(),
+                    request.getSourceType(), item, creator, index);
+            if (!formFieldDao.insert(field)) {
+                throw new IllegalStateException("保存表单字段元数据失败，fieldKey=" + field.getFieldKey());
+            }
+            result.add(FlowFormFieldVO.of(field));
+        }
+        result.sort(Comparator
+                .comparing(FlowFormFieldVO::getSort, Comparator.nullsLast(Integer::compareTo))
+                .thenComparing(FlowFormFieldVO::getFieldKey, Comparator.nullsLast(String::compareTo)));
+        return result;
     }
 
     private List<FlowFormField> filterByVersion(List<FlowFormField> fields, Integer formVersion) {
