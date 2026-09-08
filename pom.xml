@@ -16,6 +16,9 @@
         <module>nkk-kit-bom</module>
         <module>nkk-kit-core</module>
         <module>nkk-kit-web</module>
+        <module>nkk-kit-flow</module>
+        <module>nkk-kit-flow-web</module>
+        <module>nkk-kit-flow-example</module>
     </modules>
 
     <!-- 开源协议 apache 2.0 -->
@@ -52,6 +55,7 @@
         <commons-lang3.version>3.12.0</commons-lang3.version>
         <fastjson2.version>2.0.33</fastjson2.version>
         <pagehelper.boot.version>1.4.7</pagehelper.boot.version>
+        <mybatis-plus.version>3.5.5</mybatis-plus.version>
     </properties>
 
     <!-- 作者信息 -->
@@ -143,6 +147,12 @@
                 <groupId>com.github.pagehelper</groupId>
                 <artifactId>pagehelper-spring-boot-starter</artifactId>
                 <version>${pagehelper.boot.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-boot-starter</artifactId>
+                <version>${mybatis-plus.version}</version>
             </dependency>
 
             <dependency>

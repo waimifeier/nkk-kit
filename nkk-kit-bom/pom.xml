@@ -37,6 +37,18 @@
                    <version>${project.version}</version>
                </dependency>
 
+               <dependency>
+                   <groupId>${project.groupId}</groupId>
+                   <artifactId>nkk-kit-flow</artifactId>
+                   <version>${project.version}</version>
+               </dependency>
+
+               <dependency>
+                   <groupId>${project.groupId}</groupId>
+                   <artifactId>nkk-kit-flow-web</artifactId>
+                   <version>${project.version}</version>
+               </dependency>
+
         </dependencies>
     </dependencyManagement>
 

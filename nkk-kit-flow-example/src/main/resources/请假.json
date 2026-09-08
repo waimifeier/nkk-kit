@@ -1,0 +1,197 @@
+{
+  "id": 1,
+  "name": "请假审批",
+  "key": "k0001",
+  "nodeConfig": {
+    "nodeName": "发起人",
+    "nodeKey": "flk1785894730713",
+    "type": 0,
+    "nodeAssigneeList": [
+      {
+        "id": "1",
+        "name": "系统管理员",
+        "actorType": 0
+      },
+      {
+        "id": "1778231636381663234",
+        "name": "CEO",
+        "actorType": 1
+      }
+    ],
+    "childNode": {
+      "nodeName": "部门领导",
+      "nodeKey": "flk1786698065676",
+      "type": 1,
+      "setType": 4,
+      "nodeAssigneeList": [
+        {
+          "id": "1",
+          "name": "系统管理员",
+          "weight": 10
+        }
+      ],
+      "nodeCandidate": {
+        "type": 0,
+        "assignees": [
+          {
+            "id": "1778235419958444034",
+            "name": "笪小琴"
+          },
+          {
+            "id": "1778235567803465730",
+            "name": "陈小超"
+          },
+          {
+            "id": "1778264912529981441",
+            "name": "陈小辉"
+          }
+        ]
+      },
+      "examineLevel": 5,
+      "examineMode": 1,
+      "groupStrategy": 0,
+      "directorLevel": 1,
+      "directorMode": 0,
+      "selectMode": 1,
+      "termAuto": false,
+      "term": 1,
+      "termMode": 1,
+      "typeOfApprove": 1,
+      "rejectStrategy": 1,
+      "rejectStart": 4,
+      "remind": false,
+      "allowTransfer": true,
+      "allowAppendNode": true,
+      "allowRollback": true,
+      "allowCc": true,
+      "approveSelf": 0,
+      "extendConfig": {
+        "remindTime": "1:m"
+      },
+      "childNode": {
+        "nodeName": "条件路由",
+        "nodeKey": "flk1787045377132",
+        "type": 4,
+        "conditionNodes": [
+          {
+            "nodeName": "条件 1",
+            "nodeKey": "flk1787045377132-1",
+            "type": 3,
+            "priorityLevel": 1,
+            "conditionMode": 1,
+            "conditionList": [
+              [
+                {
+                  "label": "days",
+                  "field": "days",
+                  "operator": ">",
+                  "value": "10",
+                  "type": "custom"
+                }
+              ]
+            ],
+            "childNode": {
+              "nodeName": "审核人",
+              "nodeKey": "flk1787045403804",
+              "type": 1,
+              "setType": 1,
+              "nodeAssigneeList": [
+                {
+                  "id": "1",
+                  "name": "系统管理员",
+                  "weight": 10
+                }
+              ],
+              "examineLevel": 1,
+              "directorLevel": 1,
+              "selectMode": 1,
+              "termAuto": false,
+              "remind": false,
+              "term": 1,
+              "termMode": 1,
+              "examineMode": 1,
+              "approveSelf": 0,
+              "directorMode": 0,
+              "typeOfApprove": 1,
+              "extendConfig": {
+                "remindTime": "1:m",
+                "formConfig": [
+                  {
+                    "id": "input_9348",
+                    "label": "输入框",
+                    "opera": "1"
+                  }
+                ]
+              },
+              "allowCc": false,
+              "allowTransfer": false,
+              "allowAppendNode": false,
+              "allowRollback": false,
+              "rejectStrategy": 2,
+              "rejectStart": 1,
+              "delayType": 1,
+              "groupStrategy": 0,
+              "childNode": {}
+            }
+          },
+          {
+            "nodeName": "默认条件",
+            "nodeKey": "flk1787045377132-default",
+            "type": 3,
+            "priorityLevel": 2,
+            "conditionMode": 1,
+            "conditionList": []
+          }
+        ],
+        "childNode": {
+          "nodeName": "审核人",
+          "nodeKey": "flk1787045417971",
+          "type": 1,
+          "setType": 1,
+          "nodeAssigneeList": [
+            {
+              "id": "1",
+              "name": "系统管理员",
+              "weight": 10
+            }
+          ],
+          "examineLevel": 1,
+          "directorLevel": 1,
+          "selectMode": 1,
+          "termAuto": false,
+          "remind": false,
+          "term": 1,
+          "termMode": 1,
+          "examineMode": 1,
+          "approveSelf": 0,
+          "directorMode": 0,
+          "typeOfApprove": 1,
+          "extendConfig": {
+            "remindTime": "1:m",
+            "formConfig": [
+              {
+                "id": "input_9348",
+                "label": "输入框",
+                "opera": "1"
+              }
+            ]
+          },
+          "allowCc": false,
+          "allowTransfer": false,
+          "allowAppendNode": false,
+          "allowRollback": false,
+          "rejectStrategy": 2,
+          "rejectStart": 1,
+          "delayType": 1,
+          "groupStrategy": 0,
+          "childNode": {
+            "nodeName": "结束",
+            "nodeKey": "flk1785894630713",
+            "type": -1
+          }
+        }
+      },
+      "delayType": 1
+    }
+  }
+}

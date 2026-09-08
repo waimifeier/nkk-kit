@@ -1,0 +1,34 @@
+server:
+  port: 18080
+
+spring:
+  application:
+    name: nkk-kit-flow-example
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:nkk_flow_example;MODE=MySQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false
+    username: sa
+    password:
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  sql:
+    init:
+      mode: always
+      encoding: UTF-8
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    banner: false
+
+nkk:
+  flow:
+    web:
+      enabled: true
+      api-prefix: /nkk/flow
+    eventing:
+      instance: true
+      task: true

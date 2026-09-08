@@ -1,0 +1,45 @@
+package org.nkk.flow.web.model;
+
+import lombok.Data;
+import org.nkk.flow.core.context.FlowContext;
+
+import java.io.Serializable;
+
+/**
+ * 流程表单绑定展示对象。
+ */
+@Data
+public class FlowFormBindingVO implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    private String sourceType;
+
+    private Long formId;
+
+    private String formKey;
+
+    private Integer formVersion;
+
+    private String formName;
+
+    public static FlowFormBindingVO of(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof FlowFormBindingVO) {
+            return (FlowFormBindingVO) value;
+        }
+        if (value instanceof FlowFormBindingRequest) {
+            FlowFormBindingRequest request = (FlowFormBindingRequest) value;
+            FlowFormBindingVO vo = new FlowFormBindingVO();
+            vo.setSourceType(request.getSourceType());
+            vo.setFormId(request.getFormId());
+            vo.setFormKey(request.getFormKey());
+            vo.setFormVersion(request.getFormVersion());
+            vo.setFormName(request.getFormName());
+            return vo;
+        }
+        return FlowContext.fromJson(FlowContext.toJson(value), FlowFormBindingVO.class);
+    }
+}
