@@ -1,14 +1,19 @@
 package org.nkk.flow.web.service;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import org.nkk.flow.core.context.FlowContext;
 import org.nkk.flow.core.context.FlowCreator;
 import org.nkk.flow.core.extension.identity.FlowCreatorProvider;
+import org.nkk.flow.dao.FlowProcessFormBindingDao;
 import org.nkk.flow.entity.FlowProcess;
+import org.nkk.flow.entity.FlowProcessFormBinding;
+import org.nkk.flow.enums.core.FlowFormFieldEnum;
 import org.nkk.flow.enums.core.FlowProcessEnum.ProcessState;
 import org.nkk.flow.model.FlowNodeModel;
 import org.nkk.flow.model.FlowProcessModel;
 import org.nkk.flow.service.NkkFlowEngine;
+import org.nkk.flow.web.model.FlowFormBindingVO;
 import org.nkk.flow.web.model.FlowProcessCategoryResponse;
 import org.nkk.flow.web.model.FlowFormBindingRequest;
 import org.nkk.flow.web.model.FlowProcessInfoUpdateRequest;
@@ -31,11 +36,15 @@ public class FlowDesignerProcessService {
 
     private final FlowDesignerFormService formService;
 
+    private final FlowProcessFormBindingDao bindingDao;
+
     public FlowDesignerProcessService(NkkFlowEngine flowEngine, FlowCreatorProvider creatorProvider,
-                                      FlowDesignerFormService formService) {
+                                      FlowDesignerFormService formService,
+                                      FlowProcessFormBindingDao bindingDao) {
         this.flowEngine = flowEngine;
         this.creatorProvider = creatorProvider;
         this.formService = formService;
+        this.bindingDao = bindingDao;
     }
 
     /**
@@ -73,6 +82,7 @@ public class FlowDesignerProcessService {
         update.setRemark(StrUtil.trimToNull(request.getRemark()));
         update.setInstanceUrl(StrUtil.trimToNull(request.getInstanceUrl()));
         flowEngine.processService().updateProcessInfo(update);
+        syncProcessBinding(processId, request.getFormBinding(), creator);
 
         return flowEngine.processService().getProcessById(processId);
     }
@@ -98,10 +108,12 @@ public class FlowDesignerProcessService {
         List<FlowProcess> processes = flowEngine.processService().listCurrentProcesses(StrUtil.trimToNull(tenantId));
         processes = filterProcesses(processes, mode);
         Map<String, List<FlowProcessVO>> groupMap = new LinkedHashMap<>();
+        Map<Long, FlowFormBindingVO> bindingMap = loadBindings(processes);
         if (processes != null) {
             for (FlowProcess process : processes) {
                 String processType = StrUtil.trimToNull(process.getProcessType());
-                groupMap.computeIfAbsent(processType, key -> new ArrayList<>()).add(FlowProcessVO.of(process));
+                groupMap.computeIfAbsent(processType, key -> new ArrayList<>())
+                        .add(FlowProcessVO.of(process, bindingMap.get(process.getId())));
             }
         }
         List<FlowProcessCategoryResponse> groups = new ArrayList<>();
@@ -177,9 +189,10 @@ public class FlowDesignerProcessService {
         List<FlowProcess> processes = flowEngine.processService()
                 .getProcessVersions(StrUtil.trimToNull(tenantId), StrUtil.trim(processKey));
         List<FlowProcessVO> records = new ArrayList<>();
+        Map<Long, FlowFormBindingVO> bindingMap = loadBindings(processes);
         if (processes != null) {
             for (FlowProcess process : processes) {
-                records.add(FlowProcessVO.of(process));
+                records.add(FlowProcessVO.of(process, bindingMap.get(process.getId())));
             }
         }
         return records;
@@ -279,6 +292,72 @@ public class FlowDesignerProcessService {
             return;
         }
         formService.saveByBinding(formBinding);
+    }
+
+    private void syncProcessBinding(Long processId, FlowFormBindingRequest formBinding, FlowCreator creator) {
+        if (bindingDao == null || processId == null) {
+            return;
+        }
+        bindingDao.deleteByProcessId(processId);
+        if (formBinding == null || StrUtil.isBlank(formBinding.getFormKey())) {
+            return;
+        }
+        FlowProcessFormBinding binding = new FlowProcessFormBinding();
+        binding.setId(processId);
+        binding.setTenantId(creator == null ? null : creator.getTenantId());
+        binding.setCreateId(creator.getCreateId());
+        binding.setCreateBy(creator.getCreateBy());
+        binding.setCreateTime(new java.util.Date());
+        binding.setProcessId(processId);
+        binding.setSourceType(resolveSourceType(formBinding.getSourceType()));
+        binding.setFormId(formBinding.getFormId());
+        binding.setFormKey(StrUtil.trimToNull(formBinding.getFormKey()));
+        binding.setFormVersion(formBinding.getFormVersion());
+        binding.setFormName(StrUtil.trimToNull(formBinding.getFormName()));
+        if (!bindingDao.insert(binding)) {
+            throw new IllegalStateException("保存流程表单绑定失败，processId=" + processId);
+        }
+    }
+
+    private Map<Long, FlowFormBindingVO> loadBindings(List<FlowProcess> processes) {
+        Map<Long, FlowFormBindingVO> bindingMap = new LinkedHashMap<>();
+        if (bindingDao == null || CollUtil.isEmpty(processes)) {
+            return bindingMap;
+        }
+        List<Long> processIds = new ArrayList<>();
+        String tenantId = null;
+        for (FlowProcess process : processes) {
+            if (process == null || process.getId() == null) {
+                continue;
+            }
+            processIds.add(process.getId());
+            if (tenantId == null) {
+                tenantId = process.getTenantId();
+            }
+        }
+        if (processIds.isEmpty()) {
+            return bindingMap;
+        }
+        List<FlowProcessFormBinding> bindings = bindingDao.selectListByProcessIds(tenantId, processIds);
+        if (CollUtil.isEmpty(bindings)) {
+            return bindingMap;
+        }
+        for (FlowProcessFormBinding binding : bindings) {
+            if (binding == null || binding.getProcessId() == null) {
+                continue;
+            }
+            bindingMap.put(binding.getProcessId(), FlowFormBindingVO.of(binding));
+        }
+        return bindingMap;
+    }
+
+    private String resolveSourceType(String sourceType) {
+        String actualValue = StrUtil.blankToDefault(StrUtil.trim(sourceType), FlowFormFieldEnum.SourceType.FORM.value());
+        FlowFormFieldEnum.SourceType type = FlowFormFieldEnum.SourceType.of(actualValue);
+        if (type == null) {
+            throw new IllegalArgumentException("不支持的表单来源类型，sourceType=" + sourceType);
+        }
+        return type.value();
     }
 
     private FlowProcessModel resolveProcessModel(String modelContent) {

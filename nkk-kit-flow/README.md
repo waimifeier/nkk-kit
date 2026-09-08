@@ -92,7 +92,7 @@ starter 按 Spring Boot 规范拆分 Bean。使用方可以通过注册同类型
 
 ## 业务流转与数据表关系
 
-`nkk-kit-flow` 当前使用 9 张核心表承载流程定义、流程实例、任务、任务参与者和表单字段元数据。SQL 位于：
+`nkk-kit-flow` 当前使用 10 张核心表承载流程定义、流程实例、任务、任务参与者、流程-表单绑定和表单字段元数据。SQL 位于：
 
 ```text
 META-INF/nkk-flow/schema-mysql.sql
@@ -105,6 +105,7 @@ META-INF/nkk-flow/schema-mysql.sql
 | 表名 | 对应实体 | 生命周期 | 主要作用 |
 | --- | --- | --- | --- |
 | `flow_process` | `FlowProcess` | 流程定义部署后长期保留 | 保存流程定义、版本、状态和流程模型 JSON。一个 `process_key` 可以有多个版本。 |
+| `flow_process_form_binding` | `FlowProcessFormBinding` | 流程发布时写入 | 保存流程与表单的绑定关系、表单来源类型、表单编码、版本和名称。 |
 | `flow_instance` | `FlowInstance` | 只保存正在运行的实例 | 保存活动流程实例的当前节点、发起人、业务 key、实例变量等。流程结束后会从该表删除。 |
 | `flow_his_instance` | `FlowHisInstance` | 实例创建时插入，结束后继续保留 | 保存实例生命周期记录。实例启动时就会插入一条历史记录，运行中同步当前节点和变量，结束时更新最终状态和结束时间。 |
 | `flow_ext_instance` | `FlowExtInstance` | 实例创建时插入，默认随实例历史保留 | 保存实例级流程模型快照。流程定义后续改版不会影响已经启动的实例。 |
@@ -121,6 +122,7 @@ META-INF/nkk-flow/schema-mysql.sql
 | `flow_process.id` -> `flow_instance.process_id` | 一个流程定义可以启动多个活动流程实例。 |
 | `flow_process.id` -> `flow_his_instance.process_id` | 历史实例记录所属流程定义。 |
 | `flow_process.id` -> `flow_ext_instance.process_id` | 实例模型快照来源于哪个流程定义。 |
+| `flow_process.id` -> `flow_process_form_binding.process_id` | 一个流程定义只保留一条表单绑定记录。 |
 | `flow_instance.id` -> `flow_task.instance_id` | 一个活动实例下可以有多个活动任务，例如并行、会签、票签。 |
 | `flow_instance.id` -> `flow_task_actor.instance_id` | 活动任务参与者同时冗余实例 ID，方便按实例清理和查询。 |
 | `flow_instance.id` = `flow_his_instance.id` | 同一个实例在活动表和历史表中使用同一个 ID。 |
@@ -139,6 +141,7 @@ META-INF/nkk-flow/schema-mysql.sql
    调用 `FlowProcessService.deploy(...)` 或封装后的部署接口时，系统解析流程 JSON、执行模型校验，然后写入 `flow_process`。
 
    如果同一个 `process_key` 已经存在并且允许重复部署，会把旧版本的 `process_state` 更新为历史版本，再插入新版本。运行中的实例不会直接读取最新定义，而是读取自己的 `flow_ext_instance.model_content`。
+   如果发布请求携带了表单绑定信息，还会同步写入 `flow_process_form_binding`，同时把字段元数据写入 `flow_form_field`。
 
 2. 发起流程实例。
 
@@ -190,6 +193,7 @@ META-INF/nkk-flow/schema-mysql.sql
 | 操作 | 主要写入/更新/删除的表 | 说明 |
 | --- | --- | --- |
 | 部署流程定义 | 插入 `flow_process`；可能更新旧版本 `flow_process.process_state` | 保存流程模型 JSON 和版本。重复部署时旧版本转历史版本。 |
+| 发布流程绑定表单 | 插入/更新 `flow_process_form_binding`，并同步 `flow_form_field` | 保存流程版本与表单的绑定关系，便于设计器和版本列表直接读取。 |
 | 启用/禁用流程定义 | 更新 `flow_process.process_state` | 只影响后续是否允许使用该定义，不修改已运行实例的模型快照。 |
 | 修改流程定义资料 | 更新 `flow_process` | 通常修改名称、图标、分类、实例地址、备注、排序等展示和管理字段。 |
 | 发起流程实例 | 插入 `flow_instance`、`flow_his_instance`、`flow_ext_instance` | 活动实例、历史生命周期、实例模型快照同时创建。 |
@@ -251,6 +255,7 @@ META-INF/nkk-flow/schema-mysql.sql
 | 历史流程图回显 | `flow_ext_instance.model_content` |
 | 子流程关系 | `flow_instance.parent_instance_id` 或 `flow_his_instance.parent_instance_id` |
 | 表单字段元数据 | `flow_form_field` |
+| 流程绑定表单 | `flow_process_form_binding` |
 
 ## 组织参与人扩展
 

@@ -91,6 +91,7 @@ public FlowDesignerOrgProvider flowDesignerOrgProvider() {
 
 | 接口 | 说明 |
 | --- | --- |
+| `GET /nkk/flow/designer/forms/options` | 查询设计器可选表单下拉数据。 |
 | `GET /nkk/flow/designer/forms/{formKey}/fields` | 查询指定表单的字段元数据；`formVersion` 为空时返回最新版本。 |
 | `POST /nkk/flow/designer/forms/{formKey}/fields` | 保存指定表单版本的字段元数据，保存时会覆盖同一 `formKey + formVersion` 的旧数据。 |
 
@@ -100,8 +101,10 @@ public FlowDesignerOrgProvider flowDesignerOrgProvider() {
 - `fieldName`：字段展示名。
 - `fieldPath`：字段路径，适合处理嵌套对象或数组路径。
 - `fieldType`：字段类型，例如 `string`、`number`、`date`、`datetime`。
-- `sourceType`：字段来源，例如 `custom`、`business`。
+- `sourceType`：字段来源，例如 `form`、`business`。
 - `optionsJson`：选择型字段的选项数据。
+
+表单下拉数据由 `FlowDesignerFormProvider` Bean 提供。使用方只要实现这个扩展点，就能把自定义表单、业务表单、表单版本等主数据喂给前端设计器。
 
 示例：
 
@@ -122,7 +125,7 @@ curl "http://localhost:18080/nkk/flow/designer/forms/leave-form/fields?formVersi
       "fieldName": "请假天数",
       "fieldType": "number",
       "fieldPath": "days",
-      "sourceType": "custom",
+      "sourceType": "form",
       "required": 1,
       "sort": 1
     }

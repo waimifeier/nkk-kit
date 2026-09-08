@@ -1,5 +1,6 @@
 DROP TABLE IF EXISTS flow_his_task_actor;
 DROP TABLE IF EXISTS flow_form_field;
+DROP TABLE IF EXISTS flow_process_form_binding;
 DROP TABLE IF EXISTS flow_task_actor;
 DROP TABLE IF EXISTS flow_his_task;
 DROP TABLE IF EXISTS flow_task;
@@ -30,6 +31,25 @@ CREATE TABLE flow_process
 );
 
 CREATE INDEX idx_flow_process_key_version ON flow_process (tenant_id, process_key, process_version);
+
+CREATE TABLE flow_process_form_binding
+(
+    id           BIGINT       NOT NULL,
+    tenant_id    VARCHAR(50),
+    create_id    VARCHAR(50)  NOT NULL,
+    create_by    VARCHAR(50)  NOT NULL,
+    create_time  TIMESTAMP    NOT NULL,
+    process_id   BIGINT       NOT NULL,
+    source_type  VARCHAR(50)  NOT NULL,
+    form_id      BIGINT,
+    form_key     VARCHAR(100),
+    form_version INT          NOT NULL DEFAULT 1,
+    form_name    VARCHAR(100),
+    PRIMARY KEY (id)
+);
+
+CREATE UNIQUE INDEX uk_flow_process_form_binding_process ON flow_process_form_binding (process_id);
+CREATE INDEX idx_flow_process_form_binding_form ON flow_process_form_binding (tenant_id, form_key, form_version);
 
 CREATE TABLE flow_his_instance
 (

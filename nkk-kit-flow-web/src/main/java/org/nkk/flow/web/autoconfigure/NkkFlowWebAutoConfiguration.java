@@ -5,10 +5,13 @@ import org.nkk.flow.web.controller.FlowDesignerFormController;
 import org.nkk.flow.web.controller.FlowDesignerProcessController;
 import org.nkk.flow.web.controller.FlowDesignerRuntimeController;
 import org.nkk.flow.web.controller.FlowDesignerTodoController;
+import org.nkk.flow.web.extension.DefaultFlowDesignerFormProvider;
 import org.nkk.flow.web.extension.DefaultFlowDesignerOrgProvider;
+import org.nkk.flow.web.extension.FlowDesignerFormProvider;
 import org.nkk.flow.web.extension.FlowDesignerOrgProvider;
 import org.nkk.flow.core.extension.id.FlowIdGenerator;
 import org.nkk.flow.core.extension.identity.FlowCreatorProvider;
+import org.nkk.flow.dao.FlowProcessFormBindingDao;
 import org.nkk.flow.dao.FlowFormFieldDao;
 import org.nkk.flow.dao.FlowHisInstanceDao;
 import org.nkk.flow.dao.FlowHisTaskActorDao;
@@ -57,10 +60,17 @@ public class NkkFlowWebAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    public FlowDesignerFormProvider flowDesignerFormProvider() {
+        return new DefaultFlowDesignerFormProvider();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
     public FlowDesignerFormService flowDesignerFormService(FlowFormFieldDao formFieldDao,
                                                            ObjectProvider<FlowCreatorProvider> creatorProvider,
-                                                           FlowIdGenerator idGenerator) {
-        return new FlowDesignerFormService(formFieldDao, creatorProvider.getIfAvailable(), idGenerator);
+                                                           FlowIdGenerator idGenerator,
+                                                           FlowDesignerFormProvider formProvider) {
+        return new FlowDesignerFormService(formFieldDao, creatorProvider.getIfAvailable(), idGenerator, formProvider);
     }
 
     @Bean
@@ -73,8 +83,9 @@ public class NkkFlowWebAutoConfiguration {
     @ConditionalOnMissingBean
     public FlowDesignerProcessService flowDesignerProcessService(NkkFlowEngine flowEngine,
                                                                  ObjectProvider<FlowCreatorProvider> creatorProvider,
-                                                                 FlowDesignerFormService formService) {
-        return new FlowDesignerProcessService(flowEngine, creatorProvider.getIfAvailable(), formService);
+                                                                 FlowDesignerFormService formService,
+                                                                 FlowProcessFormBindingDao bindingDao) {
+        return new FlowDesignerProcessService(flowEngine, creatorProvider.getIfAvailable(), formService, bindingDao);
     }
 
     @Bean

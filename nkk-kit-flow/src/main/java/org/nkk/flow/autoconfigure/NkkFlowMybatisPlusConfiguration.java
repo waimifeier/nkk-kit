@@ -8,6 +8,7 @@ import org.nkk.flow.dao.FlowHisTaskActorDao;
 import org.nkk.flow.dao.FlowHisTaskDao;
 import org.nkk.flow.dao.FlowInstanceDao;
 import org.nkk.flow.dao.FlowProcessDao;
+import org.nkk.flow.dao.FlowProcessFormBindingDao;
 import org.nkk.flow.dao.FlowTaskActorDao;
 import org.nkk.flow.dao.FlowTaskDao;
 import org.nkk.flow.dao.mybatis.FlowExtInstanceDaoMybatisPlusImpl;
@@ -17,6 +18,7 @@ import org.nkk.flow.dao.mybatis.FlowHisTaskActorDaoMybatisPlusImpl;
 import org.nkk.flow.dao.mybatis.FlowHisTaskDaoMybatisPlusImpl;
 import org.nkk.flow.dao.mybatis.FlowInstanceDaoMybatisPlusImpl;
 import org.nkk.flow.dao.mybatis.FlowProcessDaoMybatisPlusImpl;
+import org.nkk.flow.dao.mybatis.FlowProcessFormBindingDaoMybatisPlusImpl;
 import org.nkk.flow.dao.mybatis.FlowTaskActorDaoMybatisPlusImpl;
 import org.nkk.flow.dao.mybatis.FlowTaskDaoMybatisPlusImpl;
 import org.nkk.flow.mapper.FlowExtInstanceMapper;
@@ -26,6 +28,7 @@ import org.nkk.flow.mapper.FlowHisTaskActorMapper;
 import org.nkk.flow.mapper.FlowHisTaskMapper;
 import org.nkk.flow.mapper.FlowInstanceMapper;
 import org.nkk.flow.mapper.FlowProcessMapper;
+import org.nkk.flow.mapper.FlowProcessFormBindingMapper;
 import org.nkk.flow.mapper.FlowTaskActorMapper;
 import org.nkk.flow.mapper.FlowTaskMapper;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -69,6 +72,12 @@ public class NkkFlowMybatisPlusConfiguration {
     @ConditionalOnMissingBean
     public FlowFormFieldDao flowFormFieldDao(FlowFormFieldMapper mapper) {
         return new FlowFormFieldDaoMybatisPlusImpl(mapper);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public FlowProcessFormBindingDao flowProcessFormBindingDao(FlowProcessFormBindingMapper mapper) {
+        return new FlowProcessFormBindingDaoMybatisPlusImpl(mapper);
     }
 
     @Bean

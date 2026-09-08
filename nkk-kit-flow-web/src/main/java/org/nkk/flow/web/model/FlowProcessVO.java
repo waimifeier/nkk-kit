@@ -100,6 +100,10 @@ public class FlowProcessVO implements Serializable {
     private FlowFormBindingVO formBinding;
 
     public static FlowProcessVO of(FlowProcess process) {
+        return of(process, null);
+    }
+
+    public static FlowProcessVO of(FlowProcess process, FlowFormBindingVO formBinding) {
         if (process == null) {
             return null;
         }
@@ -119,7 +123,14 @@ public class FlowProcessVO implements Serializable {
         vo.setUseScope(process.getUseScope());
         vo.setProcessState(process.getProcessState());
         vo.setSort(process.getSort());
-        vo.setFormBinding(resolveFormBinding(process));
+        FlowFormBindingVO resolved = formBinding == null ? resolveFormBinding(process) : formBinding;
+        if (resolved != null && (resolved.getFields() == null || resolved.getFields().isEmpty())) {
+            FlowFormBindingVO modelBinding = resolveFormBinding(process);
+            if (modelBinding != null && modelBinding.getFields() != null && !modelBinding.getFields().isEmpty()) {
+                resolved.setFields(modelBinding.getFields());
+            }
+        }
+        vo.setFormBinding(resolved);
         return vo;
     }
 

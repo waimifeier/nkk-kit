@@ -3,6 +3,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS `flow_his_task_actor`;
 DROP TABLE IF EXISTS `flow_form_field`;
+DROP TABLE IF EXISTS `flow_process_form_binding`;
 DROP TABLE IF EXISTS `flow_task_actor`;
 DROP TABLE IF EXISTS `flow_his_task`;
 DROP TABLE IF EXISTS `flow_task`;
@@ -33,6 +34,24 @@ CREATE TABLE `flow_process`
     KEY `idx_flow_process_key_version` (`tenant_id`, `process_key`, `process_version`),
     KEY `idx_flow_process_name` (`process_name`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '流程定义表';
+
+CREATE TABLE `flow_process_form_binding`
+(
+    `id`            bigint       NOT NULL COMMENT '主键ID',
+    `tenant_id`     varchar(50)           DEFAULT NULL COMMENT '租户ID',
+    `create_id`     varchar(50)  NOT NULL COMMENT '创建人ID',
+    `create_by`     varchar(50)  NOT NULL COMMENT '创建人名称',
+    `create_time`   datetime     NOT NULL COMMENT '创建时间',
+    `process_id`    bigint       NOT NULL COMMENT '流程定义ID',
+    `source_type`   varchar(50)  NOT NULL COMMENT '表单来源类型，取值：form(表单)、business(业务表单)',
+    `form_id`       bigint                DEFAULT NULL COMMENT '表单ID',
+    `form_key`      varchar(100)          DEFAULT NULL COMMENT '表单编码',
+    `form_version`  int          NOT NULL DEFAULT 1 COMMENT '表单版本',
+    `form_name`     varchar(100)          DEFAULT NULL COMMENT '表单名称',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_flow_process_form_binding_process` (`process_id`),
+    KEY `idx_flow_process_form_binding_form` (`tenant_id`, `form_key`, `form_version`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '流程表单绑定表';
 
 CREATE TABLE `flow_his_instance`
 (
@@ -212,7 +231,7 @@ CREATE TABLE `flow_form_field`
     `field_name`    varchar(100) NOT NULL COMMENT '字段名称',
     `field_type`    varchar(50)  NOT NULL COMMENT '字段类型，取值：string(文本)、number(数字)、boolean(布尔)、date(日期)、datetime(日期时间)、select(单选)、multi_select(多选)、radio(单选按钮)、checkbox(复选框)、object(对象)、array(数组)',
     `field_path`    varchar(255)          DEFAULT NULL COMMENT '字段路径',
-    `source_type`   varchar(50)  NOT NULL COMMENT '字段来源类型，取值：custom(自定义表单)、business(业务表单)',
+    `source_type`   varchar(50)  NOT NULL COMMENT '字段来源类型，取值：form(自定义表单)、business(业务表单)',
     `required`      tinyint      NOT NULL DEFAULT 0 COMMENT '是否必填 0 否 1 是',
     `options_json`  longtext              DEFAULT NULL COMMENT '字段选项JSON',
     `sort`          int          NOT NULL DEFAULT 0 COMMENT '排序',

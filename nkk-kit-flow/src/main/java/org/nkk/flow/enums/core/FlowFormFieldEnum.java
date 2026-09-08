@@ -60,7 +60,7 @@ public final class FlowFormFieldEnum {
     @AllArgsConstructor
     public enum SourceType implements IEnum<String> {
 
-        CUSTOM("custom", "自定义表单"),
+        FORM("form", "自定义表单"),
         BUSINESS("business", "业务表单");
 
         private final String value;

@@ -31,7 +31,7 @@ public class FlowFormFieldSaveRequest implements Serializable {
     /**
      * 字段来源类型，取值见 {@link org.nkk.flow.enums.core.FlowFormFieldEnum.SourceType}。
      *
-     * <p>为空时默认按 custom 处理。</p>
+     * <p>为空时默认按 form 处理。</p>
      */
     private String sourceType;
 

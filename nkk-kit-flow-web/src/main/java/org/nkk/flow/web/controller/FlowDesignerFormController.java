@@ -1,6 +1,7 @@
 package org.nkk.flow.web.controller;
 
 import org.nkk.core.beans.common.Result;
+import org.nkk.flow.web.model.FlowDesignerFormOption;
 import org.nkk.flow.web.model.FlowFormFieldVO;
 import org.nkk.flow.web.model.FlowFormFieldSaveRequest;
 import org.nkk.flow.web.service.FlowDesignerFormService;
@@ -58,5 +59,16 @@ public class FlowDesignerFormController {
     public Result<List<FlowFormFieldVO>> save(@PathVariable String formKey,
                                               @RequestBody FlowFormFieldSaveRequest request) {
         return Result.ok(formService.save(formKey, request));
+    }
+
+    /**
+     * 查询设计器可选表单下拉数据。
+     *
+     * @param sourceType 表单来源类型；示例值：{@code form}、{@code business}
+     * @return 表单下拉选项列表
+     */
+    @GetMapping("/options")
+    public Result<List<FlowDesignerFormOption>> options(@RequestParam(required = false) String sourceType) {
+        return Result.ok(formService.listForms(sourceType));
     }
 }

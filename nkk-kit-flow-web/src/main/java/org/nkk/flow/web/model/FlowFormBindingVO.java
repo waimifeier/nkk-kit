@@ -2,6 +2,7 @@ package org.nkk.flow.web.model;
 
 import lombok.Data;
 import org.nkk.flow.core.context.FlowContext;
+import org.nkk.flow.entity.FlowProcessFormBinding;
 
 import java.io.Serializable;
 import java.util.List;
@@ -42,6 +43,16 @@ public class FlowFormBindingVO implements Serializable {
             vo.setFormVersion(request.getFormVersion());
             vo.setFormName(request.getFormName());
             vo.setFields(request.getFields());
+            return vo;
+        }
+        if (value instanceof FlowProcessFormBinding) {
+            FlowProcessFormBinding binding = (FlowProcessFormBinding) value;
+            FlowFormBindingVO vo = new FlowFormBindingVO();
+            vo.setSourceType(binding.getSourceType());
+            vo.setFormId(binding.getFormId());
+            vo.setFormKey(binding.getFormKey());
+            vo.setFormVersion(binding.getFormVersion());
+            vo.setFormName(binding.getFormName());
             return vo;
         }
         return FlowContext.fromJson(FlowContext.toJson(value), FlowFormBindingVO.class);

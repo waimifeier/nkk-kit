@@ -8,6 +8,8 @@ import org.nkk.flow.core.extension.identity.FlowCreatorProvider;
 import org.nkk.flow.dao.FlowFormFieldDao;
 import org.nkk.flow.entity.FlowFormField;
 import org.nkk.flow.enums.core.FlowFormFieldEnum;
+import org.nkk.flow.web.extension.FlowDesignerFormProvider;
+import org.nkk.flow.web.model.FlowDesignerFormOption;
 import org.nkk.flow.web.model.FlowFormBindingRequest;
 import org.nkk.flow.web.model.FlowFormFieldSaveItemRequest;
 import org.nkk.flow.web.model.FlowFormFieldSaveRequest;
@@ -27,12 +29,14 @@ public class FlowDesignerFormService {
     private final FlowFormFieldDao formFieldDao;
     private final FlowCreatorProvider creatorProvider;
     private final FlowIdGenerator idGenerator;
+    private final FlowDesignerFormProvider formProvider;
 
     public FlowDesignerFormService(FlowFormFieldDao formFieldDao, FlowCreatorProvider creatorProvider,
-                                   FlowIdGenerator idGenerator) {
+                                   FlowIdGenerator idGenerator, FlowDesignerFormProvider formProvider) {
         this.formFieldDao = formFieldDao;
         this.creatorProvider = creatorProvider;
         this.idGenerator = idGenerator;
+        this.formProvider = formProvider;
     }
 
     /**
@@ -57,7 +61,7 @@ public class FlowDesignerFormService {
      * @param tenantId 租户 ID
      * @param formKey 表单编码
      * @param formVersion 表单版本，空则取最新版本
-     * @param sourceType 表单来源类型，custom/business
+     * @param sourceType 表单来源类型，form/business
      * @return 字段元数据列表
      */
     public List<FlowFormFieldVO> list(String tenantId, String formKey, Integer formVersion, String sourceType) {
@@ -141,6 +145,19 @@ public class FlowDesignerFormService {
         request.setSourceType(binding.getSourceType());
         request.setFields(binding.getFields());
         return saveBindingFields(binding.getFormKey(), request);
+    }
+
+    /**
+     * 查询设计器可选表单。
+     *
+     * @param sourceType 表单来源类型，form/business
+     * @return 表单下拉选项
+     */
+    public List<FlowDesignerFormOption> listForms(String sourceType) {
+        if (formProvider == null) {
+            return Collections.emptyList();
+        }
+        return formProvider.listForms(sourceType);
     }
 
     private List<FlowFormField> sortFields(List<FlowFormField> fields) {
@@ -287,7 +304,7 @@ public class FlowDesignerFormService {
 
     private FlowFormFieldEnum.SourceType resolveSourceType(String sourceType, String defaultValue) {
         String actualValue = StrUtil.blankToDefault(StrUtil.trim(sourceType),
-                StrUtil.blankToDefault(StrUtil.trim(defaultValue), FlowFormFieldEnum.SourceType.CUSTOM.value()));
+                StrUtil.blankToDefault(StrUtil.trim(defaultValue), FlowFormFieldEnum.SourceType.FORM.value()));
         FlowFormFieldEnum.SourceType type = FlowFormFieldEnum.SourceType.of(actualValue);
         if (type == null) {
             throw new IllegalArgumentException("不支持的字段来源类型，sourceType=" + sourceType);
