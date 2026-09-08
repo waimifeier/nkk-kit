@@ -26,6 +26,12 @@ public class FlowInstance extends FlowEntity implements Cloneable {
     private Long processId;
 
     /**
+     * 流程定义 key，与 processId 对应的业务可读标识。
+     * 回调 Handler 可以通过此字段快速判断是哪个流程，无需反查 flow_process 表。
+     */
+    private String processKey;
+
+    /**
      * 父流程实例 ID，子流程实例会记录发起它的父实例。
      */
     private Long parentInstanceId;

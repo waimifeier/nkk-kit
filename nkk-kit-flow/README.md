@@ -89,10 +89,13 @@ starter 按 Spring Boot 规范拆分 Bean。使用方可以通过注册同类型
 - `FlowModelCache`：替换默认内存模型缓存。
 - `FlowAiHandler`：接入外部 AI 智能体，支持审批自动通过/拒绝、低置信度转人工、失败兜底、AI 条件分支。
 - `FlowJobLock`：替换默认本地调度锁，接入 Redis、数据库等分布式锁。
+- `FlowDesignerFormProvider`：表单数据提供者，提供设计器可选表单下拉和字段元数据。
+- `FlowApprovalCallbackHandler`：审批结果回调处理器，支持多个 Bean，实例/任务生命周期节点触发。
+- `FlowBusinessApprovalLauncher`：业务发起审批桥接入口。
 
 ## 业务流转与数据表关系
 
-`nkk-kit-flow` 当前使用 10 张核心表承载流程定义、流程实例、任务、任务参与者、流程-表单绑定和表单字段元数据。SQL 位于：
+`nkk-kit-flow` 当前使用 8 张核心表承载流程定义、流程实例、任务、任务参与者和表单字段元数据。SQL 位于：
 
 ```text
 META-INF/nkk-flow/schema-mysql.sql
@@ -104,8 +107,7 @@ META-INF/nkk-flow/schema-mysql.sql
 
 | 表名 | 对应实体 | 生命周期 | 主要作用 |
 | --- | --- | --- | --- |
-| `flow_process` | `FlowProcess` | 流程定义部署后长期保留 | 保存流程定义、版本、状态和流程模型 JSON。一个 `process_key` 可以有多个版本。 |
-| `flow_process_form_binding` | `FlowProcessFormBinding` | 流程发布时写入 | 保存流程与表单的绑定关系、表单来源类型、表单编码、版本和名称。 |
+| `flow_process` | `FlowProcess` | 流程定义部署后长期保留 | 保存流程定义、版本、状态和流程模型 JSON（含 `extendConfig.metaForm` 表单绑定信息）。一个 `process_key` 可以有多个版本。 |
 | `flow_instance` | `FlowInstance` | 只保存正在运行的实例 | 保存活动流程实例的当前节点、发起人、业务 key、实例变量等。流程结束后会从该表删除。 |
 | `flow_his_instance` | `FlowHisInstance` | 实例创建时插入，结束后继续保留 | 保存实例生命周期记录。实例启动时就会插入一条历史记录，运行中同步当前节点和变量，结束时更新最终状态和结束时间。 |
 | `flow_ext_instance` | `FlowExtInstance` | 实例创建时插入，默认随实例历史保留 | 保存实例级流程模型快照。流程定义后续改版不会影响已经启动的实例。 |
@@ -113,7 +115,7 @@ META-INF/nkk-flow/schema-mysql.sql
 | `flow_his_task` | `FlowHisTask` | 任务完成、关闭或异常结束后写入 | 保存任务处理历史。活动任务完成时会复制到历史任务表，并记录任务状态、完成时间和耗时。 |
 | `flow_task_actor` | `FlowTaskActor` | 只保存活动任务参与者 | 保存当前任务的办理人、角色、部门、候选人快照以及权重、代理信息。任务完成后会从该表删除。 |
 | `flow_his_task_actor` | `FlowHisTaskActor` | 任务转历史时写入 | 保存任务参与者历史快照，便于后续查看当时是谁可审批、谁被委派、谁参与会签/票签。 |
-| `flow_form_field` | `FlowFormField` | 表单字段配置时写入 | 保存流程设计器条件节点可选字段、字段路径、字段类型、选项和版本信息。 |
+| ~~已移除~~ | ~~已移除~~ | ~~已移除~~ | 字段元数据随流程模型 JSON 存储在 `extendConfig.metaForm.fields`，通过 `FlowDesignerFormProvider` SPI 按需查询，不再落独立表。 |
 
 ### 逻辑关系
 
@@ -122,7 +124,6 @@ META-INF/nkk-flow/schema-mysql.sql
 | `flow_process.id` -> `flow_instance.process_id` | 一个流程定义可以启动多个活动流程实例。 |
 | `flow_process.id` -> `flow_his_instance.process_id` | 历史实例记录所属流程定义。 |
 | `flow_process.id` -> `flow_ext_instance.process_id` | 实例模型快照来源于哪个流程定义。 |
-| `flow_process.id` -> `flow_process_form_binding.process_id` | 一个流程定义只保留一条表单绑定记录。 |
 | `flow_instance.id` -> `flow_task.instance_id` | 一个活动实例下可以有多个活动任务，例如并行、会签、票签。 |
 | `flow_instance.id` -> `flow_task_actor.instance_id` | 活动任务参与者同时冗余实例 ID，方便按实例清理和查询。 |
 | `flow_instance.id` = `flow_his_instance.id` | 同一个实例在活动表和历史表中使用同一个 ID。 |
@@ -132,7 +133,7 @@ META-INF/nkk-flow/schema-mysql.sql
 | `flow_instance.parent_instance_id` | 子流程实例指向父流程实例。 |
 | `flow_task.parent_task_id` | 当前任务由哪个上游任务流转而来。 |
 | `flow_task.call_process_id`、`call_instance_id` | 父流程等待子流程时，任务会记录调用的子流程定义和子流程实例。 |
-| `flow_form_field.form_key/form_version` | 同一表单的多个版本字段配置 | 设计器条件节点依据表单字段元数据构建字段树和可选条件。 |
+| 表单字段元数据来源 | 流程模型 JSON 的 `extendConfig.metaForm.fields` + `FlowDesignerFormProvider.listFormFields()` | 设计器条件节点先从 Provider 查实时字段，Provider 未实现时读流程模型快照。 |
 
 ### 一次完整审批的数据流
 
@@ -141,7 +142,7 @@ META-INF/nkk-flow/schema-mysql.sql
    调用 `FlowProcessService.deploy(...)` 或封装后的部署接口时，系统解析流程 JSON、执行模型校验，然后写入 `flow_process`。
 
    如果同一个 `process_key` 已经存在并且允许重复部署，会把旧版本的 `process_state` 更新为历史版本，再插入新版本。运行中的实例不会直接读取最新定义，而是读取自己的 `flow_ext_instance.model_content`。
-   如果发布请求携带了表单绑定信息，还会同步写入 `flow_process_form_binding`，同时把字段元数据写入 `flow_form_field`。
+   如果发布请求携带了表单绑定信息，会写入 `flow_process.model_content` 的 `extendConfig.metaForm`，字段元数据随 `metaForm.fields` 一起持久化，不再落独立表。
 
 2. 发起流程实例。
 
@@ -193,7 +194,7 @@ META-INF/nkk-flow/schema-mysql.sql
 | 操作 | 主要写入/更新/删除的表 | 说明 |
 | --- | --- | --- |
 | 部署流程定义 | 插入 `flow_process`；可能更新旧版本 `flow_process.process_state` | 保存流程模型 JSON 和版本。重复部署时旧版本转历史版本。 |
-| 发布流程绑定表单 | 插入/更新 `flow_process_form_binding`，并同步 `flow_form_field` | 保存流程版本与表单的绑定关系，便于设计器和版本列表直接读取。 |
+| 发布流程绑定表单 | 写入 `flow_process.model_content` 的 `extendConfig.metaForm`， | 元表单信息随流程模型 JSON 一起存储。 |
 | 启用/禁用流程定义 | 更新 `flow_process.process_state` | 只影响后续是否允许使用该定义，不修改已运行实例的模型快照。 |
 | 修改流程定义资料 | 更新 `flow_process` | 通常修改名称、图标、分类、实例地址、备注、排序等展示和管理字段。 |
 | 发起流程实例 | 插入 `flow_instance`、`flow_his_instance`、`flow_ext_instance` | 活动实例、历史生命周期、实例模型快照同时创建。 |
@@ -254,8 +255,8 @@ META-INF/nkk-flow/schema-mysql.sql
 | 审批轨迹 | `flow_his_task`，按 `instance_id/create_time/finish_time` 排序 |
 | 历史流程图回显 | `flow_ext_instance.model_content` |
 | 子流程关系 | `flow_instance.parent_instance_id` 或 `flow_his_instance.parent_instance_id` |
-| 表单字段元数据 | `flow_form_field` |
-| 流程绑定表单 | `flow_process_form_binding` |
+| 表单字段元数据 | `flow_process.model_content` 的 `extendConfig.metaForm.fields` + `FlowDesignerFormProvider` SPI |
+| 流程绑定表单 | `flow_process.model_content` 的 `extendConfig.metaForm` |
 
 ## 组织参与人扩展
 
@@ -608,6 +609,99 @@ engine.abstainTask(taskId, FlowCreator.of("u3", "王五"), variables);
 - 角色/部门认领前的成员权限判断。
 - 消息提醒、任务到期扫描调度、业务事件发布。
 - 管理端流程设计器、表单页面、审批页面。
+
+## 表单与业务审批接入
+
+`nkk-kit-flow-web` 模块提供了表单元数据和业务审批的扩展 SPI，让使用方可以把自定义表单、业务表单接入流程设计器和运行时。
+
+### FlowDesignerFormProvider — 表单数据提供者
+
+设计器条件分支节点需要可选字段时，通过此 SPI 查询表单字段元数据。
+
+```java
+@Bean
+public FlowDesignerFormProvider flowDesignerFormProvider() {
+    return new FlowDesignerFormProvider() {
+        @Override
+        public List<FlowDesignerFormOption> listForms(String sourceType) {
+            // 返回表单下拉选项，sourceType=form 自定义表单，business 业务表单
+        }
+
+        @Override
+        public List<FlowFieldMeta> listFormFields(String formKey, Integer formVersion, String sourceType) {
+            // 返回指定表单的字段元数据
+        }
+    };
+}
+```
+
+未实现时返回空列表，流程发布时前端会把字段快照直接写入 `extendConfig.metaForm.fields`，后续条件分支和表单渲染从流程模型 JSON 读取即可。
+
+### FlowApprovalCallbackHandler — 审批结果回调
+
+审批引擎在实例/任务生命周期节点触发回调，业务系统同步自己的单据状态。推荐在业务 Service 类上直接实现此接口，同时配合 `@FlowApproval` 注解完成"发起 + 回调"的闭环。
+
+```java
+@Service
+public class OrderService implements FlowApprovalCallbackHandler {
+
+    private final OrderRepository orderRepository;
+
+    // @FlowApproval 发起，FlowApprovalCallbackHandler 回调
+    @Transactional
+    @FlowApproval(processKey = "purchase-order", businessKeyFrom = "orderNo")
+    public Order submit(Order order) {
+        return orderRepository.save(order);
+    }
+
+    /** 只处理订单审批流程。 */
+    @Override
+    public boolean supports(String processKey) {
+        return "purchase-order".equals(processKey);
+    }
+
+    @Override
+    public void onInstanceComplete(FlowHisInstance instance) {
+        orderRepository.updateFlowStatus(instance.getBusinessKey(), "APPROVED");
+    }
+
+    @Override
+    public void onInstanceReject(FlowHisInstance instance) {
+        orderRepository.updateFlowStatus(instance.getBusinessKey(), "REJECTED");
+    }
+}
+```
+
+**`supports(processKey)` 是路由过滤器**：适配器在 dispatch 前先调用它，只有返回 true 的 Handler 才会收到回调。可以有多个 Handler Bean，按 order 值从小到大逐个触发。某个 Handler 抛异常不影响其他 Handler 和主流程。
+
+### FlowBusinessApprovalLauncher — 业务发起审批桥接
+
+业务系统通过此 SPI 便捷地把业务单据发起为审批实例：
+
+```java
+@Bean
+public FlowBusinessApprovalLauncher flowBusinessApprovalLauncher(FlowDesignerRuntimeService runtimeService) {
+    return request -> {
+        FlowStartProcessRequest start = new FlowStartProcessRequest();
+        start.setProcessKey(request.getProcessKey());
+        start.setBusinessKey(request.getBusinessKey());
+        start.setVariables(request.getVariables());
+        return runtimeService.start(start).getInstanceId();
+    };
+}
+```
+
+### @FlowApproval — 无侵入式自动发起
+
+业务方法加注解即可自动发起审批，详见 `nkk-kit-flow-web/README.md` 的「无侵入式自动发起审批」章节。
+
+```java
+@Transactional
+@FlowApproval(processKey = "purchase-order", businessKeyFrom = "orderNo")
+public Order submit(Order order) {
+    return orderRepository.save(order);
+}
+```
 
 ## 模型校验
 

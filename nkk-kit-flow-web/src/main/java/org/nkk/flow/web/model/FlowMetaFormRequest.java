@@ -6,10 +6,13 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * 流程表单绑定请求。
+ * 流程元表单请求。
+ *
+ * <p>发布流程时携带的表单绑定信息，最终写入流程模型 JSON 的 {@code extendConfig.metaForm}。
+ * 不再落独立表，字段元数据随流程模型一起持久化。</p>
  */
 @Data
-public class FlowFormBindingRequest implements Serializable {
+public class FlowMetaFormRequest implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -39,9 +42,9 @@ public class FlowFormBindingRequest implements Serializable {
     private String formName;
 
     /**
-     * 字段列表。
+     * 字段元数据列表。
      *
-     * <p>流程发布时如果携带该字段，会同步写入 {@code flow_form_field}。</p>
+     * <p>随流程模型 JSON 一起持久化，供设计器条件分支和运行时表单渲染使用。</p>
      */
-    private List<FlowFormFieldSaveItemRequest> fields;
+    private List<FlowFieldMeta> fields;
 }

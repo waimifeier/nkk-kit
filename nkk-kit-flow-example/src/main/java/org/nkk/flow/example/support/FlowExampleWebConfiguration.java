@@ -1,6 +1,7 @@
 package org.nkk.flow.example.support;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.StrUtil;
 import org.nkk.flow.core.context.FlowCreator;
 import org.nkk.flow.core.extension.identity.DefaultFlowActorAccessStrategy;
 import org.nkk.flow.core.extension.identity.FlowActorAccessStrategy;
@@ -8,17 +9,24 @@ import org.nkk.flow.core.extension.identity.FlowCreatorProvider;
 import org.nkk.flow.core.extension.identity.FlowInstanceAccessStrategy;
 import org.nkk.flow.entity.FlowHisInstance;
 import org.nkk.flow.entity.FlowInstance;
+import org.nkk.flow.enums.core.FlowFormFieldEnum.SourceType;
 import org.nkk.flow.enums.runtime.FlowInstanceOperateEnum;
+import org.nkk.flow.web.extension.FlowDesignerFormProvider;
 import org.nkk.flow.web.extension.FlowDesignerOrgProvider;
 import org.nkk.flow.web.model.FlowDesignerCategoryNode;
+import org.nkk.flow.web.model.FlowDesignerFormOption;
 import org.nkk.flow.web.model.FlowDesignerOption;
 import org.nkk.flow.web.model.FlowDesignerTreeNode;
+import org.nkk.flow.web.model.FlowFieldMeta;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -50,6 +58,7 @@ public class FlowExampleWebConfiguration {
             return isAdmin(creator);
         };
     }
+
     /**
      * 统一参与人权限判断。
      *
@@ -100,6 +109,127 @@ public class FlowExampleWebConfiguration {
     }
 
     /**
+     * 提供设计器表单下拉和字段元数据。
+     *
+     * <p>覆盖 starter 默认的空实现，让设计器可以看到示例的自定义表单和业务表单。</p>
+     */
+    @Bean
+    public FlowDesignerFormProvider flowDesignerFormProvider() {
+        // ====== 表单元数据 ======
+        Map<String, long[]> formMap = new LinkedHashMap<>(); // formKey → {formId, version}
+        formMap.put("leave-form", new long[]{10001L, 1});
+        formMap.put("expense-form", new long[]{10002L, 1});
+        formMap.put("travel-form", new long[]{10003L, 1});
+        formMap.put("ot-form", new long[]{10004L, 1});
+        formMap.put("purchase-order", new long[]{20001L, 1});
+        formMap.put("contract-approval", new long[]{20002L, 1});
+
+        Map<String, String> formNameMap = new LinkedHashMap<>();
+        formNameMap.put("leave-form", "请假表单");
+        formNameMap.put("expense-form", "报销表单");
+        formNameMap.put("travel-form", "出差表单");
+        formNameMap.put("ot-form", "加班表单");
+        formNameMap.put("purchase-order", "采购订单");
+        formNameMap.put("contract-approval", "合同审批");
+
+        Map<String, String> formSourceMap = new LinkedHashMap<>();
+        formSourceMap.put("leave-form", SourceType.FORM.value());
+        formSourceMap.put("expense-form", SourceType.FORM.value());
+        formSourceMap.put("travel-form", SourceType.FORM.value());
+        formSourceMap.put("ot-form", SourceType.FORM.value());
+        formSourceMap.put("purchase-order", SourceType.BUSINESS.value());
+        formSourceMap.put("contract-approval", SourceType.BUSINESS.value());
+
+        Map<String, List<FlowFieldMeta>> fieldMap = new LinkedHashMap<>();
+        fieldMap.put("leave-form", CollUtil.newArrayList(
+                field("days", "请假天数", "number", 1, null, 1),
+                field("reason", "请假原因", "string", 1, null, 2),
+                field("type", "请假类型", "select", 1, "[{\"value\":\"1\",\"label\":\"年假\"},{\"value\":\"2\",\"label\":\"事假\"},{\"value\":\"3\",\"label\":\"病假\"},{\"value\":\"4\",\"label\":\"调休\"}]", 3),
+                field("startDate", "开始日期", "date", 1, null, 4),
+                field("endDate", "结束日期", "date", 1, null, 5),
+                field("attachment", "附件", "string", 0, null, 6)
+        ));
+        fieldMap.put("expense-form", CollUtil.newArrayList(
+                field("totalAmount", "报销金额", "number", 1, null, 1),
+                field("category", "报销类别", "select", 1, "[{\"value\":\"1\",\"label\":\"交通费\"},{\"value\":\"2\",\"label\":\"餐饮费\"},{\"value\":\"3\",\"label\":\"住宿费\"},{\"value\":\"4\",\"label\":\"办公用品\"},{\"value\":\"5\",\"label\":\"其他\"}]", 2),
+                field("reason", "报销事由", "string", 1, null, 3),
+                field("expenseDate", "消费日期", "date", 1, null, 4),
+                field("invoiceNo", "发票号", "string", 0, null, 5)
+        ));
+        fieldMap.put("travel-form", CollUtil.newArrayList(
+                field("destination", "出差目的地", "string", 1, null, 1),
+                field("startDate", "开始日期", "date", 1, null, 2),
+                field("endDate", "结束日期", "date", 1, null, 3),
+                field("budget", "预算金额", "number", 1, null, 4),
+                field("purpose", "出差事由", "string", 1, null, 5),
+                field("companions", "同行人", "multi_select", 0, null, 6)
+        ));
+        fieldMap.put("ot-form", CollUtil.newArrayList(
+                field("otDate", "加班日期", "date", 1, null, 1),
+                field("hours", "加班时长(小时)", "number", 1, null, 2),
+                field("reason", "加班原因", "string", 1, null, 3),
+                field("project", "项目名称", "string", 0, null, 4)
+        ));
+        fieldMap.put("purchase-order", CollUtil.newArrayList(
+                field("orderNo", "订单编号", "string", 1, null, 1),
+                field("supplier", "供应商", "string", 1, null, 2),
+                field("totalAmount", "订单金额", "number", 1, null, 3),
+                field("category", "采购类别", "select", 1, "[{\"value\":\"1\",\"label\":\"原材料\"},{\"value\":\"2\",\"label\":\"办公设备\"},{\"value\":\"3\",\"label\":\"IT设备\"},{\"value\":\"4\",\"label\":\"服务采购\"}]", 4),
+                field("expectedDate", "预计到货日期", "date", 0, null, 5),
+                field("urgent", "是否紧急", "boolean", 0, null, 6)
+        ));
+        fieldMap.put("contract-approval", CollUtil.newArrayList(
+                field("contractNo", "合同编号", "string", 1, null, 1),
+                field("contractName", "合同名称", "string", 1, null, 2),
+                field("partyA", "甲方", "string", 1, null, 3),
+                field("partyB", "乙方", "string", 1, null, 4),
+                field("amount", "合同金额", "number", 1, null, 5),
+                field("signDate", "签订日期", "date", 0, null, 6),
+                field("expireDate", "到期日期", "date", 0, null, 7),
+                field("contractType", "合同类型", "select", 1, "[{\"value\":\"1\",\"label\":\"采购合同\"},{\"value\":\"2\",\"label\":\"销售合同\"},{\"value\":\"3\",\"label\":\"服务合同\"},{\"value\":\"4\",\"label\":\"劳动合同\"}]", 8)
+        ));
+
+        return new FlowDesignerFormProvider() {
+            @Override
+            public List<FlowDesignerFormOption> listForms(String sourceType) {
+                List<FlowDesignerFormOption> result = new ArrayList<>();
+                for (Map.Entry<String, long[]> e : formMap.entrySet()) {
+                    String formKey = e.getKey();
+                    String actualSource = formSourceMap.get(formKey);
+                    if (sourceType != null && !sourceType.equals(actualSource)) {
+                        continue;
+                    }
+                    result.add(FlowDesignerFormOption.of(e.getValue()[0], formKey, formNameMap.get(formKey),
+                            (int) e.getValue()[1], actualSource));
+                }
+                return result;
+            }
+
+            @Override
+            public List<FlowFieldMeta> listFormFields(String formKey, Integer formVersion, String sourceType) {
+                if (StrUtil.isBlank(formKey)) {
+                    return Collections.emptyList();
+                }
+                List<FlowFieldMeta> fields = fieldMap.get(formKey);
+                return fields == null ? Collections.emptyList() : new ArrayList<>(fields);
+            }
+        };
+    }
+
+    private static FlowFieldMeta field(String fieldKey, String fieldName, String fieldType,
+                                       int required, String optionsJson, int sort) {
+        FlowFieldMeta meta = new FlowFieldMeta();
+        meta.setFieldKey(fieldKey);
+        meta.setFieldName(fieldName);
+        meta.setFieldType(fieldType);
+        meta.setFieldPath(fieldKey);
+        meta.setRequired(required);
+        meta.setOptionsJson(optionsJson);
+        meta.setSort(sort);
+        return meta;
+    }
+
+    /**
      * 提供设计器组织选择数据。
      */
     @Bean
@@ -107,24 +237,20 @@ public class FlowExampleWebConfiguration {
         return new FlowDesignerOrgProvider() {
             @Override
             public List<FlowDesignerTreeNode> listDepartmentTree() {
-                // 根节点
                 FlowDesignerTreeNode root = FlowDesignerTreeNode.department("d1", null, "总部");
 
-                // 一级部门（总部下属）
                 FlowDesignerTreeNode dev = FlowDesignerTreeNode.department("d2", "d1", "研发部");
                 FlowDesignerTreeNode finance = FlowDesignerTreeNode.department("d3", "d1", "财务部");
                 FlowDesignerTreeNode hr = FlowDesignerTreeNode.department("d4", "d1", "人力资源部");
                 FlowDesignerTreeNode market = FlowDesignerTreeNode.department("d5", "d1", "市场部");
                 FlowDesignerTreeNode admin = FlowDesignerTreeNode.department("d6", "d1", "行政部");
 
-                // 二级部门
                 FlowDesignerTreeNode backend = FlowDesignerTreeNode.department("d7", "d2", "后端组");
                 FlowDesignerTreeNode frontend = FlowDesignerTreeNode.department("d8", "d2", "前端组");
                 FlowDesignerTreeNode sale = FlowDesignerTreeNode.department("d9", "d5", "销售组");
                 FlowDesignerTreeNode brand = FlowDesignerTreeNode.department("d10", "d5", "品牌组");
                 FlowDesignerTreeNode purchase = FlowDesignerTreeNode.department("d11", "d6", "采购组");
 
-                // 组装树结构
                 dev.getChildren().add(backend);
                 dev.getChildren().add(frontend);
                 market.getChildren().add(sale);
@@ -140,13 +266,11 @@ public class FlowExampleWebConfiguration {
                 return Collections.singletonList(root);
             }
 
-
             @Override
             public List<FlowDesignerTreeNode> listEmployeeTree() {
                 FlowDesignerTreeNode root = FlowDesignerTreeNode.department("d1", null, "总部");
                 root.setDisabled(true);
 
-                // 研发部
                 FlowDesignerTreeNode dev = FlowDesignerTreeNode.department("d2", "d1", "研发部");
                 dev.setDisabled(true);
                 dev.getChildren().add(FlowDesignerTreeNode.employee("u1", "d2", "张三"));
@@ -160,68 +284,57 @@ public class FlowExampleWebConfiguration {
                 dev.getChildren().add(FlowDesignerTreeNode.employee("u9", "d2", "牛魔王"));
                 dev.getChildren().add(FlowDesignerTreeNode.employee("u10", "d2", "红孩儿"));
 
-                // 财务部
                 FlowDesignerTreeNode finance = FlowDesignerTreeNode.department("d3", "d1", "财务部");
                 finance.setDisabled(true);
                 finance.getChildren().add(FlowDesignerTreeNode.employee("u11", "d3", "王五"));
                 finance.getChildren().add(FlowDesignerTreeNode.employee("u12", "d3", "赵婷"));
                 finance.getChildren().add(FlowDesignerTreeNode.employee("u13", "d3", "陈丽"));
 
-                // 人力资源部
                 FlowDesignerTreeNode hr = FlowDesignerTreeNode.department("d4", "d1", "人力资源部");
                 hr.setDisabled(true);
                 hr.getChildren().add(FlowDesignerTreeNode.employee("u14", "d4", "周静"));
                 hr.getChildren().add(FlowDesignerTreeNode.employee("u15", "d4", "吴涛"));
 
-                // 市场部
                 FlowDesignerTreeNode market = FlowDesignerTreeNode.department("d5", "d1", "市场部");
                 market.setDisabled(true);
                 market.getChildren().add(FlowDesignerTreeNode.employee("u16", "d5", "郑浩"));
                 market.getChildren().add(FlowDesignerTreeNode.employee("u17", "d5", "何欣"));
                 market.getChildren().add(FlowDesignerTreeNode.employee("u18", "d5", "马明"));
 
-                // 行政部
                 FlowDesignerTreeNode admin = FlowDesignerTreeNode.department("d6", "d1", "行政部");
                 admin.setDisabled(true);
                 admin.getChildren().add(FlowDesignerTreeNode.employee("u19", "d6", "宋佳"));
                 admin.getChildren().add(FlowDesignerTreeNode.employee("u20", "d6", "黄强"));
 
-                // 研发部二级：后端组
                 FlowDesignerTreeNode backend = FlowDesignerTreeNode.department("d7", "d2", "后端组");
                 backend.setDisabled(true);
                 backend.getChildren().add(FlowDesignerTreeNode.employee("u21", "d7", "林峰"));
                 backend.getChildren().add(FlowDesignerTreeNode.employee("u22", "d7", "徐航"));
 
-                // 研发部二级：前端组
                 FlowDesignerTreeNode frontend = FlowDesignerTreeNode.department("d8", "d2", "前端组");
                 frontend.setDisabled(true);
                 frontend.getChildren().add(FlowDesignerTreeNode.employee("u23", "d8", "苏瑶"));
                 frontend.getChildren().add(FlowDesignerTreeNode.employee("u24", "d8", "江楠"));
 
-                // 市场部二级：销售组
                 FlowDesignerTreeNode sale = FlowDesignerTreeNode.department("d9", "d5", "销售组");
                 sale.setDisabled(true);
                 sale.getChildren().add(FlowDesignerTreeNode.employee("u25", "d9", "高磊"));
                 sale.getChildren().add(FlowDesignerTreeNode.employee("u26", "d9", "方雯"));
 
-                // 市场部二级：品牌组
                 FlowDesignerTreeNode brand = FlowDesignerTreeNode.department("d10", "d5", "品牌组");
                 brand.setDisabled(true);
                 brand.getChildren().add(FlowDesignerTreeNode.employee("u27", "d10", "钟琪"));
 
-                // 行政部二级：采购组
                 FlowDesignerTreeNode purchase = FlowDesignerTreeNode.department("d11", "d6", "采购组");
                 purchase.setDisabled(true);
                 purchase.getChildren().add(FlowDesignerTreeNode.employee("u28", "d11", "崔鹏"));
 
-                // 二级部门挂载到父部门
                 dev.getChildren().add(backend);
                 dev.getChildren().add(frontend);
                 market.getChildren().add(sale);
                 market.getChildren().add(brand);
                 admin.getChildren().add(purchase);
 
-                // 一级部门挂载到总部
                 root.getChildren().add(dev);
                 root.getChildren().add(finance);
                 root.getChildren().add(hr);
@@ -230,7 +343,6 @@ public class FlowExampleWebConfiguration {
 
                 return Collections.singletonList(root);
             }
-
 
             @Override
             public List<FlowDesignerCategoryNode> listCategoryTree() {

@@ -2,8 +2,6 @@ SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS `flow_his_task_actor`;
-DROP TABLE IF EXISTS `flow_form_field`;
-DROP TABLE IF EXISTS `flow_process_form_binding`;
 DROP TABLE IF EXISTS `flow_task_actor`;
 DROP TABLE IF EXISTS `flow_his_task`;
 DROP TABLE IF EXISTS `flow_task`;
@@ -35,24 +33,6 @@ CREATE TABLE `flow_process`
     KEY `idx_flow_process_name` (`process_name`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '流程定义表';
 
-CREATE TABLE `flow_process_form_binding`
-(
-    `id`            bigint       NOT NULL COMMENT '主键ID',
-    `tenant_id`     varchar(50)           DEFAULT NULL COMMENT '租户ID',
-    `create_id`     varchar(50)  NOT NULL COMMENT '创建人ID',
-    `create_by`     varchar(50)  NOT NULL COMMENT '创建人名称',
-    `create_time`   datetime     NOT NULL COMMENT '创建时间',
-    `process_id`    bigint       NOT NULL COMMENT '流程定义ID',
-    `source_type`   varchar(50)  NOT NULL COMMENT '表单来源类型，取值：form(表单)、business(业务表单)',
-    `form_id`       bigint                DEFAULT NULL COMMENT '表单ID',
-    `form_key`      varchar(100)          DEFAULT NULL COMMENT '表单编码',
-    `form_version`  int          NOT NULL DEFAULT 1 COMMENT '表单版本',
-    `form_name`     varchar(100)          DEFAULT NULL COMMENT '表单名称',
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_flow_process_form_binding_process` (`process_id`),
-    KEY `idx_flow_process_form_binding_form` (`tenant_id`, `form_key`, `form_version`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '流程表单绑定表';
-
 CREATE TABLE `flow_his_instance`
 (
     `id`                bigint       NOT NULL COMMENT '主键ID',
@@ -61,6 +41,7 @@ CREATE TABLE `flow_his_instance`
     `create_by`         varchar(50)  NOT NULL COMMENT '创建人名称',
     `create_time`       datetime     NOT NULL COMMENT '创建时间',
     `process_id`        bigint       NOT NULL COMMENT '流程定义ID',
+    `process_key`       varchar(100)          DEFAULT NULL COMMENT '流程定义key，回调Handler可快速判断流程类型',
     `parent_instance_id` bigint               DEFAULT NULL COMMENT '父流程实例ID',
     `priority`          tinyint               DEFAULT NULL COMMENT '优先级',
     `instance_no`       varchar(50)           DEFAULT NULL COMMENT '流程实例编号',
@@ -76,6 +57,7 @@ CREATE TABLE `flow_his_instance`
     `duration`          bigint                DEFAULT NULL COMMENT '处理耗时毫秒',
     PRIMARY KEY (`id`),
     KEY `idx_flow_his_instance_process` (`process_id`),
+    KEY `idx_flow_his_instance_key` (`process_key`),
     KEY `idx_flow_his_instance_parent` (`parent_instance_id`),
     KEY `idx_flow_his_instance_business` (`tenant_id`, `business_key`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '历史流程实例表';
@@ -88,6 +70,7 @@ CREATE TABLE `flow_instance`
     `create_by`         varchar(50)  NOT NULL COMMENT '创建人名称',
     `create_time`       datetime     NOT NULL COMMENT '创建时间',
     `process_id`        bigint       NOT NULL COMMENT '流程定义ID',
+    `process_key`       varchar(100)          DEFAULT NULL COMMENT '流程定义key，回调Handler可快速判断流程类型',
     `parent_instance_id` bigint               DEFAULT NULL COMMENT '父流程实例ID',
     `priority`          tinyint               DEFAULT NULL COMMENT '优先级',
     `instance_no`       varchar(50)           DEFAULT NULL COMMENT '流程实例编号',
@@ -100,6 +83,7 @@ CREATE TABLE `flow_instance`
     `last_update_time`  datetime              DEFAULT NULL COMMENT '最后更新时间',
     PRIMARY KEY (`id`),
     KEY `idx_flow_instance_process` (`process_id`),
+    KEY `idx_flow_instance_key` (`process_key`),
     KEY `idx_flow_instance_parent` (`parent_instance_id`),
     KEY `idx_flow_instance_business` (`tenant_id`, `business_key`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '活动流程实例表';
@@ -216,30 +200,6 @@ CREATE TABLE `flow_his_task_actor`
     KEY `idx_flow_his_task_actor_task` (`task_id`),
     KEY `idx_flow_his_task_actor_user` (`actor_id`, `actor_type`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '历史任务参与者表';
-
-CREATE TABLE `flow_form_field`
-(
-    `id`            bigint       NOT NULL COMMENT '主键ID',
-    `tenant_id`     varchar(50)           DEFAULT NULL COMMENT '租户ID',
-    `create_id`     varchar(50)  NOT NULL COMMENT '创建人ID',
-    `create_by`     varchar(50)  NOT NULL COMMENT '创建人名称',
-    `create_time`   datetime     NOT NULL COMMENT '创建时间',
-    `form_id`       bigint                DEFAULT NULL COMMENT '表单ID',
-    `form_key`      varchar(100)          DEFAULT NULL COMMENT '表单编码',
-    `form_version`  int          NOT NULL DEFAULT 1 COMMENT '表单版本',
-    `field_key`     varchar(100) NOT NULL COMMENT '字段编码',
-    `field_name`    varchar(100) NOT NULL COMMENT '字段名称',
-    `field_type`    varchar(50)  NOT NULL COMMENT '字段类型，取值：string(文本)、number(数字)、boolean(布尔)、date(日期)、datetime(日期时间)、select(单选)、multi_select(多选)、radio(单选按钮)、checkbox(复选框)、object(对象)、array(数组)',
-    `field_path`    varchar(255)          DEFAULT NULL COMMENT '字段路径',
-    `source_type`   varchar(50)  NOT NULL COMMENT '字段来源类型，取值：form(自定义表单)、business(业务表单)',
-    `required`      tinyint      NOT NULL DEFAULT 0 COMMENT '是否必填 0 否 1 是',
-    `options_json`  longtext              DEFAULT NULL COMMENT '字段选项JSON',
-    `sort`          int          NOT NULL DEFAULT 0 COMMENT '排序',
-    `remark`        varchar(255)          DEFAULT NULL COMMENT '备注',
-    PRIMARY KEY (`id`),
-    KEY `idx_flow_form_field_form` (`tenant_id`, `form_key`, `form_version`),
-    KEY `idx_flow_form_field_key` (`field_key`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '流程表单字段元数据表';
 
 SET FOREIGN_KEY_CHECKS = 1;
 

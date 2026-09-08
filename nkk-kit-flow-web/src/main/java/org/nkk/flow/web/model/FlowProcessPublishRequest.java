@@ -48,12 +48,12 @@ public class FlowProcessPublishRequest implements Serializable {
     private Object modelContent;
 
     /**
-     * 表单绑定信息。
+     * 元表单信息。
      *
      * <p>用于把流程定义与自定义表单或业务表单元数据绑定起来，具体绑定关系会写入流程模型的
-     * {@code extendConfig.formBinding}。</p>
+     * {@code extendConfig.metaForm}。</p>
      */
-    private FlowFormBindingRequest formBinding;
+    private FlowMetaFormRequest metaForm;
 
     /**
      * 是否保存为草稿。

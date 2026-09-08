@@ -78,6 +78,7 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
         instance.setCreateBy(creator.getCreateBy());
         instance.setCreateTime(context.getCreateTimeHandler().getCurrentTime(FlowExecuteTypeEnum.START, null, null));
         instance.setProcessId(process.getId());
+        instance.setProcessKey(process.getProcessKey());
         instance.setParentInstanceId(parentInstanceId);
         instance.setCurrentNodeName(startNode.getNodeName());
         instance.setCurrentNodeKey(startNode.getNodeKey());

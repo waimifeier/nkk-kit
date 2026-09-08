@@ -5,14 +5,9 @@ import org.nkk.flow.web.controller.FlowDesignerFormController;
 import org.nkk.flow.web.controller.FlowDesignerProcessController;
 import org.nkk.flow.web.controller.FlowDesignerRuntimeController;
 import org.nkk.flow.web.controller.FlowDesignerTodoController;
-import org.nkk.flow.web.extension.DefaultFlowDesignerFormProvider;
-import org.nkk.flow.web.extension.DefaultFlowDesignerOrgProvider;
-import org.nkk.flow.web.extension.FlowDesignerFormProvider;
-import org.nkk.flow.web.extension.FlowDesignerOrgProvider;
+import org.nkk.flow.web.extension.*;
 import org.nkk.flow.core.extension.id.FlowIdGenerator;
 import org.nkk.flow.core.extension.identity.FlowCreatorProvider;
-import org.nkk.flow.dao.FlowProcessFormBindingDao;
-import org.nkk.flow.dao.FlowFormFieldDao;
 import org.nkk.flow.dao.FlowHisInstanceDao;
 import org.nkk.flow.dao.FlowHisTaskActorDao;
 import org.nkk.flow.dao.FlowHisTaskDao;
@@ -25,6 +20,7 @@ import org.nkk.flow.web.service.FlowDesignerFormService;
 import org.nkk.flow.web.service.FlowDesignerProcessService;
 import org.nkk.flow.web.service.FlowDesignerRuntimeService;
 import org.nkk.flow.web.service.FlowDesignerTodoService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -66,11 +62,8 @@ public class NkkFlowWebAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public FlowDesignerFormService flowDesignerFormService(FlowFormFieldDao formFieldDao,
-                                                           ObjectProvider<FlowCreatorProvider> creatorProvider,
-                                                           FlowIdGenerator idGenerator,
-                                                           FlowDesignerFormProvider formProvider) {
-        return new FlowDesignerFormService(formFieldDao, creatorProvider.getIfAvailable(), idGenerator, formProvider);
+    public FlowDesignerFormService flowDesignerFormService(FlowDesignerFormProvider formProvider) {
+        return new FlowDesignerFormService(formProvider);
     }
 
     @Bean
@@ -82,10 +75,8 @@ public class NkkFlowWebAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public FlowDesignerProcessService flowDesignerProcessService(NkkFlowEngine flowEngine,
-                                                                 ObjectProvider<FlowCreatorProvider> creatorProvider,
-                                                                 FlowDesignerFormService formService,
-                                                                 FlowProcessFormBindingDao bindingDao) {
-        return new FlowDesignerProcessService(flowEngine, creatorProvider.getIfAvailable(), formService, bindingDao);
+                                                                 ObjectProvider<FlowCreatorProvider> creatorProvider) {
+        return new FlowDesignerProcessService(flowEngine, creatorProvider.getIfAvailable());
     }
 
     @Bean
@@ -124,5 +115,32 @@ public class NkkFlowWebAutoConfiguration {
     @ConditionalOnMissingBean
     public FlowDesignerTodoController flowDesignerTodoController(FlowDesignerTodoService todoService) {
         return new FlowDesignerTodoController(todoService);
+    }
+
+    /**
+     * 自动发起审批切面。
+     *
+     * <p>拦截 {@code @FlowApproval} 注解的业务方法，方法成功后自动发起审批实例。
+     * 需要 classpath 中有 AspectJ 依赖（spring-boot-starter-aop）。</p>
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnClass(name = "org.aspectj.lang.annotation.Aspect")
+    public FlowApprovalAutoStartAspect flowApprovalAutoStartAspect() {
+        return new FlowApprovalAutoStartAspect();
+    }
+
+    /**
+     * 审批回调适配器。
+     *
+     * <p>监听引擎的 {@code NkkFlowInstanceEvent} 和 {@code NkkFlowTaskEvent} Spring 事件，
+     * 翻译为 {@code FlowApprovalCallbackHandler} 的业务友好回调方法。
+     * 使用方只需实现一个或多个 {@code FlowApprovalCallbackHandler} Bean，
+     * 就能在审批生命周期节点收到通知并更新自己的业务表状态。</p>
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public FlowApprovalCallbackAdapter flowApprovalCallbackAdapter() {
+        return new FlowApprovalCallbackAdapter();
     }
 }

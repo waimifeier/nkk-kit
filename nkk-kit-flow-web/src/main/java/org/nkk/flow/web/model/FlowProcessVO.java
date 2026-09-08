@@ -95,15 +95,15 @@ public class FlowProcessVO implements Serializable {
     private Integer sort;
 
     /**
-     * 流程表单绑定信息。
+     * 流程元表单信息。
      */
-    private FlowFormBindingVO formBinding;
+    private FlowMetaFormVO metaForm;
 
     public static FlowProcessVO of(FlowProcess process) {
         return of(process, null);
     }
 
-    public static FlowProcessVO of(FlowProcess process, FlowFormBindingVO formBinding) {
+    public static FlowProcessVO of(FlowProcess process, FlowMetaFormVO metaForm) {
         if (process == null) {
             return null;
         }
@@ -123,25 +123,25 @@ public class FlowProcessVO implements Serializable {
         vo.setUseScope(process.getUseScope());
         vo.setProcessState(process.getProcessState());
         vo.setSort(process.getSort());
-        FlowFormBindingVO resolved = formBinding == null ? resolveFormBinding(process) : formBinding;
+        FlowMetaFormVO resolved = metaForm == null ? resolveMetaForm(process) : metaForm;
         if (resolved != null && (resolved.getFields() == null || resolved.getFields().isEmpty())) {
-            FlowFormBindingVO modelBinding = resolveFormBinding(process);
-            if (modelBinding != null && modelBinding.getFields() != null && !modelBinding.getFields().isEmpty()) {
-                resolved.setFields(modelBinding.getFields());
+            FlowMetaFormVO modelMetaForm = resolveMetaForm(process);
+            if (modelMetaForm != null && modelMetaForm.getFields() != null && !modelMetaForm.getFields().isEmpty()) {
+                resolved.setFields(modelMetaForm.getFields());
             }
         }
-        vo.setFormBinding(resolved);
+        vo.setMetaForm(resolved);
         return vo;
     }
 
-    private static FlowFormBindingVO resolveFormBinding(FlowProcess process) {
+    private static FlowMetaFormVO resolveMetaForm(FlowProcess process) {
         if (process == null || process.getModelContent() == null) {
             return null;
         }
         try {
             FlowProcessModel model = FlowContext.fromJson(process.getModelContent(), FlowProcessModel.class);
-            Object value = model == null || model.getExtendConfig() == null ? null : model.getExtendConfig().get("formBinding");
-            return FlowFormBindingVO.of(value);
+            Object value = model == null || model.getExtendConfig() == null ? null : model.getExtendConfig().get("metaForm");
+            return FlowMetaFormVO.of(value);
         } catch (Exception ex) {
             return null;
         }
