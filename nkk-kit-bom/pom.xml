@@ -9,7 +9,7 @@
     <parent>
         <groupId>io.github.waimifeier</groupId>
         <artifactId>nkk-kit</artifactId>
-        <version>1.0.0</version>
+        <version>1.1.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -25,6 +25,15 @@
 
     <dependencyManagement>
         <dependencies>
+               <!-- BOM 自身（可用于 dependencyManagement 里嵌套引用） -->
+               <dependency>
+                   <groupId>${project.groupId}</groupId>
+                   <artifactId>nkk-kit-bom</artifactId>
+                   <version>${project.version}</version>
+                   <type>pom</type>
+               </dependency>
+
+               <!-- 核心模块 -->
                <dependency>
                    <groupId>${project.groupId}</groupId>
                    <artifactId>nkk-kit-core</artifactId>
@@ -37,6 +46,7 @@
                    <version>${project.version}</version>
                </dependency>
 
+               <!-- 审批流模块 -->
                <dependency>
                    <groupId>${project.groupId}</groupId>
                    <artifactId>nkk-kit-flow</artifactId>
