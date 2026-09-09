@@ -1,4 +1,4 @@
-package org.nkk.flow.web.model;
+package org.nkk.flow.enums.core;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

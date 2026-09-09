@@ -16,7 +16,7 @@ public class FlowTodoRecordResponse implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 当前用户与该流程记录的关系类型，取值见 {@link FlowTodoTypeEnum}。
+     * 当前用户与该流程记录的关系类型，取值见 {@link org.nkk.flow.enums.core.FlowTodoTypeEnum}。
      */
     private Integer type;
 

@@ -5,6 +5,7 @@ import org.nkk.flow.autoconfigure.NkkFlowTaskEvent;
 import org.nkk.flow.core.context.FlowContext;
 import org.nkk.flow.entity.FlowHisInstance;
 import org.nkk.flow.entity.FlowHisTask;
+import org.nkk.flow.entity.FlowHisTaskActor;
 import org.nkk.flow.entity.FlowTask;
 import org.nkk.flow.entity.FlowTaskActor;
 import org.nkk.flow.enums.runtime.FlowEventTypeEnum;

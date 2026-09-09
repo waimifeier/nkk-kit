@@ -19,7 +19,7 @@ import org.nkk.flow.enums.core.FlowInstanceEnum.InstanceState;
 import org.nkk.flow.enums.core.FlowTaskEnum.TaskType;
 import org.nkk.flow.service.NkkFlowEngine;
 import org.nkk.flow.web.model.FlowTodoRecordResponse;
-import org.nkk.flow.web.model.FlowTodoTypeEnum;
+import org.nkk.flow.enums.core.FlowTodoTypeEnum;
 
 import java.util.ArrayList;
 import java.util.Collections;

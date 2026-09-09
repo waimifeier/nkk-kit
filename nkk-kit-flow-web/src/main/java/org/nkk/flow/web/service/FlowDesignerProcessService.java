@@ -50,7 +50,6 @@ public class FlowDesignerProcessService {
         model.setKey(StrUtil.trim(request.getProcessKey()));
         model.setName(StrUtil.trim(request.getProcessName()));
         model.setInstanceUrl(StrUtil.trimToNull(request.getInstanceUrl()));
-        applyMetaForm(model, request.getMetaForm());
 
         FlowCreator creator = currentCreator();
         Long processId = flowEngine.processService().deploy(
@@ -254,16 +253,6 @@ public class FlowDesignerProcessService {
             return (String) modelContent;
         }
         return FlowContext.toJson(modelContent);
-    }
-
-    private void applyMetaForm(FlowProcessModel model, org.nkk.flow.web.model.FlowMetaFormRequest metaForm) {
-        if (model == null || metaForm == null) {
-            return;
-        }
-        if (model.getExtendConfig() == null) {
-            model.setExtendConfig(new LinkedHashMap<String, Object>());
-        }
-        model.getExtendConfig().put("metaForm", metaForm);
     }
 
     private FlowProcessModel resolveProcessModel(String modelContent) {

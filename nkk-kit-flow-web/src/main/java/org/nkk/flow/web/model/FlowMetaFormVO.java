@@ -33,17 +33,6 @@ public class FlowMetaFormVO implements Serializable {
         if (value instanceof FlowMetaFormVO) {
             return (FlowMetaFormVO) value;
         }
-        if (value instanceof FlowMetaFormRequest) {
-            FlowMetaFormRequest request = (FlowMetaFormRequest) value;
-            FlowMetaFormVO vo = new FlowMetaFormVO();
-            vo.setSourceType(request.getSourceType());
-            vo.setFormId(request.getFormId());
-            vo.setFormKey(request.getFormKey());
-            vo.setFormVersion(request.getFormVersion());
-            vo.setFormName(request.getFormName());
-            vo.setFields(request.getFields());
-            return vo;
-        }
         return FlowContext.fromJson(FlowContext.toJson(value), FlowMetaFormVO.class);
     }
 }

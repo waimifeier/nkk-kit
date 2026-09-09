@@ -44,16 +44,11 @@ public class FlowProcessPublishRequest implements Serializable {
 
     /**
      * 流程 JSON 模型内容。支持传 JSON 对象或 JSON 字符串。
+     *
+     * <p>如果需要绑定表单元数据，前端应直接写入模型的
+     * {@code extendConfig.metaForm}，后端发布时不再单独处理 metaForm 字段。</p>
      */
     private Object modelContent;
-
-    /**
-     * 元表单信息。
-     *
-     * <p>用于把流程定义与自定义表单或业务表单元数据绑定起来，具体绑定关系会写入流程模型的
-     * {@code extendConfig.metaForm}。</p>
-     */
-    private FlowMetaFormRequest metaForm;
 
     /**
      * 是否保存为草稿。
