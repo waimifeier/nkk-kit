@@ -73,6 +73,31 @@ public class FlowProcess extends FlowEntity {
     private Integer sort;
 
     /**
+     * 表单来源类型，取值：form(自定义表单)、business(业务表单)。
+     */
+    private String formSourceType;
+
+    /**
+     * 表单ID。
+     */
+    private Long formId;
+
+    /**
+     * 表单编码。
+     */
+    private String formKey;
+
+    /**
+     * 表单版本。
+     */
+    private Integer formVersion;
+
+    /**
+     * 表单名称。
+     */
+    private String formName;
+
+    /**
      * 将流程模型 JSON 反序列化为流程模型对象，并补齐父节点引用。
      *
      * @return 流程模型对象

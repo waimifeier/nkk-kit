@@ -1,7 +1,6 @@
 package org.nkk.flow.web.service;
 
 import org.nkk.flow.web.extension.FlowDesignerOrgProvider;
-import org.nkk.flow.web.model.FlowDesignerCategoryNode;
 import org.nkk.flow.web.model.FlowDesignerOption;
 import org.nkk.flow.web.model.FlowDesignerTreeNode;
 
@@ -24,10 +23,6 @@ public class FlowDesignerOrgService {
 
     public List<FlowDesignerTreeNode> listEmployeeTree() {
         return orgProvider.listEmployeeTree();
-    }
-
-    public List<FlowDesignerCategoryNode> listCategoryTree() {
-        return orgProvider.listCategoryTree();
     }
 
     public List<FlowDesignerOption> listRoles() {

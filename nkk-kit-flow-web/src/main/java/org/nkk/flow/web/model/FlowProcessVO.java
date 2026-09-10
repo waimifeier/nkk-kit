@@ -100,10 +100,6 @@ public class FlowProcessVO implements Serializable {
     private FlowMetaFormVO metaForm;
 
     public static FlowProcessVO of(FlowProcess process) {
-        return of(process, null);
-    }
-
-    public static FlowProcessVO of(FlowProcess process, FlowMetaFormVO metaForm) {
         if (process == null) {
             return null;
         }
@@ -123,27 +119,36 @@ public class FlowProcessVO implements Serializable {
         vo.setUseScope(process.getUseScope());
         vo.setProcessState(process.getProcessState());
         vo.setSort(process.getSort());
-        FlowMetaFormVO resolved = metaForm == null ? resolveMetaForm(process) : metaForm;
-        if (resolved != null && (resolved.getFields() == null || resolved.getFields().isEmpty())) {
-            FlowMetaFormVO modelMetaForm = resolveMetaForm(process);
-            if (modelMetaForm != null && modelMetaForm.getFields() != null && !modelMetaForm.getFields().isEmpty()) {
-                resolved.setFields(modelMetaForm.getFields());
-            }
-        }
-        vo.setMetaForm(resolved);
+        vo.setMetaForm(resolveMetaForm(process));
         return vo;
     }
 
+    /**
+     * 从流程定义实体解析元表单信息。
+     *
+     * <p>表单元数据从 {@code flow_process} 独立列读取，字段定义从模型 JSON 的
+     * {@code metaFields} 顶层字段读取。</p>
+     */
     private static FlowMetaFormVO resolveMetaForm(FlowProcess process) {
-        if (process == null || process.getModelContent() == null) {
+        if (process == null) {
             return null;
         }
-        try {
-            FlowProcessModel model = FlowContext.fromJson(process.getModelContent(), FlowProcessModel.class);
-            Object value = model == null || model.getExtendConfig() == null ? null : model.getExtendConfig().get("metaForm");
-            return FlowMetaFormVO.of(value);
-        } catch (Exception ex) {
-            return null;
+        FlowMetaFormVO vo = new FlowMetaFormVO();
+        vo.setSourceType(process.getFormSourceType());
+        vo.setFormId(process.getFormId());
+        vo.setFormKey(process.getFormKey());
+        vo.setFormVersion(process.getFormVersion());
+        vo.setFormName(process.getFormName());
+
+        if (process.getModelContent() != null) {
+            try {
+                FlowProcessModel model = FlowContext.fromJson(process.getModelContent(), FlowProcessModel.class);
+                if (model != null && model.getMetaFields() != null) {
+                    vo.setFields(model.getMetaFields());
+                }
+            } catch (Exception ignored) {
+            }
         }
+        return vo;
     }
 }

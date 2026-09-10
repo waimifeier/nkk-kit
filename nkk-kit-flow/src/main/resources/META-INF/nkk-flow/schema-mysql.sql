@@ -28,9 +28,16 @@ CREATE TABLE `flow_process`
     `process_state`   tinyint      NOT NULL DEFAULT 1 COMMENT '流程状态 0，不可用 1，可用 2，历史版本',
     `model_content`   longtext              DEFAULT NULL COMMENT '流程模型定义JSON内容',
     `sort`            int          NOT NULL DEFAULT 0 COMMENT '排序',
+    `form_source_type` varchar(32)          DEFAULT NULL COMMENT '表单来源类型 form/business',
+    `form_id`         bigint                DEFAULT NULL COMMENT '表单ID',
+    `form_key`        varchar(100)          DEFAULT NULL COMMENT '表单编码',
+    `form_version`    int                   DEFAULT 1 COMMENT '表单版本',
+    `form_name`       varchar(100)          DEFAULT NULL COMMENT '表单名称',
     PRIMARY KEY (`id`),
     KEY `idx_flow_process_key_version` (`tenant_id`, `process_key`, `process_version`),
-    KEY `idx_flow_process_name` (`process_name`)
+    KEY `idx_flow_process_name` (`process_name`),
+    KEY `idx_flow_process_form_source` (`form_source_type`),
+    KEY `idx_flow_process_form_key` (`form_key`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '流程定义表';
 
 CREATE TABLE `flow_his_instance`

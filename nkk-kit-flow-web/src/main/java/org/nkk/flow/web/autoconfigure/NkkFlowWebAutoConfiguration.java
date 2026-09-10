@@ -1,12 +1,12 @@
 package org.nkk.flow.web.autoconfigure;
 
+import org.nkk.flow.web.controller.FlowDesignerCategoryController;
 import org.nkk.flow.web.controller.FlowDesignerOrgController;
 import org.nkk.flow.web.controller.FlowDesignerFormController;
 import org.nkk.flow.web.controller.FlowDesignerProcessController;
 import org.nkk.flow.web.controller.FlowDesignerRuntimeController;
 import org.nkk.flow.web.controller.FlowDesignerTodoController;
 import org.nkk.flow.web.extension.*;
-import org.nkk.flow.core.extension.id.FlowIdGenerator;
 import org.nkk.flow.core.extension.identity.FlowCreatorProvider;
 import org.nkk.flow.dao.FlowHisInstanceDao;
 import org.nkk.flow.dao.FlowHisTaskActorDao;
@@ -15,6 +15,7 @@ import org.nkk.flow.dao.FlowProcessDao;
 import org.nkk.flow.dao.FlowTaskActorDao;
 import org.nkk.flow.dao.FlowTaskDao;
 import org.nkk.flow.service.NkkFlowEngine;
+import org.nkk.flow.web.service.FlowDesignerCategoryService;
 import org.nkk.flow.web.service.FlowDesignerOrgService;
 import org.nkk.flow.web.service.FlowDesignerFormService;
 import org.nkk.flow.web.service.FlowDesignerProcessService;
@@ -52,6 +53,24 @@ public class NkkFlowWebAutoConfiguration {
     @ConditionalOnMissingBean
     public FlowDesignerOrgController flowDesignerOrgController(FlowDesignerOrgService orgService) {
         return new FlowDesignerOrgController(orgService);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public FlowDesignerCategoryProvider flowDesignerCategoryProvider() {
+        return new DefaultFlowDesignerCategoryProvider();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public FlowDesignerCategoryService flowDesignerCategoryService(FlowDesignerCategoryProvider categoryProvider) {
+        return new FlowDesignerCategoryService(categoryProvider);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public FlowDesignerCategoryController flowDesignerCategoryController(FlowDesignerCategoryService categoryService) {
+        return new FlowDesignerCategoryController(categoryService);
     }
 
     @Bean

@@ -1,6 +1,7 @@
 package org.nkk.flow.core.extension.json;
 
 import cn.hutool.core.util.StrUtil;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -25,6 +26,18 @@ public class JacksonFlowJsonHandler implements FlowJsonHandler {
         }
         try {
             return objectMapper.readValue(json, type);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("流程 JSON 解析失败", e);
+        }
+    }
+
+    @Override
+    public <T> T fromJson(String json, TypeReference<T> typeReference) {
+        if (StrUtil.isBlank(json)) {
+            return null;
+        }
+        try {
+            return objectMapper.readValue(json, typeReference);
         } catch (Exception e) {
             throw new IllegalArgumentException("流程 JSON 解析失败", e);
         }

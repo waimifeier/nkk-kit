@@ -65,6 +65,11 @@ public class FlowDesignerProcessService {
         update.setProcessType(StrUtil.trimToNull(request.getProcessType()));
         update.setRemark(StrUtil.trimToNull(request.getRemark()));
         update.setInstanceUrl(StrUtil.trimToNull(request.getInstanceUrl()));
+        update.setFormSourceType(StrUtil.trimToNull(request.getFormSourceType()));
+        update.setFormId(request.getFormId());
+        update.setFormKey(StrUtil.trimToNull(request.getFormKey()));
+        update.setFormVersion(request.getFormVersion());
+        update.setFormName(StrUtil.trimToNull(request.getFormName()));
         flowEngine.processService().updateProcessInfo(update);
 
         return flowEngine.processService().getProcessById(processId);

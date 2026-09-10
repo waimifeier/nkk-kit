@@ -1,7 +1,6 @@
 package org.nkk.flow.web.controller;
 
 import org.nkk.core.beans.common.Result;
-import org.nkk.flow.web.model.FlowDesignerCategoryNode;
 import org.nkk.flow.web.model.FlowDesignerOption;
 import org.nkk.flow.web.model.FlowDesignerTreeNode;
 import org.nkk.flow.web.service.FlowDesignerOrgService;
@@ -42,18 +41,6 @@ public class FlowDesignerOrgController {
     @GetMapping("/employees/tree")
     public Result<List<FlowDesignerTreeNode>> employees() {
         return Result.ok(orgService.listEmployeeTree());
-    }
-
-    /**
-     * 获取分类树。
-     *
-     * <p>分类支持多级结构，用于流程分类、模板分类等自定义分组数据。</p>
-     *
-     * @return 分类树节点列表
-     */
-    @GetMapping("/categories/tree")
-    public Result<List<FlowDesignerCategoryNode>> categories() {
-        return Result.ok(orgService.listCategoryTree());
     }
 
     /**

@@ -2,8 +2,10 @@ package org.nkk.flow.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
+import org.nkk.flow.model.FlowFieldMeta;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -36,9 +38,21 @@ public class FlowProcessModel implements Serializable {
     private FlowNodeModel nodeConfig;
 
     /**
-     * 流程级扩展配置，业务侧可放置流程分类、表单配置等自定义数据。
+     * 流程级扩展配置，业务侧可放置流程分类、业务分组等自定义数据。
+     *
+     * <p>表单绑定信息已抽离为独立列（flow_process.form_source_type/form_key 等），
+     * 表单字段定义已抽离为 {@link #metaFields}，不再放在此 Map 中。</p>
      */
     private Map<String, Object> extendConfig;
+
+    /**
+     * 表单字段元数据列表。
+     *
+     * <p>存放表单字段定义（条件分支可选字段、发起审批时的表单渲染字段等）。
+     * 表单来源类型、表单编码等元信息已抽离为 {@code flow_process} 表的独立列
+     * （form_source_type/form_key/form_version/form_id/form_name）。</p>
+     */
+    private List<FlowFieldMeta> metaFields;
 
     /**
      * 根据节点编码查找流程节点。

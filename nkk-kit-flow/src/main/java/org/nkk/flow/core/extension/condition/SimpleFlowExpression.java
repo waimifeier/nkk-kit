@@ -3,12 +3,13 @@ package org.nkk.flow.core.extension.condition;
 import org.nkk.flow.model.FlowCondition;
 
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 /**
- * 默认条件表达式，支持 eq、ne、gt、ge、lt、le。
+ * 默认条件表达式，支持 eq、ne、gt、ge、lt、le、contains、notContains。
  */
 public class SimpleFlowExpression implements FlowExpression {
 
@@ -35,6 +36,12 @@ public class SimpleFlowExpression implements FlowExpression {
         if ("ne".equalsIgnoreCase(operator) || "!=".equals(operator)) {
             return !Objects.equals(stringValue(actual), stringValue(expected));
         }
+        if ("contains".equalsIgnoreCase(operator)) {
+            return contains(actual, expected);
+        }
+        if ("notContains".equalsIgnoreCase(operator)) {
+            return !contains(actual, expected);
+        }
         BigDecimal left = number(actual);
         BigDecimal right = number(expected);
         if (left == null || right == null) {
@@ -54,6 +61,31 @@ public class SimpleFlowExpression implements FlowExpression {
             return compare <= 0;
         }
         return false;
+    }
+
+    /**
+     * 判断 actual 是否包含 expected。
+     * <p>actual 为集合/数组时，判断 expected 是否在集合中；actual 为字符串时，按子串匹配。</p>
+     */
+    private boolean contains(Object actual, Object expected) {
+        if (actual == null || expected == null) {
+            return false;
+        }
+        if (actual instanceof Collection) {
+            return ((Collection<?>) actual).contains(expected);
+        }
+        if (actual.getClass().isArray()) {
+            int len = java.lang.reflect.Array.getLength(actual);
+            Object expectedValue = expected;
+            for (int i = 0; i < len; i++) {
+                Object element = java.lang.reflect.Array.get(actual, i);
+                if (Objects.equals(element, expectedValue)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        return String.valueOf(actual).contains(String.valueOf(expected));
     }
 
     private String stringValue(Object value) {

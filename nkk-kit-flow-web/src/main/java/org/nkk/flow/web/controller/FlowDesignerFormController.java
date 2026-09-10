@@ -2,7 +2,7 @@ package org.nkk.flow.web.controller;
 
 import org.nkk.core.beans.common.Result;
 import org.nkk.flow.web.model.FlowDesignerFormOption;
-import org.nkk.flow.web.model.FlowFieldMeta;
+import org.nkk.flow.model.FlowFieldMeta;
 import org.nkk.flow.web.service.FlowDesignerFormService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

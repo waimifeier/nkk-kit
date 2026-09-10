@@ -25,10 +25,17 @@ CREATE TABLE flow_process
     process_state   TINYINT      NOT NULL DEFAULT 1,
     model_content   CLOB,
     sort            INT          NOT NULL DEFAULT 0,
+    form_source_type VARCHAR(32),
+    form_id         BIGINT,
+    form_key        VARCHAR(100),
+    form_version    INT          DEFAULT 1,
+    form_name       VARCHAR(100),
     PRIMARY KEY (id)
 );
 
 CREATE INDEX idx_flow_process_key_version ON flow_process (tenant_id, process_key, process_version);
+CREATE INDEX idx_flow_process_form_source ON flow_process (form_source_type);
+CREATE INDEX idx_flow_process_form_key ON flow_process (form_key);
 
 CREATE TABLE flow_his_instance
 (

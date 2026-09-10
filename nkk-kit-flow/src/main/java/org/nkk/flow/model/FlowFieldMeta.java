@@ -1,4 +1,4 @@
-package org.nkk.flow.web.model;
+package org.nkk.flow.model;
 
 import lombok.Data;
 
@@ -28,7 +28,7 @@ public class FlowFieldMeta implements Serializable {
     private String fieldName;
 
     /**
-     * 字段类型，取值见 {@code FlowFormFieldEnum.FieldType}。
+     * 字段类型，取值见 {@link org.nkk.flow.enums.core.FlowFormFieldEnum.FieldType}。
      */
     private String fieldType;
 

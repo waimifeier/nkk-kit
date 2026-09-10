@@ -7,7 +7,7 @@
     <groupId>io.github.waimifeier</groupId>
     <artifactId>nkk-kit</artifactId>
     <packaging>pom</packaging>
-    <version>1.1.0</version>
+    <version>1.1.2</version>
     <name>nkk-kit</name>
     <description>nkk工具包是总结了工作中常用的工具包和实体类</description>
     <url>https://github.com/waimifeier/nkk-kit</url>
@@ -50,10 +50,14 @@
     </scm>
 
     <properties>
+        <!-- 源码/报告统一 UTF-8，避免 Windows GBK 编译导致 class 内中文常量乱码 -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
 
-        <revision>1.1.0</revision>
+        <revision>1.1.2</revision>
         <lombok.version>1.18.26</lombok.version>
         <hutool.version>5.8.16</hutool.version>
         <streamex.version>0.8.2</streamex.version>

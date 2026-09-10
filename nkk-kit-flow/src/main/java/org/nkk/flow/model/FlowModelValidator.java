@@ -558,7 +558,9 @@ public final class FlowModelValidator {
                 || "gt".equalsIgnoreCase(operator) || ">".equals(operator)
                 || "ge".equalsIgnoreCase(operator) || ">=".equals(operator)
                 || "lt".equalsIgnoreCase(operator) || "<".equals(operator)
-                || "le".equalsIgnoreCase(operator) || "<=".equals(operator);
+                || "le".equalsIgnoreCase(operator) || "<=".equals(operator)
+                || "contains".equalsIgnoreCase(operator)
+                || "notContains".equalsIgnoreCase(operator);
     }
 
     /**

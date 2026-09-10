@@ -1,7 +1,6 @@
 package org.nkk.flow.web.extension;
 
 import org.nkk.flow.web.model.FlowDesignerOption;
-import org.nkk.flow.web.model.FlowDesignerCategoryNode;
 import org.nkk.flow.web.model.FlowDesignerTreeNode;
 
 import java.util.Collections;
@@ -22,11 +21,6 @@ public class DefaultFlowDesignerOrgProvider implements FlowDesignerOrgProvider {
 
     @Override
     public List<FlowDesignerTreeNode> listEmployeeTree() {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public List<FlowDesignerCategoryNode> listCategoryTree() {
         return Collections.emptyList();
     }
 

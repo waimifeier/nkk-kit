@@ -1,7 +1,7 @@
 package org.nkk.flow.web.extension;
 
 import org.nkk.flow.web.model.FlowDesignerFormOption;
-import org.nkk.flow.web.model.FlowFieldMeta;
+import org.nkk.flow.model.FlowFieldMeta;
 
 import java.util.Collections;
 import java.util.List;

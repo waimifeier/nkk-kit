@@ -46,7 +46,6 @@ org.nkk.flow.web
 │
 ├── model/                                 # 请求/响应 DTO
 │   ├── FlowProcessPublishRequest.java     # 发布流程定义请求（含 modelContent JSON）
-│   ├── FlowProcessPublishResponse.java
 │   ├── FlowProcessInfoUpdateRequest.java
 │   ├── FlowProcessCategoryResponse.java
 │   ├── FlowStartProcessRequest.java       # 发起流程实例请求
@@ -124,7 +123,7 @@ Controller 层职责：**参数校验 + 调用 Service + 返回响应**。
 ```java
 // ✅ 正确
 @PostMapping("/publish")
-public R<FlowProcessPublishResponse> publish(@RequestBody @Valid FlowProcessPublishRequest req) {
+public R<FlowProcess> publish(@RequestBody @Valid FlowProcessPublishRequest req) {
     return R.ok(flowDesignerProcessService.publish(req));
 }
 

@@ -227,6 +227,11 @@ public class FlowProcessServiceImpl implements FlowProcessService {
         update.setProcessType(process.getProcessType());
         update.setInstanceUrl(process.getInstanceUrl());
         update.setRemark(process.getRemark());
+        update.setFormSourceType(process.getFormSourceType());
+        update.setFormId(process.getFormId());
+        update.setFormKey(process.getFormKey());
+        update.setFormVersion(process.getFormVersion());
+        update.setFormName(process.getFormName());
         return processDao.updateById(update);
     }
 }

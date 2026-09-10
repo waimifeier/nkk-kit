@@ -43,10 +43,35 @@ public class FlowProcessPublishRequest implements Serializable {
     private String instanceUrl;
 
     /**
+     * 表单来源类型。例如 FORM、URL、CUSTOM。
+     */
+    private String formSourceType;
+
+    /**
+     * 表单 ID。
+     */
+    private Long formId;
+
+    /**
+     * 表单唯一编码。
+     */
+    private String formKey;
+
+    /**
+     * 表单版本号。
+     */
+    private Integer formVersion;
+
+    /**
+     * 表单名称。
+     */
+    private String formName;
+
+    /**
      * 流程 JSON 模型内容。支持传 JSON 对象或 JSON 字符串。
      *
-     * <p>如果需要绑定表单元数据，前端应直接写入模型的
-     * {@code extendConfig.metaForm}，后端发布时不再单独处理 metaForm 字段。</p>
+     * 这是模型内容 {@link org.nkk.flow.model.FlowProcessModel}
+     *
      */
     private Object modelContent;
 

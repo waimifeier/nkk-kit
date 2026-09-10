@@ -34,7 +34,8 @@ public class FlowDesignerProcessController {
     /**
      * 发布流程定义。
      *
-     * <p>请求体示例：{@code {"processName":"请假审批","processKey":"leave","processIcon":"icon-leave","processType":"hr","instanceUrl":"/flow/instances/{instanceId}","remark":"请假流程","saveAsDraft":false,"modelContent":{"nodeKey":"start","nodeName":"发起人","type":0,"childNode":{...}}}}</p>
+     * <p>请求体示例：{@code {"processName":"请假审批","processKey":"leave","processIcon":"icon-leave","processType":"hr","instanceUrl":"/flow/instances/{instanceId}","remark":"请假流程","formSourceType":"FORM","formId":1001,"formKey":"leave-form","formVersion":1,"formName":"请假表单","saveAsDraft":false,"modelContent":{"nodeKey":"start","nodeName":"发起人","type":0,"childNode":{...}}}}</p>
+     * <p>{@code formSourceType/formId/formKey/formVersion/formName} 为表单元数据，发布时会写入 flow_process 表的独立列；表单字段定义放在 {@code modelContent.metaFields} 中。</p>
      * <p>{@code saveAsDraft=true} 时只保存草稿，不强校验流程模型，也不影响当前启用版本。</p>
      *
      * @param request 流程发布请求

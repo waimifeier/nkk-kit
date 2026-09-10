@@ -20,7 +20,10 @@ public class FlowCondition implements Serializable {
     private String field;
 
     /**
-     * 条件操作符，默认表达式支持 eq、ne、gt、ge、lt、le 以及 =、!=、>、>=、<、<=。
+     * 条件操作符，默认表达式支持 eq、ne、gt、ge、lt、le、contains、notContains
+     * 以及 =、!=、>、>=、<、<=。
+     * <p>contains/notContains 用于集合或字符串：actual 为集合/数组时判断元素是否在其中，
+     * actual 为字符串时按子串匹配。</p>
      */
     private String operator;
 

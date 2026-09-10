@@ -111,6 +111,10 @@ public class FlowContext {
         return jsonHandler.fromJson(json, type);
     }
 
+    public static <T> T fromJson(String json, com.fasterxml.jackson.core.type.TypeReference<T> typeReference) {
+        return jsonHandler.fromJson(json, typeReference);
+    }
+
     public static String toJson(Object value) {
         return jsonHandler.toJson(value);
     }

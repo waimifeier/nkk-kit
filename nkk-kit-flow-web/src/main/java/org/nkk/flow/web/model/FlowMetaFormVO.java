@@ -2,6 +2,7 @@ package org.nkk.flow.web.model;
 
 import lombok.Data;
 import org.nkk.flow.core.context.FlowContext;
+import org.nkk.flow.model.FlowFieldMeta;
 
 import java.io.Serializable;
 import java.util.List;

@@ -11,13 +11,14 @@ import org.nkk.flow.entity.FlowHisInstance;
 import org.nkk.flow.entity.FlowInstance;
 import org.nkk.flow.enums.core.FlowFormFieldEnum.SourceType;
 import org.nkk.flow.enums.runtime.FlowInstanceOperateEnum;
+import org.nkk.flow.web.extension.FlowDesignerCategoryProvider;
 import org.nkk.flow.web.extension.FlowDesignerFormProvider;
 import org.nkk.flow.web.extension.FlowDesignerOrgProvider;
 import org.nkk.flow.web.model.FlowDesignerCategoryNode;
 import org.nkk.flow.web.model.FlowDesignerFormOption;
 import org.nkk.flow.web.model.FlowDesignerOption;
 import org.nkk.flow.web.model.FlowDesignerTreeNode;
-import org.nkk.flow.web.model.FlowFieldMeta;
+import org.nkk.flow.model.FlowFieldMeta;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -345,15 +346,6 @@ public class FlowExampleWebConfiguration {
             }
 
             @Override
-            public List<FlowDesignerCategoryNode> listCategoryTree() {
-                return CollUtil.newArrayList(
-                        FlowDesignerCategoryNode.leaf("c1-1-1", null, "人事审批"),
-                        FlowDesignerCategoryNode.leaf("c1-1-2", null, "财务审批"),
-                        FlowDesignerCategoryNode.leaf("c1-1-3", null, "合同审批")
-                );
-            }
-
-            @Override
             public List<FlowDesignerOption> listRoles() {
                 return Arrays.asList(
                         FlowDesignerOption.role("r1", "部门负责人"),
@@ -365,6 +357,27 @@ public class FlowExampleWebConfiguration {
                         FlowDesignerOption.role("r7", "技术审批"),
                         FlowDesignerOption.role("r8", "测试"),
                         FlowDesignerOption.role("r9", "管理员")
+                );
+            }
+        };
+    }
+
+    /**
+     * 提供设计器分类树。
+     *
+     * <p>覆盖 starter 默认的空实现，让设计器可以看到示例的流程分类。</p>
+     */
+    @Bean
+    public FlowDesignerCategoryProvider flowDesignerCategoryProvider() {
+        return new FlowDesignerCategoryProvider() {
+            @Override
+            public List<FlowDesignerCategoryNode> listCategoryTree() {
+                return CollUtil.newArrayList(
+                        FlowDesignerCategoryNode.leaf("c1-1-1", null, "人事审批"),
+                        FlowDesignerCategoryNode.leaf("c1-1-2", null, "财务审批"),
+                        FlowDesignerCategoryNode.leaf("c1-1-3", null, "合同审批"),
+                        FlowDesignerCategoryNode.leaf("c1-1-4", null, "采购审批"),
+                        FlowDesignerCategoryNode.leaf("c1-1-5", null, "行政审批")
                 );
             }
         };
