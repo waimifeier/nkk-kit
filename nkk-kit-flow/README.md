@@ -286,24 +286,29 @@ META-INF/nkk-flow/schema-mysql.sql
 
 默认实现 `DefaultFlowInstanceAccessStrategy` 的规则是：
 
-- 撤回：只允许流程发起人。
-- 挂起、激活、终止、作废、超时结束：只允许管理员。
+- 系统自动操作（定时超时、触发器、子流程级联回调等）：直接放行。
+- 撤回、挂起、激活、终止、作废、超时结束等人工操作：只允许流程发起人（实例创建人）。
 
-如果你希望“流程管理员、部门主管、角色负责人、单据拥有者”也能操作实例，可以自己覆盖这个 Bean：
+默认规则开箱即用，无需配置。如果你希望“流程管理员、部门主管、角色负责人、单据拥有者”也能操作实例，可以自己覆盖这个 Bean：
 
 ```java
 @Bean
-public FlowInstanceAccessStrategy flowInstanceAccessStrategy(UserOrgService userOrgService) {
+public FlowInstanceAccessStrategy flowInstanceAccessStrategy(FlowCreatorProvider creatorProvider,
+                                                             UserOrgService userOrgService) {
     return (creator, instance, hisInstance, operateType) -> {
-        if (creator != null && "0".equals(creator.getCreateId())) {
-            return true;
-        }
-        if (hisInstance == null) {
+        if (creator == null || hisInstance == null) {
             return false;
         }
+        // 系统自动操作放行（也可以直接继承 DefaultFlowInstanceAccessStrategy 复用该判断）
+        FlowCreator systemCreator = creatorProvider.getSystemCreator();
+        if (systemCreator != null && Objects.equals(systemCreator.getCreateId(), creator.getCreateId())) {
+            return true;
+        }
+        // 流程发起人放行
         if (Objects.equals(creator.getCreateId(), hisInstance.getCreateId())) {
             return true;
         }
+        // 流程管理员角色放行
         return userOrgService.hasRole(creator.getCreateId(), "FLOW_ADMIN");
     };
 }

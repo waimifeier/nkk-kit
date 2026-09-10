@@ -6,11 +6,7 @@ import org.nkk.flow.core.context.FlowCreator;
 import org.nkk.flow.core.extension.identity.DefaultFlowActorAccessStrategy;
 import org.nkk.flow.core.extension.identity.FlowActorAccessStrategy;
 import org.nkk.flow.core.extension.identity.FlowCreatorProvider;
-import org.nkk.flow.core.extension.identity.FlowInstanceAccessStrategy;
-import org.nkk.flow.entity.FlowHisInstance;
-import org.nkk.flow.entity.FlowInstance;
 import org.nkk.flow.enums.core.FlowFormFieldEnum.SourceType;
-import org.nkk.flow.enums.runtime.FlowInstanceOperateEnum;
 import org.nkk.flow.web.extension.FlowDesignerCategoryProvider;
 import org.nkk.flow.web.extension.FlowDesignerFormProvider;
 import org.nkk.flow.web.extension.FlowDesignerOrgProvider;
@@ -28,37 +24,12 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * flow-web 示例配置。
  */
 @Configuration
 public class FlowExampleWebConfiguration {
-
-    /**
-     * 实例级操作权限判断。
-     *
-     * <p>该策略只处理整个流程实例的管理类操作，不处理具体审批任务的办理权限。</p>
-     *
-     * <p>示例规则：</p>
-     * <ul>
-     *     <li>撤回流程：只允许流程发起人操作。</li>
-     *     <li>挂起、激活、终止、作废等管理操作：只允许示例管理员操作。</li>
-     * </ul>
-     */
-    @Bean
-    public FlowInstanceAccessStrategy flowInstanceAccessStrategy() {
-        return (creator, instance, hisInstance, operateType) -> {
-            if (creator == null || creator.getCreateId() == null) {
-                return false;
-            }
-            if (FlowInstanceOperateEnum.REVOKE == operateType) {
-                return isCreator(creator, instance, hisInstance);
-            }
-            return isAdmin(creator);
-        };
-    }
 
     /**
      * 统一参与人权限判断。
@@ -99,18 +70,6 @@ public class FlowExampleWebConfiguration {
                 return FlowCreator.of("0", "系统操作人");
             }
         };
-    }
-
-    private boolean isCreator(FlowCreator creator, FlowInstance instance, FlowHisInstance hisInstance) {
-        String createId = instance == null ? null : instance.getCreateId();
-        if (createId == null && hisInstance != null) {
-            createId = hisInstance.getCreateId();
-        }
-        return Objects.equals(creator.getCreateId(), createId);
-    }
-
-    private boolean isAdmin(FlowCreator creator) {
-        return "1".equals(creator.getCreateId());
     }
 
     private boolean isRoleAllowed(String userId, String roleId) {

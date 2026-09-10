@@ -133,7 +133,8 @@ public class DefaultFlowSubProcessHandler implements FlowSubProcessHandler {
             return;
         }
         if (InstanceState.DESTROYED == state) {
-            context.getRuntimeService().destroyByInstanceId(parentTask.getInstanceId(), parentTask.variableToMap());
+            context.getRuntimeService().destroyByInstanceId(parentTask.getInstanceId(),
+                    context.getSystemCreator(), parentTask.variableToMap());
             return;
         }
         context.getRuntimeService().terminate(parentTask.getInstanceId(), context.getSystemCreator());
