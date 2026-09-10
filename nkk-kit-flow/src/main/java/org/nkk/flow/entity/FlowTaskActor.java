@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import org.nkk.flow.enums.core.FlowTaskActorEnum.AgentType;
 import org.nkk.flow.enums.core.FlowTaskActorEnum.ActorType;
-import org.nkk.flow.model.FlowNodeAssignee;
+import org.nkk.flow.model.node.task.FlowNodeAssignee;
 
 import java.io.Serializable;
 

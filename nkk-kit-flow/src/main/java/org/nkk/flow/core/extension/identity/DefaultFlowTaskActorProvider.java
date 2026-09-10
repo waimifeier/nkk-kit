@@ -5,9 +5,9 @@ import org.nkk.flow.core.context.FlowDataTransfer;
 import org.nkk.flow.entity.FlowTaskActor;
 import org.nkk.flow.enums.core.FlowTaskActorEnum.ActorType;
 import org.nkk.flow.enums.node.FlowNodeSetTypeEnum;
-import org.nkk.flow.model.FlowDynamicAssignee;
-import org.nkk.flow.model.FlowNodeAssignee;
-import org.nkk.flow.model.FlowNodeModel;
+import org.nkk.flow.model.node.task.FlowDynamicAssignee;
+import org.nkk.flow.model.node.task.FlowNodeAssignee;
+import org.nkk.flow.model.node.task.TaskNodeModel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +19,7 @@ import java.util.Map;
 public class DefaultFlowTaskActorProvider implements FlowTaskActorProvider {
 
     @Override
-    public List<FlowTaskActor> getTaskActors(FlowNodeModel nodeModel, FlowExecution execution) {
+    public List<FlowTaskActor> getTaskActors(TaskNodeModel nodeModel, FlowExecution execution) {
         FlowDynamicAssignee dynamicAssignee = resolveDynamicAssignee(nodeModel, execution);
         List<FlowNodeAssignee> assignees = dynamicAssignee == null
                 ? getNodeAssignees(nodeModel, execution)
@@ -38,8 +38,7 @@ public class DefaultFlowTaskActorProvider implements FlowTaskActorProvider {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public List<FlowNodeAssignee> getNodeAssignees(FlowNodeModel nodeModel, FlowExecution execution) {
+    public List<FlowNodeAssignee> getNodeAssignees(TaskNodeModel nodeModel, FlowExecution execution) {
         FlowDynamicAssignee dynamicAssignee = resolveDynamicAssignee(nodeModel, execution);
         if (dynamicAssignee != null && dynamicAssignee.getAssigneeList() != null) {
             return dynamicAssignee.getAssigneeList();
@@ -47,8 +46,7 @@ public class DefaultFlowTaskActorProvider implements FlowTaskActorProvider {
         return nodeModel.getNodeAssigneeList();
     }
 
-    @SuppressWarnings("unchecked")
-    private FlowDynamicAssignee resolveDynamicAssignee(FlowNodeModel nodeModel, FlowExecution execution) {
+    private FlowDynamicAssignee resolveDynamicAssignee(TaskNodeModel nodeModel, FlowExecution execution) {
         Map<String, Object> dynamicMap = FlowDataTransfer.get(FlowDataTransfer.DYNAMIC_ASSIGNEE);
         if (dynamicMap != null && nodeModel.getNodeKey() != null && dynamicMap.containsKey(nodeModel.getNodeKey())) {
             Object value = dynamicMap.get(nodeModel.getNodeKey());
@@ -67,14 +65,12 @@ public class DefaultFlowTaskActorProvider implements FlowTaskActorProvider {
     }
 
     @Override
-    public Integer getActorType(FlowNodeModel nodeModel) {
-        if (!nodeModel.allJoinGroupStrategy()) {
-            if (FlowNodeSetTypeEnum.ROLE.value().equals(nodeModel.getSetType())) {
-                return ActorType.ROLE.value();
-            }
-            if (FlowNodeSetTypeEnum.DEPARTMENT.value().equals(nodeModel.getSetType())) {
-                return ActorType.DEPARTMENT.value();
-            }
+    public Integer getActorType(TaskNodeModel nodeModel) {
+        if (FlowNodeSetTypeEnum.ROLE.value().equals(nodeModel.getSetType())) {
+            return ActorType.ROLE.value();
+        }
+        if (FlowNodeSetTypeEnum.DEPARTMENT.value().equals(nodeModel.getSetType())) {
+            return ActorType.DEPARTMENT.value();
         }
         return ActorType.USER.value();
     }

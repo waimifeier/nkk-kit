@@ -4,7 +4,7 @@ import org.nkk.flow.core.context.FlowCreator;
 import org.nkk.flow.core.extension.listener.FlowInstanceListener;
 import org.nkk.flow.entity.FlowHisInstance;
 import org.nkk.flow.enums.runtime.FlowEventTypeEnum;
-import org.nkk.flow.model.FlowNodeModel;
+import org.nkk.flow.model.node.FlowNodeModel;
 import org.springframework.context.ApplicationEventPublisher;
 
 /**

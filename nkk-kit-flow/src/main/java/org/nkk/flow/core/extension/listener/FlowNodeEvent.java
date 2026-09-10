@@ -4,7 +4,7 @@ import lombok.Getter;
 import org.nkk.flow.core.context.FlowContext;
 import org.nkk.flow.core.context.FlowExecution;
 import org.nkk.flow.entity.FlowTask;
-import org.nkk.flow.model.FlowNodeModel;
+import org.nkk.flow.model.node.FlowNodeModel;
 
 import java.io.Serializable;
 import java.util.Collections;

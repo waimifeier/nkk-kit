@@ -38,7 +38,8 @@ import org.nkk.flow.core.extension.task.FlowCreateTaskHandler;
 import org.nkk.flow.core.extension.task.FlowTaskCreateInterceptor;
 import org.nkk.flow.core.extension.time.DefaultFlowCreateTimeHandler;
 import org.nkk.flow.core.extension.time.FlowCreateTimeHandler;
-import org.nkk.flow.model.FlowNodeModel;
+import org.nkk.flow.model.node.FlowNodeModel;
+import org.nkk.flow.model.node.task.TaskNodeModel;
 import org.nkk.flow.service.FlowProcessService;
 import org.nkk.flow.service.FlowQueryService;
 import org.nkk.flow.service.FlowRuntimeService;
@@ -119,7 +120,7 @@ public class FlowContext {
         return jsonHandler.toJson(value);
     }
 
-    public boolean createTask(FlowExecution execution, FlowNodeModel nodeModel) {
+    public boolean createTask(FlowExecution execution, TaskNodeModel nodeModel) {
         if (nodeListener != null) {
             nodeListener.beforeCreateTask(FlowNodeEvent.of(this, execution, nodeModel));
         }

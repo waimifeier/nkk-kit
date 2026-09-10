@@ -5,7 +5,7 @@ import org.nkk.flow.core.extension.listener.FlowTaskListener;
 import org.nkk.flow.entity.FlowTask;
 import org.nkk.flow.entity.FlowTaskActor;
 import org.nkk.flow.enums.runtime.FlowEventTypeEnum;
-import org.nkk.flow.model.FlowNodeModel;
+import org.nkk.flow.model.node.FlowNodeModel;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.List;

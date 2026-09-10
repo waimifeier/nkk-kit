@@ -6,7 +6,8 @@ import org.nkk.flow.entity.FlowTask;
 import org.nkk.flow.entity.FlowTaskActor;
 import org.nkk.flow.enums.core.FlowTaskEnum.PerformType;
 import org.nkk.flow.enums.core.FlowTaskEnum.TaskState;
-import org.nkk.flow.model.FlowNodeModel;
+import org.nkk.flow.model.node.FlowNodeModel;
+import org.nkk.flow.model.node.task.TaskNodeModel;
 
 import java.util.List;
 import java.util.Map;
@@ -17,9 +18,9 @@ import java.util.Optional;
  */
 public interface FlowTaskService {
 
-    List<FlowTask> createTask(FlowNodeModel nodeModel, FlowExecution execution);
+    List<FlowTask> createTask(TaskNodeModel nodeModel, FlowExecution execution);
 
-    FlowTask createSequentialTask(FlowNodeModel nodeModel, FlowExecution execution, FlowTaskActor actor);
+    FlowTask createSequentialTask(TaskNodeModel nodeModel, FlowExecution execution, FlowTaskActor actor);
 
     FlowTask complete(Long taskId, FlowCreator creator, Map<String, Object> args);
 

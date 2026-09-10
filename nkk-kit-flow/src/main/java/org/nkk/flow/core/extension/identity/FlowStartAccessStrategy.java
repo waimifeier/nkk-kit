@@ -2,9 +2,10 @@ package org.nkk.flow.core.extension.identity;
 
 import org.nkk.flow.core.context.FlowCreator;
 import org.nkk.flow.enums.core.FlowTaskActorEnum.ActorType;
-import org.nkk.flow.model.FlowNodeAssignee;
+import org.nkk.flow.model.node.task.FlowNodeAssignee;
 
 import java.util.List;
+import org.nkk.flow.model.node.FlowNodeModel;
 
 /**
  * 流程发起权限策略。

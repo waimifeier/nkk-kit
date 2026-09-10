@@ -1,4 +1,4 @@
-package org.nkk.flow.model;
+package org.nkk.flow.model.node.task;
 
 import lombok.Getter;
 
@@ -66,10 +66,10 @@ public class FlowSignPolicy implements Serializable {
     /**
      * 从节点扩展配置中解析多人审批收口策略。
      *
-     * @param nodeModel 流程节点模型
+     * @param nodeModel 任务节点模型
      * @return 多人审批收口策略
      */
-    public static FlowSignPolicy of(FlowNodeModel nodeModel) {
+    public static FlowSignPolicy of(TaskNodeModel nodeModel) {
         FlowSignPolicy policy = new FlowSignPolicy();
         if (nodeModel == null) {
             return policy;

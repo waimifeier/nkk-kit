@@ -9,8 +9,9 @@ import org.nkk.flow.enums.runtime.FlowEventTypeEnum;
 import org.nkk.flow.enums.core.FlowInstanceEnum.InstanceState;
 import org.nkk.flow.enums.core.FlowTaskEnum.TaskState;
 import org.nkk.flow.enums.core.FlowTaskEnum.TaskType;
-import org.nkk.flow.model.FlowNodeModel;
+import org.nkk.flow.model.node.FlowNodeModel;
 import org.nkk.flow.model.FlowProcessModel;
+import org.nkk.flow.model.node.task.TaskNodeModel;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -57,11 +58,11 @@ public class FlowExecution implements Serializable {
         }
     }
 
-    public List<FlowTaskActor> getProviderTaskActors(FlowNodeModel nodeModel) {
+    public List<FlowTaskActor> getProviderTaskActors(TaskNodeModel nodeModel) {
         return context.getTaskActorProvider().getTaskActors(nodeModel, this);
     }
 
-    public Integer getProviderTaskActorType(FlowNodeModel nodeModel) {
+    public Integer getProviderTaskActorType(TaskNodeModel nodeModel) {
         return context.getTaskActorProvider().getActorType(nodeModel);
     }
 

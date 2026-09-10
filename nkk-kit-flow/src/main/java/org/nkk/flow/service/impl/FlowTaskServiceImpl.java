@@ -20,8 +20,9 @@ import org.nkk.flow.enums.node.FlowNodeTypeEnum;
 import org.nkk.flow.enums.core.FlowTaskEnum.PerformType;
 import org.nkk.flow.enums.core.FlowTaskEnum.TaskState;
 import org.nkk.flow.enums.core.FlowTaskEnum.TaskType;
-import org.nkk.flow.model.FlowNodeAssignee;
-import org.nkk.flow.model.FlowNodeModel;
+import org.nkk.flow.model.node.task.FlowNodeAssignee;
+import org.nkk.flow.model.node.FlowNodeModel;
+import org.nkk.flow.model.node.task.TaskNodeModel;
 import org.nkk.flow.service.FlowTaskService;
 
 import java.util.ArrayList;
@@ -57,7 +58,7 @@ public class FlowTaskServiceImpl implements FlowTaskService {
     }
 
     @Override
-    public List<FlowTask> createTask(FlowNodeModel nodeModel, FlowExecution execution) {
+    public List<FlowTask> createTask(TaskNodeModel nodeModel, FlowExecution execution) {
         FlowTask task = createTaskBase(nodeModel, execution);
         PerformType performType = resolvePerformType(nodeModel);
 
@@ -125,7 +126,7 @@ public class FlowTaskServiceImpl implements FlowTaskService {
     }
 
     @Override
-    public FlowTask createSequentialTask(FlowNodeModel nodeModel, FlowExecution execution, FlowTaskActor actor) {
+    public FlowTask createSequentialTask(TaskNodeModel nodeModel, FlowExecution execution, FlowTaskActor actor) {
         FlowTask task = createTaskBase(nodeModel, execution);
         task.setPerformType(PerformType.SEQUENTIAL.value());
         taskDao.insert(task);
@@ -505,7 +506,7 @@ public class FlowTaskServiceImpl implements FlowTaskService {
         return task;
     }
 
-    protected FlowTask createTaskBase(FlowNodeModel nodeModel, FlowExecution execution) {
+    protected FlowTask createTaskBase(TaskNodeModel nodeModel, FlowExecution execution) {
         FlowTask task = new FlowTask();
         task.setId(idGenerator.nextId(null));
         task.setTenantId(execution.getFlowCreator().getTenantId());
@@ -596,7 +597,7 @@ public class FlowTaskServiceImpl implements FlowTaskService {
         }
     }
 
-    private PerformType resolvePerformType(FlowNodeModel nodeModel) {
+    private PerformType resolvePerformType(TaskNodeModel nodeModel) {
         if (FlowNodeTypeEnum.START.eq(nodeModel.getType())) {
             return PerformType.START;
         }
@@ -615,7 +616,7 @@ public class FlowTaskServiceImpl implements FlowTaskService {
         return PerformType.of(nodeModel.getExamineMode());
     }
 
-    private void loadScheduleConfig(FlowTask task, FlowNodeModel nodeModel) {
+    private void loadScheduleConfig(FlowTask task, TaskNodeModel nodeModel) {
         task.setTermMode(nodeModel.getTermMode());
         if (Boolean.TRUE.equals(nodeModel.getTermAuto()) && nodeModel.getTerm() != null && nodeModel.getTerm() > 0) {
             Calendar calendar = Calendar.getInstance();
@@ -717,7 +718,7 @@ public class FlowTaskServiceImpl implements FlowTaskService {
         }
     }
 
-    public FlowNodeAssignee nextSequentialAssignee(FlowNodeModel nodeModel, FlowExecution execution, String currentActorId) {
+    public FlowNodeAssignee nextSequentialAssignee(TaskNodeModel nodeModel, FlowExecution execution, String currentActorId) {
         List<FlowTaskActor> actors = execution.getProviderTaskActors(nodeModel);
         if (actors == null || actors.isEmpty()) {
             return null;

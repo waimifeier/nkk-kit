@@ -6,8 +6,8 @@ import org.nkk.flow.core.context.FlowContext;
 import org.nkk.flow.core.context.FlowDataTransfer;
 import org.nkk.flow.core.context.FlowExecution;
 import org.nkk.flow.core.extension.ai.FlowAiHandler;
-import org.nkk.flow.model.FlowConditionNode;
-import org.nkk.flow.model.FlowNodeModel;
+import org.nkk.flow.model.node.router.FlowConditionNode;
+import org.nkk.flow.model.node.FlowNodeModel;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -24,12 +24,12 @@ public class DefaultFlowConditionHandler implements FlowConditionHandler {
 
     @Override
     public Optional<FlowConditionNode> getConditionNode(FlowContext context, FlowExecution execution, FlowNodeModel nodeModel) {
-        return getConditionNode(context, execution, nodeModel, nodeModel.getConditionNodes());
+        return getConditionNode(context, execution, nodeModel, nodeModel.getBranchNodes());
     }
 
     @Override
     public Optional<FlowConditionNode> getRouteNode(FlowContext context, FlowExecution execution, FlowNodeModel nodeModel) {
-        return getConditionNode(context, execution, nodeModel, nodeModel.getRouteNodes());
+        return getConditionNode(context, execution, nodeModel, nodeModel.getBranchNodes());
     }
 
     private Optional<FlowConditionNode> getConditionNode(FlowContext context, FlowExecution execution,
@@ -66,7 +66,7 @@ public class DefaultFlowConditionHandler implements FlowConditionHandler {
 
     @Override
     public Optional<List<FlowConditionNode>> getInclusiveNodes(FlowContext context, FlowExecution execution, FlowNodeModel nodeModel) {
-        List<FlowConditionNode> nodes = nodeModel.getInclusiveNodes();
+        List<FlowConditionNode> nodes = nodeModel.getBranchNodes();
         if (CollUtil.isEmpty(nodes)) {
             return Optional.empty();
         }

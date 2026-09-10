@@ -19,7 +19,7 @@ import org.nkk.flow.enums.runtime.FlowExecuteTypeEnum;
 import org.nkk.flow.enums.runtime.FlowInstanceOperateEnum;
 import org.nkk.flow.enums.core.FlowInstanceEnum.InstanceState;
 import org.nkk.flow.enums.core.FlowTaskEnum.TaskState;
-import org.nkk.flow.model.FlowNodeModel;
+import org.nkk.flow.model.node.FlowNodeModel;
 import org.nkk.flow.model.FlowProcessModel;
 import org.nkk.flow.service.FlowRuntimeService;
 import org.nkk.flow.service.FlowTaskService;

@@ -2,7 +2,7 @@ package org.nkk.flow.core.extension.task;
 
 import org.nkk.flow.core.context.FlowExecution;
 import org.nkk.flow.entity.FlowTask;
-import org.nkk.flow.model.FlowNodeModel;
+import org.nkk.flow.model.node.FlowNodeModel;
 
 /**
  * 默认任务创建处理器。

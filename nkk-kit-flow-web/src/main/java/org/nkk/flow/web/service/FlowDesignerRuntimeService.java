@@ -14,8 +14,9 @@ import org.nkk.flow.enums.core.FlowTaskEnum.TaskType;
 import org.nkk.flow.enums.core.FlowTaskEnum.PerformType;
 import org.nkk.flow.enums.node.FlowNodeSetTypeEnum;
 import org.nkk.flow.enums.node.FlowNodeTypeEnum;
-import org.nkk.flow.model.FlowNodeAssignee;
-import org.nkk.flow.model.FlowNodeModel;
+import org.nkk.flow.model.node.task.ApprovalNodeModel;
+import org.nkk.flow.model.node.task.FlowNodeAssignee;
+import org.nkk.flow.model.node.FlowNodeModel;
 import org.nkk.flow.service.NkkFlowEngine;
 import org.nkk.flow.web.model.FlowInstanceApprovalRecordResponse;
 import org.nkk.flow.web.model.FlowInstanceDetailResponse;
@@ -420,7 +421,7 @@ public class FlowDesignerRuntimeService {
         if (CollUtil.isEmpty(assignees)) {
             throw new IllegalArgumentException("加签人员不能为空");
         }
-        FlowNodeModel nodeModel = new FlowNodeModel();
+        ApprovalNodeModel nodeModel = new ApprovalNodeModel();
         nodeModel.setNodeKey(StrUtil.blankToDefault(StrUtil.trim(request.getNodeKey()), signNodeKey()));
         nodeModel.setNodeName(StrUtil.trim(request.getNodeName()));
         nodeModel.setType(FlowNodeTypeEnum.APPROVAL.value());
@@ -477,17 +478,21 @@ public class FlowDesignerRuntimeService {
     }
 
     private Boolean nodeOperationAllowed(FlowNodeModel node, NodeOperation operation) {
+        if (!(node instanceof ApprovalNodeModel)) {
+            return null;
+        }
+        ApprovalNodeModel approvalNode = (ApprovalNodeModel) node;
         if (operation == NodeOperation.TRANSFER) {
-            return node.getAllowTransfer();
+            return approvalNode.getAllowTransfer();
         }
         if (operation == NodeOperation.APPEND_NODE) {
-            return node.getAllowAppendNode();
+            return approvalNode.getAllowAppendNode();
         }
         if (operation == NodeOperation.ROLLBACK) {
-            return node.getAllowRollback();
+            return approvalNode.getAllowRollback();
         }
         if (operation == NodeOperation.CC) {
-            return node.getAllowCc();
+            return approvalNode.getAllowCc();
         }
         return null;
     }

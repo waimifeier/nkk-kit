@@ -16,10 +16,12 @@ import org.nkk.flow.enums.core.FlowTaskEnum.PerformType;
 import org.nkk.flow.enums.node.FlowRejectStrategyEnum;
 import org.nkk.flow.enums.core.FlowTaskEnum.TaskState;
 import org.nkk.flow.enums.core.FlowTaskEnum.TaskType;
-import org.nkk.flow.model.FlowNodeAssignee;
-import org.nkk.flow.model.FlowNodeModel;
+import org.nkk.flow.model.node.task.FlowNodeAssignee;
+import org.nkk.flow.model.node.FlowNodeModel;
 import org.nkk.flow.model.FlowProcessModel;
-import org.nkk.flow.model.FlowSignPolicy;
+import org.nkk.flow.model.node.task.FlowSignPolicy;
+import org.nkk.flow.model.node.task.StartNodeModel;
+import org.nkk.flow.model.node.task.TaskNodeModel;
 import org.nkk.flow.service.NkkFlowEngine;
 
 import java.util.ArrayList;
@@ -90,7 +92,8 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
         FlowProcessModel model = process.model();
         FlowNodeModel startNode = model.getNodeConfig();
         if (context.getStartAccessStrategy() != null
-                && !context.getStartAccessStrategy().isAllowed(creator, startNode.getNodeAssigneeList())) {
+                && !context.getStartAccessStrategy().isAllowed(creator,
+                startNode instanceof StartNodeModel ? ((StartNodeModel) startNode).getNodeAssigneeList() : null)) {
             throw new IllegalStateException("当前用户无权发起该流程，processKey=" + process.getProcessKey());
         }
         if (checkNodeModel != null) {
@@ -260,23 +263,24 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
         }
         FlowProcessModel model = runtimeService().getProcessModelByInstanceId(instance.getId());
         FlowNodeModel nodeModel = model.getNode(task.getTaskKey());
-        if (nodeModel == null) {
+        if (!(nodeModel instanceof TaskNodeModel)) {
             throw new IllegalStateException("流程模型中不存在任务节点，taskKey=" + task.getTaskKey());
         }
+        TaskNodeModel taskNode = (TaskNodeModel) nodeModel;
         FlowExecution execution = new FlowExecution(context, model, creator, instance, task.variableToMap());
         execution.setFlowTask(task);
         PerformType performType = PerformType.of(task.getPerformType());
-        if (performType == PerformType.SEQUENTIAL && createNextSequentialTask(nodeModel, execution, task)) {
+        if (performType == PerformType.SEQUENTIAL && createNextSequentialTask(taskNode, execution, task)) {
             return true;
         }
         if (performType == PerformType.COUNTERSIGN) {
-            return handleSignDecision(resolveCountersignResult(nodeModel, task), task, creator, execution);
+            return handleSignDecision(resolveCountersignResult(taskNode, task), task, creator, execution);
         }
         if (performType == PerformType.OR_SIGN) {
-            return handleSignDecision(resolveOrSignResult(nodeModel, task), task, creator, execution);
+            return handleSignDecision(resolveOrSignResult(taskNode, task), task, creator, execution);
         }
         if (performType == PerformType.VOTE_SIGN) {
-            VoteResult voteResult = resolveVoteResult(nodeModel, task);
+            VoteResult voteResult = resolveVoteResult(taskNode, task);
             return handleSignDecision(voteResult, task, creator, execution);
         }
         return execution.executeNodeModel(task.getTaskKey());
@@ -298,12 +302,14 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
         FlowProcessModel model = runtimeService().getProcessModelByInstanceId(instance.getId());
         FlowNodeModel nodeModel = model.getNode(task.getTaskKey());
         PerformType performType = PerformType.of(task.getPerformType());
-        if (performType != PerformType.COUNTERSIGN
+        if (!(nodeModel instanceof TaskNodeModel)
+                || (performType != PerformType.COUNTERSIGN
                 && performType != PerformType.OR_SIGN
-                && performType != PerformType.VOTE_SIGN) {
+                && performType != PerformType.VOTE_SIGN)) {
             throw new IllegalStateException("当前任务不是多人审批任务，taskId=" + taskId);
         }
-        if (state == TaskState.ABSTAINED && !FlowSignPolicy.of(nodeModel).isAllowAbstain()) {
+        TaskNodeModel taskNode = (TaskNodeModel) nodeModel;
+        if (state == TaskState.ABSTAINED && !FlowSignPolicy.of(taskNode).isAllowAbstain()) {
             throw new IllegalStateException("当前节点未开启弃权，nodeKey=" + task.getTaskKey());
         }
         FlowTask completed = taskService().executeTask(taskId, actualCreator, args, state, null);
@@ -525,7 +531,7 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
         return Optional.of(execution.getFlowTasks());
     }
 
-    private boolean createNextSequentialTask(FlowNodeModel nodeModel, FlowExecution execution, FlowTask completedTask) {
+    private boolean createNextSequentialTask(TaskNodeModel nodeModel, FlowExecution execution, FlowTask completedTask) {
         List<FlowHisTaskActor> hisActors = queryService().getHisTaskActorsByTaskId(completedTask.getId());
         if (hisActors == null || hisActors.isEmpty()) {
             return false;
@@ -545,7 +551,7 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
         return false;
     }
 
-    private VoteResult resolveCountersignResult(FlowNodeModel nodeModel, FlowTask task) {
+    private VoteResult resolveCountersignResult(TaskNodeModel nodeModel, FlowTask task) {
         FlowSignPolicy policy = FlowSignPolicy.of(nodeModel);
         int defaultWeight = defaultVoteWeight(nodeModel, task);
         VoteStats stats = collectVoteStats(task, defaultWeight, policy);
@@ -561,7 +567,7 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
         return stats.activeCount > 0 ? VoteResult.WAIT : VoteResult.PASS;
     }
 
-    private VoteResult resolveOrSignResult(FlowNodeModel nodeModel, FlowTask task) {
+    private VoteResult resolveOrSignResult(TaskNodeModel nodeModel, FlowTask task) {
         FlowSignPolicy policy = FlowSignPolicy.of(nodeModel);
         int defaultWeight = defaultVoteWeight(nodeModel, task);
         VoteStats stats = collectVoteStats(task, defaultWeight, policy);
@@ -574,7 +580,7 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
         return stats.activeCount > 0 ? VoteResult.WAIT : VoteResult.REJECT;
     }
 
-    private VoteResult resolveVoteResult(FlowNodeModel nodeModel, FlowTask task) {
+    private VoteResult resolveVoteResult(TaskNodeModel nodeModel, FlowTask task) {
         FlowSignPolicy policy = FlowSignPolicy.of(nodeModel);
         int defaultWeight = defaultVoteWeight(nodeModel, task);
         VoteStats stats = collectVoteStats(task, defaultWeight, policy);
@@ -661,7 +667,7 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
         return false;
     }
 
-    private int defaultVoteWeight(FlowNodeModel nodeModel, FlowTask task) {
+    private int defaultVoteWeight(TaskNodeModel nodeModel, FlowTask task) {
         int actorCount = voteActorCount(task);
         if (actorCount > 0) {
             return (100 + actorCount - 1) / actorCount;
@@ -773,7 +779,10 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
             }
             return assertRejectableNode(specifiedNode);
         }
-        FlowRejectStrategyEnum strategy = FlowRejectStrategyEnum.of(currentNode == null ? null : currentNode.getRejectStrategy());
+        Integer rejectStrategy = currentNode instanceof TaskNodeModel
+                ? ((TaskNodeModel) currentNode).getRejectStrategy()
+                : null;
+        FlowRejectStrategyEnum strategy = FlowRejectStrategyEnum.of(rejectStrategy);
         if (strategy == FlowRejectStrategyEnum.TERMINATE_APPROVAL) {
             return null;
         }

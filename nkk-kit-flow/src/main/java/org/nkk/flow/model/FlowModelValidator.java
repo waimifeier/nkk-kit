@@ -13,6 +13,19 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.nkk.flow.model.node.FlowNodeModel;
+import org.nkk.flow.model.node.router.ConditionRouterNodeModel;
+import org.nkk.flow.model.node.router.FlowCondition;
+import org.nkk.flow.model.node.router.FlowConditionNode;
+import org.nkk.flow.model.node.router.InclusiveRouterNodeModel;
+import org.nkk.flow.model.node.router.ParallelRouterNodeModel;
+import org.nkk.flow.model.node.router.RouteRouterNodeModel;
+import org.nkk.flow.model.node.task.ApprovalNodeModel;
+import org.nkk.flow.model.node.task.CallProcessNodeModel;
+import org.nkk.flow.model.node.task.CopyNodeModel;
+import org.nkk.flow.model.node.task.FlowNodeAssignee;
+import org.nkk.flow.model.node.task.FlowSignPolicy;
+import org.nkk.flow.model.node.task.TaskNodeModel;
 
 /**
  * 流程模型校验工具。
@@ -115,11 +128,33 @@ public final class FlowModelValidator {
 
         validateNodeByType(node, path, context, errors);
         markEndPath(node, context);
-        collectBranches(node.getConditionNodes(), path + ".conditionNodes", node, context, errors, BranchType.CONDITION);
-        collectBranches(node.getParallelNodes(), path + ".parallelNodes", node, context, errors, BranchType.PARALLEL);
-        collectBranches(node.getInclusiveNodes(), path + ".inclusiveNodes", node, context, errors, BranchType.INCLUSIVE);
-        collectBranches(node.getRouteNodes(), path + ".routeNodes", node, context, errors, BranchType.ROUTE);
+        collectRouterBranches(node, path, context, errors);
         collectNode(node.getChildNode(), path + ".childNode", context, errors);
+    }
+
+    /**
+     * 按路由容器子类型收集并校验分支列表。
+     *
+     * @param node 当前节点
+     * @param path 当前节点路径
+     * @param context 校验上下文
+     * @param errors 错误列表
+     */
+    private static void collectRouterBranches(FlowNodeModel node, String path, ValidationContext context,
+                                              List<String> errors) {
+        if (node instanceof ConditionRouterNodeModel) {
+            collectBranches(((ConditionRouterNodeModel) node).getConditionNodes(), path + ".conditionNodes",
+                    node, context, errors, BranchType.CONDITION);
+        } else if (node instanceof ParallelRouterNodeModel) {
+            collectBranches(((ParallelRouterNodeModel) node).getParallelNodes(), path + ".parallelNodes",
+                    node, context, errors, BranchType.PARALLEL);
+        } else if (node instanceof InclusiveRouterNodeModel) {
+            collectBranches(((InclusiveRouterNodeModel) node).getInclusiveNodes(), path + ".inclusiveNodes",
+                    node, context, errors, BranchType.INCLUSIVE);
+        } else if (node instanceof RouteRouterNodeModel) {
+            collectBranches(((RouteRouterNodeModel) node).getRouteNodes(), path + ".routeNodes",
+                    node, context, errors, BranchType.ROUTE);
+        }
     }
 
     /**
@@ -134,34 +169,34 @@ public final class FlowModelValidator {
                                            List<String> errors) {
         if (FlowNodeTypeEnum.APPROVAL.eq(node.getType())) {
             context.hasApprovalNode = true;
-            validateApprovalNode(node, path, errors);
+            validateApprovalNode((ApprovalNodeModel) node, path, errors);
             return;
         }
         if (FlowNodeTypeEnum.COPY.eq(node.getType())) {
-            validateCopyNode(node, path, errors);
+            validateCopyNode((CopyNodeModel) node, path, errors);
             return;
         }
-        if (FlowNodeTypeEnum.CONDITION_APPROVAL.eq(node.getType())
-                || FlowNodeTypeEnum.CONDITION_BRANCH.eq(node.getType())) {
-            validateBranchContainer(node, node.getConditionNodes(), path, "conditionNodes", errors);
+        if (node instanceof ConditionRouterNodeModel) {
+            validateBranchContainer(node, ((ConditionRouterNodeModel) node).getConditionNodes(), path, "conditionNodes", errors);
             return;
         }
-        if (FlowNodeTypeEnum.PARALLEL_BRANCH.eq(node.getType())) {
-            validateBranchContainer(node, node.getParallelNodes(), path, "parallelNodes", errors);
+        if (node instanceof ParallelRouterNodeModel) {
+            validateBranchContainer(node, ((ParallelRouterNodeModel) node).getParallelNodes(), path, "parallelNodes", errors);
             return;
         }
-        if (FlowNodeTypeEnum.INCLUSIVE_BRANCH.eq(node.getType())) {
-            validateBranchContainer(node, node.getInclusiveNodes(), path, "inclusiveNodes", errors);
+        if (node instanceof InclusiveRouterNodeModel) {
+            validateBranchContainer(node, ((InclusiveRouterNodeModel) node).getInclusiveNodes(), path, "inclusiveNodes", errors);
             return;
         }
-        if (FlowNodeTypeEnum.ROUTE_BRANCH.eq(node.getType())) {
-            validateBranchContainer(node, node.getRouteNodes(), path, "routeNodes", errors);
-            if (node.getChildNode() != null && hasDefaultCondition(node.getRouteNodes())) {
+        if (node instanceof RouteRouterNodeModel) {
+            List<FlowConditionNode> routeNodes = ((RouteRouterNodeModel) node).getRouteNodes();
+            validateBranchContainer(node, routeNodes, path, "routeNodes", errors);
+            if (node.getChildNode() != null && hasDefaultCondition(routeNodes)) {
                 errors.add(path + " 路由分支配置公共后续节点时，routeNodes 不允许存在空条件默认路由，nodeKey=" + value(node.getNodeKey()));
             }
             return;
         }
-        if (FlowNodeTypeEnum.CALL_PROCESS.eq(node.getType()) && StrUtil.isBlank(node.getCallProcess())) {
+        if (node instanceof CallProcessNodeModel && StrUtil.isBlank(((CallProcessNodeModel) node).getCallProcess())) {
             errors.add(path + " 子流程节点 callProcess 不能为空，nodeKey=" + value(node.getNodeKey()));
             return;
         }
@@ -201,7 +236,7 @@ public final class FlowModelValidator {
      * @param path 当前节点路径
      * @param errors 错误列表
      */
-    private static void validateApprovalNode(FlowNodeModel node, String path, List<String> errors) {
+    private static void validateApprovalNode(ApprovalNodeModel node, String path, List<String> errors) {
         PerformType performType = PerformType.of(node.getExamineMode());
         if (PerformType.START == performType || PerformType.CALL_PROCESS == performType
                 || PerformType.TIMER == performType || PerformType.TRIGGER == performType
@@ -229,7 +264,7 @@ public final class FlowModelValidator {
      * @param path 当前节点路径
      * @param errors 错误列表
      */
-    private static void validateCopyNode(FlowNodeModel node, String path, List<String> errors) {
+    private static void validateCopyNode(CopyNodeModel node, String path, List<String> errors) {
         validateAssignees(node, path, "抄送节点", errors);
     }
 
@@ -241,7 +276,7 @@ public final class FlowModelValidator {
      * @param nodeType 节点类型说明
      * @param errors 错误列表
      */
-    private static void validateAssignees(FlowNodeModel node, String path, String nodeType, List<String> errors) {
+    private static void validateAssignees(TaskNodeModel node, String path, String nodeType, List<String> errors) {
         if (requiresAssignee(node) && CollUtil.isEmpty(node.getNodeAssigneeList())) {
             errors.add(path + " " + nodeType + " 未配置参与人，nodeKey=" + value(node.getNodeKey())
                     + "，setType=" + node.getSetType());
@@ -274,7 +309,7 @@ public final class FlowModelValidator {
      * @param node 当前节点
      * @return true 表示必须配置参与人
      */
-    private static boolean requiresAssignee(FlowNodeModel node) {
+    private static boolean requiresAssignee(TaskNodeModel node) {
         return FlowNodeSetTypeEnum.SPECIFY_MEMBERS.value().equals(node.getSetType())
                 || FlowNodeSetTypeEnum.ROLE.value().equals(node.getSetType())
                 || FlowNodeSetTypeEnum.DEPARTMENT.value().equals(node.getSetType())
@@ -372,23 +407,31 @@ public final class FlowModelValidator {
         if (node.getConditionList() == null) {
             return;
         }
-        for (int i = 0; i < node.getConditionList().size(); i++) {
-            FlowCondition condition = node.getConditionList().get(i);
-            String conditionPath = path + ".conditionList[" + i + "]";
-            if (condition == null) {
-                errors.add(conditionPath + " 条件不能为空");
+        if (branchType == BranchType.PARALLEL && CollUtil.isNotEmpty(node.getConditionList())) {
+            errors.add(path + " 并行分支不需要配置条件表达式");
+        }
+        for (int g = 0; g < node.getConditionList().size(); g++) {
+            List<FlowCondition> group = node.getConditionList().get(g);
+            String groupPath = path + ".conditionList[" + g + "]";
+            if (group == null) {
+                errors.add(groupPath + " 条件组不能为空");
                 continue;
             }
-            if (StrUtil.isBlank(condition.getField())) {
-                errors.add(conditionPath + " field 不能为空");
-            }
-            if (StrUtil.isBlank(condition.getOperator())) {
-                errors.add(conditionPath + " operator 不能为空");
-            } else if (!isSupportedOperator(condition.getOperator())) {
-                errors.add(conditionPath + " operator 不支持，operator=" + condition.getOperator());
-            }
-            if (branchType == BranchType.PARALLEL && CollUtil.isNotEmpty(node.getConditionList())) {
-                errors.add(conditionPath + " 并行分支不需要配置条件表达式");
+            for (int i = 0; i < group.size(); i++) {
+                FlowCondition condition = group.get(i);
+                String conditionPath = groupPath + "[" + i + "]";
+                if (condition == null) {
+                    errors.add(conditionPath + " 条件不能为空");
+                    continue;
+                }
+                if (StrUtil.isBlank(condition.getField())) {
+                    errors.add(conditionPath + " field 不能为空");
+                }
+                if (StrUtil.isBlank(condition.getOperator())) {
+                    errors.add(conditionPath + " operator 不能为空");
+                } else if (!isSupportedOperator(condition.getOperator())) {
+                    errors.add(conditionPath + " operator 不支持，operator=" + condition.getOperator());
+                }
             }
         }
     }
@@ -447,11 +490,17 @@ public final class FlowModelValidator {
         } else if (node.getNodeName().length() > 100) {
             errors.add(path + " 节点 nodeName 长度不能超过 100，nodeKey=" + value(node.getNodeKey()));
         }
-        if (node.getActionUrl() != null && node.getActionUrl().length() > 200) {
-            errors.add(path + " actionUrl 长度不能超过 200，nodeKey=" + value(node.getNodeKey()));
+        if (node instanceof TaskNodeModel) {
+            String actionUrl = ((TaskNodeModel) node).getActionUrl();
+            if (actionUrl != null && actionUrl.length() > 200) {
+                errors.add(path + " actionUrl 长度不能超过 200，nodeKey=" + value(node.getNodeKey()));
+            }
         }
-        if (node.getCallProcess() != null && node.getCallProcess().length() > 200) {
-            errors.add(path + " callProcess 长度不能超过 200，nodeKey=" + value(node.getNodeKey()));
+        if (node instanceof CallProcessNodeModel) {
+            String callProcess = ((CallProcessNodeModel) node).getCallProcess();
+            if (callProcess != null && callProcess.length() > 200) {
+                errors.add(path + " callProcess 长度不能超过 200，nodeKey=" + value(node.getNodeKey()));
+            }
         }
     }
 

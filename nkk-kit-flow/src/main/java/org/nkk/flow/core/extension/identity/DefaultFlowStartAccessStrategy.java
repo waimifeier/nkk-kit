@@ -2,7 +2,7 @@ package org.nkk.flow.core.extension.identity;
 
 import cn.hutool.core.collection.CollUtil;
 import org.nkk.flow.core.context.FlowCreator;
-import org.nkk.flow.model.FlowNodeAssignee;
+import org.nkk.flow.model.node.task.FlowNodeAssignee;
 
 import java.util.List;
 

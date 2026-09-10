@@ -6,7 +6,7 @@ import org.nkk.flow.entity.FlowInstance;
 import org.nkk.flow.entity.FlowProcess;
 import org.nkk.flow.entity.FlowTask;
 import org.nkk.flow.enums.core.FlowInstanceEnum.InstanceState;
-import org.nkk.flow.model.FlowNodeModel;
+import org.nkk.flow.model.node.FlowNodeModel;
 import org.nkk.flow.model.FlowProcessModel;
 
 import java.util.Map;

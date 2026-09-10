@@ -9,7 +9,7 @@ import org.nkk.flow.enums.core.FlowInstanceEnum.InstanceState;
 import org.nkk.flow.enums.core.FlowTaskEnum.TaskState;
 import org.nkk.flow.model.FlowAiConfig;
 import org.nkk.flow.model.FlowAiResponse;
-import org.nkk.flow.model.FlowNodeModel;
+import org.nkk.flow.model.node.FlowNodeModel;
 
 import java.util.List;
 import java.util.Map;

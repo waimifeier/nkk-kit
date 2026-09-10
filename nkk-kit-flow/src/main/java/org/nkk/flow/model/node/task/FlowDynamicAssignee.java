@@ -1,4 +1,4 @@
-package org.nkk.flow.model;
+package org.nkk.flow.model.node.task;
 
 import lombok.Data;
 import org.nkk.flow.enums.core.FlowTaskActorEnum.ActorType;

@@ -1,30 +1,56 @@
-package org.nkk.flow.model;
+package org.nkk.flow.model.node;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.EqualsAndHashCode;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.nkk.flow.core.context.FlowContext;
 import org.nkk.flow.core.context.FlowExecution;
 import org.nkk.flow.core.extension.listener.FlowNodeEvent;
 import org.nkk.flow.enums.core.FlowInstanceEnum.InstanceState;
 import org.nkk.flow.enums.node.FlowNodeTypeEnum;
-import org.nkk.flow.enums.node.FlowNodeSetTypeEnum;
-import org.nkk.flow.enums.core.FlowTaskEnum.PerformType;
-import org.nkk.flow.enums.node.FlowRejectStrategyEnum;
+import org.nkk.flow.model.FlowAiConfig;
 
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.nkk.flow.model.node.endpoint.AutoPassNodeModel;
+import org.nkk.flow.model.node.endpoint.AutoRejectNodeModel;
+import org.nkk.flow.model.node.endpoint.EndNodeModel;
+import org.nkk.flow.model.node.router.ConditionRouterNodeModel;
+import org.nkk.flow.model.node.router.FlowConditionNode;
+import org.nkk.flow.model.node.router.InclusiveRouterNodeModel;
+import org.nkk.flow.model.node.router.ParallelRouterNodeModel;
+import org.nkk.flow.model.node.router.RouteRouterNodeModel;
+import org.nkk.flow.model.node.router.RouterNodeModel;
+import org.nkk.flow.model.node.task.ApprovalNodeModel;
+import org.nkk.flow.model.node.task.CallProcessNodeModel;
+import org.nkk.flow.model.node.task.CopyNodeModel;
+import org.nkk.flow.model.node.task.StartNodeModel;
+import org.nkk.flow.model.node.task.TaskNodeModel;
+import org.nkk.flow.model.node.task.TimerNodeModel;
+import org.nkk.flow.model.node.task.TriggerNodeModel;
 
 /**
- * 流程节点模型。
+ * 流程节点模型基类。
+ *
+ * <p>JSON 的 {@code type} 字段作为多态判别字段，反序列化时按类型实例化对应子类。
+ * 子类型不在本类维护清单，而是由各子类上的 {@link FlowNodeType} 注解自我声明，
+ * JSON 处理器启动时扫描 {@code org.nkk.flow.model} 包自动注册：
+ * 任务节点见 {@link TaskNodeModel}（审批/抄送/发起/延迟/触发），
+ * 路由容器见 {@link RouterNodeModel}（条件/并行/包容/路由），
+ * 分支项见 {@link FlowConditionNode}，子流程见 {@link CallProcessNodeModel}。</p>
+ *
+ * <p>新增节点类型：新建继承本类（或 {@link TaskNodeModel}/{@link RouterNodeModel}）的子类，
+ * 贴上 {@link FlowNodeType} 注解即可，无需修改本类。</p>
  */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class FlowNodeModel implements Serializable {
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type", visible = true)
+public abstract class FlowNodeModel implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -39,137 +65,14 @@ public class FlowNodeModel implements Serializable {
     private String nodeKey;
 
     /**
-     * 节点类型，取值见 {@link FlowNodeTypeEnum}。
+     * 节点类型，取值见 {@link FlowNodeTypeEnum}，同时作为多态反序列化的判别字段。
      */
     private Integer type;
 
     /**
-     * 审批人设置类型，取值见 {@link FlowNodeSetTypeEnum}。
-     */
-    private Integer setType;
-
-    /**
-     * 审批参与方式，取值见 {@link PerformType}。
-     */
-    private Integer examineMode;
-
-    /**
-     * 分支汇聚策略，1 表示所有分支汇聚后再继续流转。
-     */
-    private Integer groupStrategy;
-
-    /**
-     * 票签通过权重，票签场景下达到该权重后视为通过。
-     */
-    private Integer passWeight;
-
-    /**
-     * 驳回策略，取值见 {@link FlowRejectStrategyEnum}。
-     */
-    private Integer rejectStrategy;
-
-    /**
-     * 是否允许驳回到发起节点，1 表示允许。
-     */
-    private Integer rejectStart;
-
-    /**
-     * 是否开启任务到期自动处理。
-     */
-    private Boolean termAuto;
-
-    /**
-     * 任务期限，单位小时。
-     */
-    private Integer term;
-
-    /**
-     * 任务到期处理模式，1 表示超时自动拒绝，其他值按自动通过处理。
-     */
-    private Integer termMode;
-
-    /**
-     * 是否开启任务提醒。
-     */
-    private Boolean remind;
-
-    /**
-     * 是否允许审批转交。
-     *
-     * <p>false 表示当前节点禁止调用转办、委派、代理等转交类操作。</p>
-     */
-    private Boolean allowTransfer;
-
-    /**
-     * 是否允许审批加签或减签。
-     *
-     * <p>false 表示当前节点禁止调用加签、减签操作。</p>
-     */
-    private Boolean allowAppendNode;
-
-    /**
-     * 是否允许审批回退。
-     *
-     * <p>false 表示当前节点禁止选择目标节点回退。</p>
-     */
-    private Boolean allowRollback;
-
-    /**
-     * 是否允许审批节点手动抄送。
-     *
-     * <p>false 表示当前节点禁止调用手动抄送操作。</p>
-     */
-    private Boolean allowCc;
-
-    /**
-     * 触发器类型，预留给业务侧或扩展点识别触发方式。
-     */
-    private Integer triggerType;
-
-    /**
-     * 子流程引用。默认支持 processKey、processKey:version、processId 三种写法。
-     */
-    private String callProcess;
-
-    /**
-     * 子流程是否异步执行，true 表示启动子流程后父流程继续向下流转。
-     */
-    private Boolean callAsync;
-
-    /**
-     * AI 处理器编码，配置后会交给流程 AI 扩展点处理。
+     * AI 处理器编码，配置后条件分支、包容分支的路由决策交给流程 AI 扩展点处理。
      */
     private String callAi;
-
-    /**
-     * 节点任务办理页地址。
-     */
-    private String actionUrl;
-
-    /**
-     * 节点办理人配置。
-     */
-    private List<FlowNodeAssignee> nodeAssigneeList;
-
-    /**
-     * 条件分支列表。
-     */
-    private List<FlowConditionNode> conditionNodes;
-
-    /**
-     * 并行分支列表。
-     */
-    private List<FlowConditionNode> parallelNodes;
-
-    /**
-     * 包容分支列表。
-     */
-    private List<FlowConditionNode> inclusiveNodes;
-
-    /**
-     * 路由分支列表。
-     */
-    private List<FlowConditionNode> routeNodes;
 
     /**
      * 扩展配置，票签策略、提醒配置、AI 配置等非固定字段可放在这里。
@@ -188,6 +91,16 @@ public class FlowNodeModel implements Serializable {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private FlowNodeModel parentNode;
+
+    /**
+     * 当前节点的分支列表，仅路由容器子类有值，其他节点类型返回 null。
+     *
+     * @return 分支节点列表
+     */
+    @JsonIgnore
+    public List<FlowConditionNode> getBranchNodes() {
+        return null;
+    }
 
     /**
      * 执行当前节点，并按节点类型决定是否创建任务、进入分支、启动子流程或结束实例。
@@ -210,49 +123,46 @@ public class FlowNodeModel implements Serializable {
     }
 
     private boolean executeInternal(FlowContext context, FlowExecution execution) {
-        if (FlowNodeTypeEnum.CONDITION_APPROVAL.eq(type) || FlowNodeTypeEnum.CONDITION_BRANCH.eq(type)) {
+        if (this instanceof ConditionRouterNodeModel) {
             return context.getConditionHandler().getConditionNode(context, execution, this)
                     .map(node -> executeConditionNode(context, execution, node))
                     .orElse(false);
         }
-        if (FlowNodeTypeEnum.PARALLEL_BRANCH.eq(type)) {
+        if (this instanceof ParallelRouterNodeModel) {
             return executeParallelNode(context, execution);
         }
-        if (FlowNodeTypeEnum.INCLUSIVE_BRANCH.eq(type)) {
+        if (this instanceof InclusiveRouterNodeModel) {
             return executeInclusiveNode(context, execution);
         }
-        if (FlowNodeTypeEnum.ROUTE_BRANCH.eq(type)) {
+        if (this instanceof RouteRouterNodeModel) {
             return executeRouteNode(context, execution);
         }
-        if (FlowNodeTypeEnum.START.eq(type) || FlowNodeTypeEnum.COPY.eq(type)) {
-            context.createTask(execution, this);
+        if (this instanceof StartNodeModel || this instanceof CopyNodeModel) {
+            context.createTask(execution, (TaskNodeModel) this);
             return nextNode().map(next -> next.execute(context, execution)).orElse(true);
         }
-        if (FlowNodeTypeEnum.TIMER.eq(type) || FlowNodeTypeEnum.TRIGGER.eq(type)) {
-            context.createTask(execution, this);
+        if (this instanceof TimerNodeModel || this instanceof TriggerNodeModel || this instanceof ApprovalNodeModel) {
+            context.createTask(execution, (TaskNodeModel) this);
             return true;
         }
-        if (FlowNodeTypeEnum.CALL_PROCESS.eq(type)) {
+        if (this instanceof CallProcessNodeModel) {
+            CallProcessNodeModel callNode = (CallProcessNodeModel) this;
             if (context.getSubProcessHandler() == null) {
                 throw new IllegalStateException("未配置子流程处理器，nodeKey=" + nodeKey);
             }
-            boolean started = context.getSubProcessHandler().start(context, execution, this);
-            if (Boolean.TRUE.equals(callAsync)) {
+            boolean started = context.getSubProcessHandler().start(context, execution, callNode);
+            if (Boolean.TRUE.equals(callNode.getCallAsync())) {
                 return nextNode().map(next -> next.execute(context, execution)).orElse(started);
             }
             return started;
         }
-        if (FlowNodeTypeEnum.APPROVAL.eq(type)) {
-            context.createTask(execution, this);
-            return true;
-        }
-        if (FlowNodeTypeEnum.AUTO_PASS.eq(type)) {
+        if (this instanceof AutoPassNodeModel) {
             return execution.endInstance(this, InstanceState.AUTO_PASS);
         }
-        if (FlowNodeTypeEnum.AUTO_REJECT.eq(type)) {
+        if (this instanceof AutoRejectNodeModel) {
             return execution.endInstance(this, InstanceState.AUTO_REJECT);
         }
-        if (FlowNodeTypeEnum.END.eq(type)) {
+        if (this instanceof EndNodeModel) {
             return execution.endInstance(this, InstanceState.COMPLETED);
         }
         return nextNode().map(next -> next.execute(context, execution)).orElseGet(() -> execution.endInstance(this, InstanceState.COMPLETED));
@@ -271,19 +181,7 @@ public class FlowNodeModel implements Serializable {
         if (nodeKey.equals(this.nodeKey)) {
             return this;
         }
-        FlowNodeModel found = findFromConditionNodes(nodeKey, conditionNodes);
-        if (found != null) {
-            return found;
-        }
-        found = findFromConditionNodes(nodeKey, parallelNodes);
-        if (found != null) {
-            return found;
-        }
-        found = findFromConditionNodes(nodeKey, inclusiveNodes);
-        if (found != null) {
-            return found;
-        }
-        found = findFromConditionNodes(nodeKey, routeNodes);
+        FlowNodeModel found = findFromBranchNodes(nodeKey, getBranchNodes());
         if (found != null) {
             return found;
         }
@@ -320,16 +218,7 @@ public class FlowNodeModel implements Serializable {
             }
             return true;
         }
-        if (removeFromConditionNodes(targetNodeKey, conditionNodes)) {
-            return true;
-        }
-        if (removeFromConditionNodes(targetNodeKey, parallelNodes)) {
-            return true;
-        }
-        if (removeFromConditionNodes(targetNodeKey, inclusiveNodes)) {
-            return true;
-        }
-        if (removeFromConditionNodes(targetNodeKey, routeNodes)) {
+        if (removeFromBranchNodes(targetNodeKey, getBranchNodes())) {
             return true;
         }
         return childNode != null && childNode.removeNode(targetNodeKey);
@@ -378,24 +267,6 @@ public class FlowNodeModel implements Serializable {
     }
 
     /**
-     * 判断当前节点是否需要等待所有分支汇聚。
-     *
-     * @return true 表示所有分支汇聚后再继续流转
-     */
-    public boolean allJoinGroupStrategy() {
-        return Integer.valueOf(1).equals(groupStrategy);
-    }
-
-    /**
-     * 判断当前节点是否需要保存办理人权重。
-     *
-     * @return true 表示当前节点是票签模式，需要保存权重
-     */
-    public boolean saveWeight() {
-        return Integer.valueOf(4).equals(examineMode);
-    }
-
-    /**
      * 从扩展配置中读取 AI 配置。
      *
      * @return AI 配置，未配置时返回空配置对象
@@ -415,7 +286,7 @@ public class FlowNodeModel implements Serializable {
         return FlowContext.fromJson(FlowContext.toJson(value), FlowAiConfig.class);
     }
 
-    private FlowNodeModel findFromConditionNodes(String nodeKey, List<FlowConditionNode> nodes) {
+    private FlowNodeModel findFromBranchNodes(String nodeKey, List<FlowConditionNode> nodes) {
         if (nodes == null) {
             return null;
         }
@@ -430,7 +301,7 @@ public class FlowNodeModel implements Serializable {
         return null;
     }
 
-    private boolean removeFromConditionNodes(String targetNodeKey, List<FlowConditionNode> nodes) {
+    private boolean removeFromBranchNodes(String targetNodeKey, List<FlowConditionNode> nodes) {
         if (nodes == null) {
             return false;
         }
@@ -473,6 +344,7 @@ public class FlowNodeModel implements Serializable {
     }
 
     private boolean executeParallelNode(FlowContext context, FlowExecution execution) {
+        List<FlowConditionNode> parallelNodes = ((ParallelRouterNodeModel) this).getParallelNodes();
         if (parallelNodes == null || parallelNodes.isEmpty()) {
             return nextNode().map(next -> next.execute(context, execution)).orElse(true);
         }
@@ -517,4 +389,3 @@ public class FlowNodeModel implements Serializable {
         return nodeKey.startsWith("route:") ? nodeKey.substring("route:".length()) : nodeKey;
     }
 }
-

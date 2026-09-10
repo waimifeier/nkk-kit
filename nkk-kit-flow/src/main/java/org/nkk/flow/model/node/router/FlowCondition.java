@@ -1,4 +1,4 @@
-package org.nkk.flow.model;
+package org.nkk.flow.model.node.router;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
@@ -13,6 +13,11 @@ import java.io.Serializable;
 public class FlowCondition implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
+    /**
+     * 条件展示名称，设计器回显用（例如表单字段中文名）。
+     */
+    private String label;
 
     /**
      * 条件字段名，对应流程变量 Map 中的 key。
@@ -31,5 +36,10 @@ public class FlowCondition implements Serializable {
      * 条件期望值。
      */
     private Object value;
+
+    /**
+     * 条件来源类型，设计器标记字段来源（form-表单字段 / custom-自由输入）。
+     */
+    private String type;
 }
 

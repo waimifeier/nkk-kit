@@ -6,6 +6,7 @@ import org.nkk.flow.entity.FlowInstance;
 import org.nkk.flow.entity.FlowTask;
 import org.nkk.flow.entity.FlowTaskActor;
 import org.nkk.flow.enums.core.FlowTaskEnum.PerformType;
+import org.nkk.flow.model.node.FlowNodeModel;
 
 import java.util.Date;
 import java.util.Map;
@@ -47,7 +48,7 @@ public interface NkkFlowEngine {
 
     Optional<FlowInstance> startInstanceByProcessKey(String processKey, Integer version, FlowCreator creator,
                                                      Map<String, Object> args, boolean saveAsDraft,
-                                                     Consumer<org.nkk.flow.model.FlowNodeModel> checkNodeModel,
+                                                     Consumer<FlowNodeModel> checkNodeModel,
                                                      Supplier<FlowInstance> supplier);
 
     default Optional<FlowInstance> startInstanceByProcessKey(String processKey, Integer version, FlowCreator creator, String businessKey) {
@@ -62,7 +63,7 @@ public interface NkkFlowEngine {
 
     Optional<FlowInstance> startInstanceById(Long processId, FlowCreator creator, Map<String, Object> args,
                                              boolean saveAsDraft,
-                                             Consumer<org.nkk.flow.model.FlowNodeModel> checkNodeModel,
+                                             Consumer<FlowNodeModel> checkNodeModel,
                                              Supplier<FlowInstance> supplier);
 
     default Optional<FlowInstance> startInstanceById(Long processId, FlowCreator creator, String businessKey) {
@@ -139,10 +140,10 @@ public interface NkkFlowEngine {
 
     boolean redeployProcessModel(Long instanceId, Function<org.nkk.flow.model.FlowProcessModel, org.nkk.flow.model.FlowProcessModel> function);
 
-    boolean executeAppendNodeModel(Long taskId, org.nkk.flow.model.FlowNodeModel nodeModel,
+    boolean executeAppendNodeModel(Long taskId, FlowNodeModel nodeModel,
                                    FlowCreator creator, Map<String, Object> args, boolean beforeAfter);
 
-    default boolean executeAppendNodeModel(Long taskId, org.nkk.flow.model.FlowNodeModel nodeModel,
+    default boolean executeAppendNodeModel(Long taskId, FlowNodeModel nodeModel,
                                            FlowCreator creator, boolean beforeAfter) {
         return executeAppendNodeModel(taskId, nodeModel, creator, null, beforeAfter);
     }

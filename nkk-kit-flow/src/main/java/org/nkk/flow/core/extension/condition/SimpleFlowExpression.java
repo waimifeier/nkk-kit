@@ -1,6 +1,6 @@
 package org.nkk.flow.core.extension.condition;
 
-import org.nkk.flow.model.FlowCondition;
+import org.nkk.flow.model.node.router.FlowCondition;
 
 import java.math.BigDecimal;
 import java.util.Collection;
@@ -10,20 +10,31 @@ import java.util.Objects;
 
 /**
  * 默认条件表达式，支持 eq、ne、gt、ge、lt、le、contains、notContains。
+ * <p>条件组语义：组间 OR（任一组命中即命中），组内条件 AND（组内全部满足才算命中）。</p>
  */
 public class SimpleFlowExpression implements FlowExpression {
 
     @Override
-    public boolean eval(List<FlowCondition> conditions, Map<String, Object> args) {
-        if (conditions == null || conditions.isEmpty()) {
+    public boolean eval(List<List<FlowCondition>> conditionGroups, Map<String, Object> args) {
+        if (conditionGroups == null || conditionGroups.isEmpty()) {
             return true;
         }
-        for (FlowCondition condition : conditions) {
-            if (!match(condition, args)) {
-                return false;
+        for (List<FlowCondition> group : conditionGroups) {
+            if (group == null || group.isEmpty()) {
+                continue;
+            }
+            boolean matched = true;
+            for (FlowCondition condition : group) {
+                if (!match(condition, args)) {
+                    matched = false;
+                    break;
+                }
+            }
+            if (matched) {
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     private boolean match(FlowCondition condition, Map<String, Object> args) {

@@ -3,7 +3,7 @@ package org.nkk.flow.core.extension.identity;
 import org.nkk.flow.core.context.FlowCreator;
 import org.nkk.flow.entity.FlowTaskActor;
 import org.nkk.flow.enums.core.FlowTaskActorEnum.ActorType;
-import org.nkk.flow.model.FlowNodeAssignee;
+import org.nkk.flow.model.node.task.FlowNodeAssignee;
 
 /**
  * 流程参与人访问策略。

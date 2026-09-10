@@ -12,7 +12,8 @@ import org.nkk.flow.entity.FlowTask;
 import org.nkk.flow.enums.runtime.FlowEventTypeEnum;
 import org.nkk.flow.enums.core.FlowInstanceEnum.InstanceState;
 import org.nkk.flow.enums.core.FlowTaskEnum.TaskState;
-import org.nkk.flow.model.FlowNodeModel;
+import org.nkk.flow.model.node.task.CallProcessNodeModel;
+import org.nkk.flow.model.node.FlowNodeModel;
 import org.nkk.flow.model.FlowProcessModel;
 
 import java.util.HashMap;
@@ -28,7 +29,7 @@ import java.util.Map;
 public class DefaultFlowSubProcessHandler implements FlowSubProcessHandler {
 
     @Override
-    public boolean start(FlowContext context, FlowExecution execution, FlowNodeModel nodeModel) {
+    public boolean start(FlowContext context, FlowExecution execution, CallProcessNodeModel nodeModel) {
         if (StrUtil.isBlank(nodeModel.getCallProcess())) {
             throw new IllegalArgumentException("子流程定义 key 不能为空，nodeKey=" + nodeModel.getNodeKey());
         }

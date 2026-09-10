@@ -7,6 +7,8 @@ import org.nkk.flow.model.FlowFieldMeta;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import org.nkk.flow.model.node.FlowNodeModel;
+import org.nkk.flow.model.node.router.FlowConditionNode;
 
 /**
  * 流程定义 JSON 模型。
@@ -91,10 +93,7 @@ public class FlowProcessModel implements Serializable {
      * @param rootNode 当前根节点
      */
     private void buildParentNode(FlowNodeModel rootNode) {
-        buildParentConditionNodes(rootNode, rootNode.getConditionNodes());
-        buildParentConditionNodes(rootNode, rootNode.getParallelNodes());
-        buildParentConditionNodes(rootNode, rootNode.getInclusiveNodes());
-        buildParentConditionNodes(rootNode, rootNode.getRouteNodes());
+        buildParentConditionNodes(rootNode, rootNode.getBranchNodes());
         if (rootNode.getChildNode() != null) {
             rootNode.getChildNode().setParentNode(rootNode);
             buildParentNode(rootNode.getChildNode());
@@ -126,10 +125,7 @@ public class FlowProcessModel implements Serializable {
      */
     private void cleanParentNode(FlowNodeModel node) {
         node.setParentNode(null);
-        cleanParentConditionNodes(node.getConditionNodes());
-        cleanParentConditionNodes(node.getParallelNodes());
-        cleanParentConditionNodes(node.getInclusiveNodes());
-        cleanParentConditionNodes(node.getRouteNodes());
+        cleanParentConditionNodes(node.getBranchNodes());
         if (node.getChildNode() != null) {
             cleanParentNode(node.getChildNode());
         }

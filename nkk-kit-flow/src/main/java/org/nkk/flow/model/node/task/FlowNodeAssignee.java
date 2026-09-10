@@ -1,4 +1,4 @@
-package org.nkk.flow.model;
+package org.nkk.flow.model.node.task;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;

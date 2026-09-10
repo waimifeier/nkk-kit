@@ -7,19 +7,19 @@ import org.nkk.flow.entity.FlowHisInstance;
 import org.nkk.flow.entity.FlowInstance;
 import org.nkk.flow.entity.FlowProcess;
 import org.nkk.flow.enums.core.FlowInstanceEnum.InstanceState;
-import org.nkk.flow.model.FlowNodeModel;
+import org.nkk.flow.model.node.task.CallProcessNodeModel;
 
 /**
  * 子流程处理扩展。
  */
 public interface FlowSubProcessHandler {
 
-    boolean start(FlowContext context, FlowExecution execution, FlowNodeModel nodeModel);
+    boolean start(FlowContext context, FlowExecution execution, CallProcessNodeModel nodeModel);
 
     /**
      * 解析子流程定义。默认支持 processKey、processKey:version、processId 三种写法。
      */
-    default FlowProcess resolveProcess(FlowContext context, FlowExecution execution, FlowNodeModel nodeModel) {
+    default FlowProcess resolveProcess(FlowContext context, FlowExecution execution, CallProcessNodeModel nodeModel) {
         String callProcess = nodeModel.getCallProcess();
         if (StrUtil.isBlank(callProcess)) {
             throw new IllegalArgumentException("子流程定义不能为空，nodeKey=" + nodeModel.getNodeKey());

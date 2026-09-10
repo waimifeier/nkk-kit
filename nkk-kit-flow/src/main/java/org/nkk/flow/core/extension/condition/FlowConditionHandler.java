@@ -2,8 +2,8 @@ package org.nkk.flow.core.extension.condition;
 
 import org.nkk.flow.core.context.FlowContext;
 import org.nkk.flow.core.context.FlowExecution;
-import org.nkk.flow.model.FlowConditionNode;
-import org.nkk.flow.model.FlowNodeModel;
+import org.nkk.flow.model.node.router.FlowConditionNode;
+import org.nkk.flow.model.node.FlowNodeModel;
 
 import java.util.List;
 import java.util.Optional;

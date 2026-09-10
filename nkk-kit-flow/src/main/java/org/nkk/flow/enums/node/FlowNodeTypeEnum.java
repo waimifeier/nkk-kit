@@ -7,8 +7,8 @@ import org.nkk.core.enums.common.IEnum;
 /**
  * 流程模型节点类型。
  *
- * <p>该枚举描述流程设计器中的节点类型，只用于 {@link org.nkk.flow.model.FlowNodeModel#getType()}
- * 和 {@link org.nkk.flow.model.FlowConditionNode#getType()}。任务办理过程中的转办、委派、跳转、
+ * <p>该枚举描述流程设计器中的节点类型，只用于 {@link org.nkk.flow.model.node.FlowNodeModel#getType()}
+ * 和 {@link org.nkk.flow.model.node.router.FlowConditionNode#getType()}。任务办理过程中的转办、委派、跳转、
  * 驳回等运行时任务类型仍由 {@link org.nkk.flow.enums.core.FlowTaskEnum.TaskType} 表示。</p>
  */
 @Getter

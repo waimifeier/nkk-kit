@@ -6,7 +6,7 @@ import org.nkk.flow.core.context.FlowCreator;
 import org.nkk.flow.core.extension.identity.FlowCreatorProvider;
 import org.nkk.flow.entity.FlowProcess;
 import org.nkk.flow.enums.core.FlowProcessEnum.ProcessState;
-import org.nkk.flow.model.FlowNodeModel;
+import org.nkk.flow.model.node.FlowNodeModel;
 import org.nkk.flow.model.FlowProcessModel;
 import org.nkk.flow.service.NkkFlowEngine;
 import org.nkk.flow.web.model.FlowProcessCategoryResponse;
