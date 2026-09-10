@@ -56,7 +56,7 @@ public interface FlowRuntimeService {
     boolean timeout(Long instanceId, FlowTask currentTask, FlowCreator creator);
 
     default boolean destroyByInstanceId(Long instanceId, Map<String, Object> args) {
-        return destroyByInstanceId(instanceId, FlowCreator.ADMIN, args);
+        return destroyByInstanceId(instanceId, null, args);
     }
 
     boolean destroyByInstanceId(Long instanceId, FlowCreator creator, Map<String, Object> args);

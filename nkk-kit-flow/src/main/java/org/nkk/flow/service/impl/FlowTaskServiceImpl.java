@@ -159,7 +159,7 @@ public class FlowTaskServiceImpl implements FlowTaskService {
         if (task == null) {
             throw new IllegalArgumentException("任务不存在，taskId=" + taskId);
         }
-        FlowCreator actualCreator = creator == null ? FlowCreator.ADMIN : creator;
+        FlowCreator actualCreator = creator == null ? context.getSystemCreator() : creator;
         if (state == TaskState.COMPLETED && isAllowed(task, actualCreator.getCreateId()) == null) {
             throw new IllegalStateException("当前用户无权审批任务，taskId=" + taskId);
         }
@@ -214,7 +214,7 @@ public class FlowTaskServiceImpl implements FlowTaskService {
                 task.putAllVariable(args);
                 task.setOpinion(opinion);
             }
-            completeTaskAndNotify(task, state, creator == null ? FlowCreator.ADMIN : creator, null);
+            completeTaskAndNotify(task, state, creator == null ? context.getSystemCreator() : creator, null);
         }
     }
 
@@ -225,7 +225,7 @@ public class FlowTaskServiceImpl implements FlowTaskService {
             return true;
         }
         for (FlowTask task : tasks) {
-            completeTaskAndNotify(task, state, creator == null ? FlowCreator.ADMIN : creator, null);
+            completeTaskAndNotify(task, state, creator == null ? context.getSystemCreator() : creator, null);
         }
         return true;
     }
@@ -238,7 +238,7 @@ public class FlowTaskServiceImpl implements FlowTaskService {
             return true;
         }
         for (FlowTask task : tasks) {
-            completeTaskAndNotify(task, state, creator == null ? FlowCreator.ADMIN : creator, null);
+            completeTaskAndNotify(task, state, creator == null ? context.getSystemCreator() : creator, null);
         }
         return true;
     }
@@ -454,13 +454,13 @@ public class FlowTaskServiceImpl implements FlowTaskService {
             return false;
         }
         replaceTaskActors(task, Collections.singletonList(actor));
-        notifyTaskChanged(FlowEventTypeEnum.TASK_ACTOR_CHANGED, task, FlowCreator.ADMIN);
+        notifyTaskChanged(FlowEventTypeEnum.TASK_ACTOR_CHANGED, task, context.getSystemCreator());
         return true;
     }
 
     @Override
     public List<FlowTask> endCallProcessTask(Long callProcessId, Long callInstanceId) {
-        return finishCallProcessTask(callProcessId, callInstanceId, FlowCreator.ADMIN, TaskState.AUTO_COMPLETED);
+        return finishCallProcessTask(callProcessId, callInstanceId, context.getSystemCreator(), TaskState.AUTO_COMPLETED);
     }
 
     @Override
@@ -472,7 +472,7 @@ public class FlowTaskServiceImpl implements FlowTaskService {
         }
         List<FlowTask> completed = new ArrayList<>();
         for (FlowTask task : tasks) {
-            completed.add(executeTask(task.getId(), creator == null ? FlowCreator.ADMIN : creator, null,
+            completed.add(executeTask(task.getId(), creator == null ? context.getSystemCreator() : creator, null,
                     state == null ? TaskState.AUTO_COMPLETED : state));
         }
         return completed;
@@ -544,7 +544,7 @@ public class FlowTaskServiceImpl implements FlowTaskService {
     }
 
     private void completeTaskAndNotify(FlowTask task, TaskState state, FlowCreator creator, FlowNodeModel nodeModel) {
-        FlowCreator actualCreator = creator == null ? FlowCreator.ADMIN : creator;
+        FlowCreator actualCreator = creator == null ? context.getSystemCreator() : creator;
         TaskState actualState = state == null ? TaskState.COMPLETED : state;
         List<FlowTaskActor> actors = moveToHisTask(task, actualState, actualCreator);
         notifyTask(eventTypeOf(actualState), task, actors, nodeModel, actualCreator);

@@ -22,7 +22,7 @@ import java.util.List;
  * 流程设计器流程定义接口。
  */
 @RestController
-@RequestMapping("${nkk.flow.web.api-prefix:/nkk/flow}/designer/processes")
+@RequestMapping("${flow.web.api-prefix:/flow}/designer/processes")
 public class FlowDesignerProcessController {
 
     private final FlowDesignerProcessService processService;

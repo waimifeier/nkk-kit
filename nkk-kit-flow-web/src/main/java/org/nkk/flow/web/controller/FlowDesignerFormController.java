@@ -18,7 +18,7 @@ import java.util.List;
  * <p>字段元数据不再落独立表，统一走 {@code FlowDesignerFormProvider} SPI 获取。</p>
  */
 @RestController
-@RequestMapping("${nkk.flow.web.api-prefix:/nkk/flow}/designer/forms")
+@RequestMapping("${flow.web.api-prefix:/flow}/designer/forms")
 public class FlowDesignerFormController {
 
     private final FlowDesignerFormService formService;

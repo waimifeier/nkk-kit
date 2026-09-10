@@ -116,8 +116,11 @@ public class NkkFlowAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public FlowInstanceAccessStrategy flowInstanceAccessStrategy() {
-        return new DefaultFlowInstanceAccessStrategy();
+    public FlowInstanceAccessStrategy flowInstanceAccessStrategy(
+            ObjectProvider<FlowCreatorProvider> creatorProvider) {
+        DefaultFlowInstanceAccessStrategy strategy = new DefaultFlowInstanceAccessStrategy();
+        creatorProvider.ifAvailable(strategy::setCreatorProvider);
+        return strategy;
     }
 
     @Bean
@@ -152,14 +155,14 @@ public class NkkFlowAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = "nkk.flow.eventing", name = "task", havingValue = "true")
+    @ConditionalOnProperty(prefix = "flow.eventing", name = "task", havingValue = "true")
     public FlowTaskListener springFlowTaskListener(ApplicationEventPublisher publisher) {
         return new SpringFlowTaskListener(publisher);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = "nkk.flow.eventing", name = "instance", havingValue = "true")
+    @ConditionalOnProperty(prefix = "flow.eventing", name = "instance", havingValue = "true")
     public FlowInstanceListener springFlowInstanceListener(ApplicationEventPublisher publisher) {
         return new SpringFlowInstanceListener(publisher);
     }

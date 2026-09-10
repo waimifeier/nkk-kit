@@ -152,6 +152,22 @@ public class FlowContext {
         return current;
     }
 
+    /**
+     * 获取系统操作人（用于自动超时、触发器、子流程等无人操作场景）。
+     *
+     * @return 系统操作人；未配置 {@link FlowCreatorProvider#getSystemCreator()} 时抛异常
+     */
+    public FlowCreator getSystemCreator() {
+        if (creatorProvider == null) {
+            throw new IllegalStateException("未配置 FlowCreatorProvider，无法获取系统操作人");
+        }
+        FlowCreator system = creatorProvider.getSystemCreator();
+        if (system == null || StrUtil.isBlank(system.getCreateId())) {
+            throw new IllegalStateException("FlowCreatorProvider 未提供系统操作人，请在 provider 中实现 getSystemCreator()");
+        }
+        return system;
+    }
+
     public void cacheProcessModel(String key, Object model) {
         if (modelCache != null && key != null && model != null) {
             modelCache.put(key, model);

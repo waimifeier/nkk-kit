@@ -26,11 +26,10 @@
 可选配置：
 
 ```yaml
-nkk:
-  flow:
-    web:
-      enabled: true
-      api-prefix: /nkk/flow
+flow:
+  web:
+    enabled: true
+    api-prefix: /flow
 ```
 
 ## 设计器组织数据
@@ -41,9 +40,9 @@ nkk:
 
 | 接口 | 说明 |
 | --- | --- |
-| `GET /nkk/flow/designer/org/departments/tree` | 部门树，只包含部门节点。 |
-| `GET /nkk/flow/designer/org/employees/tree` | 员工树，通常是部门节点 + 员工叶子节点。 |
-| `GET /nkk/flow/designer/org/roles` | 角色普通列表。 |
+| `GET /flow/designer/org/departments/tree` | 部门树，只包含部门节点。 |
+| `GET /flow/designer/org/employees/tree` | 员工树，通常是部门节点 + 员工叶子节点。 |
+| `GET /flow/designer/org/roles` | 角色普通列表。 |
 
 使用方实现 `FlowDesignerOrgProvider` Bean 即可：
 
@@ -91,8 +90,8 @@ public FlowDesignerOrgProvider flowDesignerOrgProvider() {
 
 | 接口 | 说明 |
 | --- | --- |
-| `GET /nkk/flow/designer/forms/options` | 查询设计器可选表单下拉数据。 |
-| `GET /nkk/flow/designer/forms/{formKey}/fields` | 查询指定表单的字段元数据；`formVersion` 为空时返回最新版本。 |
+| `GET /flow/designer/forms/options` | 查询设计器可选表单下拉数据。 |
+| `GET /flow/designer/forms/{formKey}/fields` | 查询指定表单的字段元数据；`formVersion` 为空时返回最新版本。 |
 
 
 字段元数据约定：
@@ -109,7 +108,7 @@ public FlowDesignerOrgProvider flowDesignerOrgProvider() {
 示例：
 
 ```bash
-curl "http://localhost:18080/nkk/flow/designer/forms/leave-form/fields?formVersion=1"
+curl "http://localhost:18080/flow/designer/forms/leave-form/fields?formVersion=1"
 ```
 
 保存示例：
@@ -141,13 +140,13 @@ curl "http://localhost:18080/nkk/flow/designer/forms/leave-form/fields?formVersi
 
 | 接口 | 说明 |
 | --- | --- |
-| `POST /nkk/flow/designer/processes/publish` | 发布流程定义，生成新版本。 |
-| `GET /nkk/flow/designer/processes/categories` | 按流程分类查询当前流程定义，不分页。 |
-| `GET /nkk/flow/designer/processes/{processId}` | 查询流程定义详情。 |
-| `POST /nkk/flow/designer/processes/{processId}/enable` | 启用流程定义。 |
-| `POST /nkk/flow/designer/processes/{processId}/disable` | 禁用流程定义。 |
-| `PUT /nkk/flow/designer/processes/{processId}/info` | 修改流程基础信息。 |
-| `GET /nkk/flow/designer/processes/key/{processKey}/versions` | 查询流程版本记录。 |
+| `POST /flow/designer/processes/publish` | 发布流程定义，生成新版本。 |
+| `GET /flow/designer/processes/categories` | 按流程分类查询当前流程定义，不分页。 |
+| `GET /flow/designer/processes/{processId}` | 查询流程定义详情。 |
+| `POST /flow/designer/processes/{processId}/enable` | 启用流程定义。 |
+| `POST /flow/designer/processes/{processId}/disable` | 禁用流程定义。 |
+| `PUT /flow/designer/processes/{processId}/info` | 修改流程基础信息。 |
+| `GET /flow/designer/processes/key/{processKey}/versions` | 查询流程版本记录。 |
 
 发布流程请求示例：
 
@@ -182,7 +181,7 @@ curl "http://localhost:18080/nkk/flow/designer/forms/leave-form/fields?formVersi
 按分类查询当前流程：
 
 ```bash
-curl http://localhost:18080/nkk/flow/designer/processes/categories
+curl http://localhost:18080/flow/designer/processes/categories
 ```
 
 基础信息修改请求示例：
@@ -218,24 +217,24 @@ curl http://localhost:18080/nkk/flow/designer/processes/categories
 
 | 接口 | 说明 |
 | --- | --- |
-| `POST /nkk/flow/designer/runtime/instances/start` | 发起流程实例。 |
-| `GET /nkk/flow/designer/runtime/instances/{instanceId}` | 查询流程实例详情。 |
-| `POST /nkk/flow/designer/runtime/instances/{instanceId}/submit` | 提交草稿并继续流转。 |
-| `GET /nkk/flow/designer/runtime/instances/{instanceId}/tasks` | 查询实例当前活动任务。 |
-| `GET /nkk/flow/designer/runtime/instances/{instanceId}/history/tasks` | 查询实例历史任务。 |
-| `POST /nkk/flow/designer/runtime/instances/{instanceId}/revoke` | 撤回流程实例。 |
-| `POST /nkk/flow/designer/runtime/instances/{instanceId}/suspend` | 挂起流程实例。 |
-| `POST /nkk/flow/designer/runtime/instances/{instanceId}/active` | 激活流程实例。 |
-| `POST /nkk/flow/designer/runtime/instances/{instanceId}/destroy` | 作废流程实例。 |
-| `GET /nkk/flow/designer/runtime/tasks/{taskId}` | 查询任务详情。 |
-| `GET /nkk/flow/designer/runtime/tasks/{taskId}/actors` | 查询任务参与人。 |
-| `POST /nkk/flow/designer/runtime/tasks/{taskId}/complete` | 办理通过任务。 |
-| `POST /nkk/flow/designer/runtime/tasks/{taskId}/reject` | 驳回任务。 |
-| `POST /nkk/flow/designer/runtime/tasks/{taskId}/transfer` | 转办任务。 |
-| `POST /nkk/flow/designer/runtime/tasks/{taskId}/delegate` | 委托任务。 |
-| `POST /nkk/flow/designer/runtime/tasks/{taskId}/resolve` | 办结委托任务。 |
-| `POST /nkk/flow/designer/runtime/tasks/{taskId}/view` | 阅读抄送任务。 |
-| `POST /nkk/flow/designer/runtime/tasks/{taskId}/terminate` | 终止任务所在流程。 |
+| `POST /flow/designer/runtime/instances/start` | 发起流程实例。 |
+| `GET /flow/designer/runtime/instances/{instanceId}` | 查询流程实例详情。 |
+| `POST /flow/designer/runtime/instances/{instanceId}/submit` | 提交草稿并继续流转。 |
+| `GET /flow/designer/runtime/instances/{instanceId}/tasks` | 查询实例当前活动任务。 |
+| `GET /flow/designer/runtime/instances/{instanceId}/history/tasks` | 查询实例历史任务。 |
+| `POST /flow/designer/runtime/instances/{instanceId}/revoke` | 撤回流程实例。 |
+| `POST /flow/designer/runtime/instances/{instanceId}/suspend` | 挂起流程实例。 |
+| `POST /flow/designer/runtime/instances/{instanceId}/active` | 激活流程实例。 |
+| `POST /flow/designer/runtime/instances/{instanceId}/destroy` | 作废流程实例。 |
+| `GET /flow/designer/runtime/tasks/{taskId}` | 查询任务详情。 |
+| `GET /flow/designer/runtime/tasks/{taskId}/actors` | 查询任务参与人。 |
+| `POST /flow/designer/runtime/tasks/{taskId}/complete` | 办理通过任务。 |
+| `POST /flow/designer/runtime/tasks/{taskId}/reject` | 驳回任务。 |
+| `POST /flow/designer/runtime/tasks/{taskId}/transfer` | 转办任务。 |
+| `POST /flow/designer/runtime/tasks/{taskId}/delegate` | 委托任务。 |
+| `POST /flow/designer/runtime/tasks/{taskId}/resolve` | 办结委托任务。 |
+| `POST /flow/designer/runtime/tasks/{taskId}/view` | 阅读抄送任务。 |
+| `POST /flow/designer/runtime/tasks/{taskId}/terminate` | 终止任务所在流程。 |
 
 发起流程示例：
 
@@ -279,7 +278,7 @@ curl http://localhost:18080/nkk/flow/designer/processes/categories
 说明：
 
 - `saveAsDraft = true` 只创建流程实例和历史实例快照，不会创建后续审批任务。
-- 提交草稿时调用 `POST /nkk/flow/designer/runtime/instances/{instanceId}/submit`。
+- 提交草稿时调用 `POST /flow/designer/runtime/instances/{instanceId}/submit`。
 - 提交草稿会把历史实例状态从“暂存”改为“审批中”，并从草稿保存的当前节点继续执行。
 - 提交请求里的 `variables` 会合并到草稿保存的流程变量中，可用于补全表单数据。
 

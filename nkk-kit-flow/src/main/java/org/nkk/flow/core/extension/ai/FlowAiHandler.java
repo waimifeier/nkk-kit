@@ -114,7 +114,7 @@ public interface FlowAiHandler {
         if (tasks != null) {
             for (FlowTask task : tasks) {
                 if (task.getId() != null && nodeModel.getNodeKey().equals(task.getTaskKey())) {
-                    context.getTaskService().executeTask(task.getId(), FlowCreator.ADMIN, execution.getArgs(),
+                    context.getTaskService().executeTask(task.getId(), context.getSystemCreator(), execution.getArgs(),
                             TaskState.AUTO_COMPLETED);
                 }
             }

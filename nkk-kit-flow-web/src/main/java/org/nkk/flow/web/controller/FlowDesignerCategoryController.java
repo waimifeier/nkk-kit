@@ -13,7 +13,7 @@ import java.util.List;
  * 流程设计器分类数据接口。
  */
 @RestController
-@RequestMapping("${nkk.flow.web.api-prefix:/nkk/flow}/designer/categories")
+@RequestMapping("${flow.web.api-prefix:/flow}/designer/categories")
 public class FlowDesignerCategoryController {
 
     private final FlowDesignerCategoryService categoryService;

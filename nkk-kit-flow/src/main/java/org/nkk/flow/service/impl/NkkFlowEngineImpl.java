@@ -129,9 +129,9 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
 
     @Override
     public boolean autoCompleteTask(Long taskId, Map<String, Object> args, FlowCreator creator) {
-        FlowTask task = taskService().executeTask(taskId, creator == null ? FlowCreator.ADMIN : creator, args,
+        FlowTask task = taskService().executeTask(taskId, creator == null ? context.getSystemCreator() : creator, args,
                 TaskState.AUTO_COMPLETED, null);
-        return continueAfterTask(task, creator == null ? FlowCreator.ADMIN : creator, args);
+        return continueAfterTask(task, creator == null ? context.getSystemCreator() : creator, args);
     }
 
     @Override
@@ -139,7 +139,7 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
         if (task == null) {
             return false;
         }
-        return rejectTask(task.getId(), creator == null ? FlowCreator.ADMIN : creator, args, null).isPresent();
+        return rejectTask(task.getId(), creator == null ? context.getSystemCreator() : creator, args, null).isPresent();
     }
 
     @Override
@@ -220,7 +220,7 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
                 task.setRemindTime(null);
                 taskService().updateTask(task);
                 if (context.getTaskListener() != null) {
-                    context.getTaskListener().notify(FlowEventTypeEnum.TASK_REMINDED, task, null, null, FlowCreator.ADMIN);
+                    context.getTaskListener().notify(FlowEventTypeEnum.TASK_REMINDED, task, null, null, context.getSystemCreator());
                 }
             }
             if (task.getExpireTime() != null && !task.getExpireTime().after(current)) {
@@ -236,24 +236,24 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
         }
         FlowProcessModel model = runtimeService().getProcessModelByInstanceId(instance.getId());
         FlowNodeModel nodeModel = model.getNode(task.getTaskKey());
-        FlowExecution execution = new FlowExecution(context, model, FlowCreator.ADMIN, instance, task.variableToMap());
+        FlowExecution execution = new FlowExecution(context, model, context.getSystemCreator(), instance, task.variableToMap());
         execution.setFlowTask(task);
         if (TaskType.TRIGGER.eq(task.getTaskType()) && context.getTaskTrigger() != null) {
             if (!context.getTaskTrigger().execute(nodeModel, execution)) {
                 return;
             }
             if (context.getTaskListener() != null) {
-                context.getTaskListener().notify(FlowEventTypeEnum.TASK_TRIGGERED, task, null, nodeModel, FlowCreator.ADMIN);
+                context.getTaskListener().notify(FlowEventTypeEnum.TASK_TRIGGERED, task, null, nodeModel, context.getSystemCreator());
             }
         }
         TaskState state = Integer.valueOf(1).equals(task.getTermMode())
                 ? TaskState.AUTO_REJECTED
                 : TaskState.AUTO_COMPLETED;
-        FlowTask completed = taskService().executeTask(task.getId(), FlowCreator.ADMIN, null, state);
+        FlowTask completed = taskService().executeTask(task.getId(), context.getSystemCreator(), null, state);
         if (context.getTaskListener() != null) {
-            context.getTaskListener().notify(FlowEventTypeEnum.TASK_TIMEOUT, completed, null, nodeModel, FlowCreator.ADMIN);
+            context.getTaskListener().notify(FlowEventTypeEnum.TASK_TIMEOUT, completed, null, nodeModel, context.getSystemCreator());
         }
-        continueAfterTask(completed, FlowCreator.ADMIN, completed.variableToMap());
+        continueAfterTask(completed, context.getSystemCreator(), completed.variableToMap());
     }
 
     private boolean continueAfterTask(FlowTask task, FlowCreator creator, Map<String, Object> args) {
@@ -287,7 +287,7 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
     }
 
     private boolean executeSignTask(Long taskId, FlowCreator creator, Map<String, Object> args, TaskState state) {
-        FlowCreator actualCreator = creator == null ? FlowCreator.ADMIN : creator;
+        FlowCreator actualCreator = creator == null ? context.getSystemCreator() : creator;
         FlowTask task = queryService().getTask(taskId);
         if (task == null) {
             return false;
@@ -323,7 +323,7 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
         }
         if (voteResult == VoteResult.REJECT) {
             completeActiveSameNodeTasks(task, creator, TaskState.AUTO_REJECTED);
-            runtimeService().reject(task.getInstanceId(), task, creator == null ? FlowCreator.ADMIN : creator);
+            runtimeService().reject(task.getInstanceId(), task, creator == null ? context.getSystemCreator() : creator);
             return true;
         }
         completeActiveSameNodeTasks(task, creator, TaskState.AUTO_COMPLETED);
@@ -712,7 +712,7 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
 
     private void completeActiveSameNodeTasks(FlowTask task, FlowCreator creator, TaskState state) {
         taskService().completeActiveTasksByInstanceIdAndTaskKey(task.getInstanceId(), task.getTaskKey(),
-                creator == null ? FlowCreator.ADMIN : creator, state);
+                creator == null ? context.getSystemCreator() : creator, state);
     }
 
     private enum VoteResult {

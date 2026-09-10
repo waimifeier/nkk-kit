@@ -252,6 +252,9 @@ public class FlowEngineBuilder {
         context.setStartAccessStrategy(startAccessStrategy);
         context.setInstanceAccessStrategy(instanceAccessStrategy);
         context.setCreatorProvider(creatorProvider);
+        if (instanceAccessStrategy instanceof DefaultFlowInstanceAccessStrategy) {
+            ((DefaultFlowInstanceAccessStrategy) instanceAccessStrategy).setCreatorProvider(creatorProvider);
+        }
         context.setNodeListener(nodeListener);
         context.setTaskListener(taskListener);
         context.setInstanceListener(instanceListener);

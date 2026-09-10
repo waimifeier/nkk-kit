@@ -14,7 +14,7 @@ import java.util.List;
  * 流程设计器组织数据接口。
  */
 @RestController
-@RequestMapping("${nkk.flow.web.api-prefix:/nkk/flow}/designer/org")
+@RequestMapping("${flow.web.api-prefix:/flow}/designer/org")
 public class FlowDesignerOrgController {
 
     private final FlowDesignerOrgService orgService;

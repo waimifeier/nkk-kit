@@ -10,7 +10,7 @@ import org.springframework.context.ApplicationEventPublisher;
 /**
  * Spring 实例事件发布器。
  *
- * <p>当配置 {@code nkk.flow.eventing.instance=true} 且使用方没有自定义
+ * <p>当配置 {@code flow.eventing.instance=true} 且使用方没有自定义
  * {@link FlowInstanceListener} Bean 时，starter 会自动装配该监听器。核心流程引擎触发实例事件后，
  * 该监听器会把事件包装成 {@link NkkFlowInstanceEvent} 并发布到 Spring 容器。</p>
  *

@@ -12,13 +12,19 @@ import org.nkk.flow.enums.runtime.FlowInstanceOperateEnum;
  * <p>默认规则：</p>
  * <ul>
  *     <li>撤回流程：只允许流程发起人操作。</li>
- *     <li>挂起、激活、终止、作废、超时结束：只允许管理员操作。</li>
+ *     <li>挂起、激活、终止、作废、超时结束：只允许系统操作人操作。</li>
  * </ul>
  *
- * <p>默认管理员判断使用 {@link FlowCreator#ADMIN} 的用户 ID。业务系统如果有自己的管理员、
+ * <p>默认系统操作人由 {@link FlowCreatorProvider#getSystemCreator()} 提供。业务系统如果有自己的管理员、
  * 角色或部门规则，请注册自定义 {@link FlowInstanceAccessStrategy} Bean 覆盖该实现。</p>
  */
 public class DefaultFlowInstanceAccessStrategy implements FlowInstanceAccessStrategy {
+
+    private FlowCreatorProvider creatorProvider;
+
+    public void setCreatorProvider(FlowCreatorProvider creatorProvider) {
+        this.creatorProvider = creatorProvider;
+    }
 
     @Override
     public boolean isAllowed(FlowCreator creator, FlowInstance instance, FlowHisInstance hisInstance,
@@ -49,15 +55,20 @@ public class DefaultFlowInstanceAccessStrategy implements FlowInstanceAccessStra
     }
 
     /**
-     * 判断当前操作人是否为流程管理员。
+     * 判断当前操作人是否为系统操作人（拥有实例管理权限）。
      *
-     * <p>默认只识别 {@link FlowCreator#ADMIN}。如果业务系统使用角色、权限标识或用户表字段判断管理员，
+     * <p>默认通过 {@link FlowCreatorProvider#getSystemCreator()} 获取系统操作人身份并比较。
+     * 如果业务系统使用角色、权限标识或用户表字段判断管理员，
      * 可以继承该类覆盖本方法，或直接注册自定义 {@link FlowInstanceAccessStrategy}。</p>
      *
      * @param creator 当前操作人
-     * @return true 表示当前操作人是流程管理员
+     * @return true 表示当前操作人是系统操作人
      */
     protected boolean isAdmin(FlowCreator creator) {
-        return StrUtil.equals(FlowCreator.ADMIN.getCreateId(), creator.getCreateId());
+        if (creatorProvider == null) {
+            return false;
+        }
+        FlowCreator systemCreator = creatorProvider.getSystemCreator();
+        return systemCreator != null && StrUtil.equals(systemCreator.getCreateId(), creator.getCreateId());
     }
 }

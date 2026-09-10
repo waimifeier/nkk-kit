@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * Spring 任务事件发布器。
  *
- * <p>当配置 {@code nkk.flow.eventing.task=true} 且使用方没有自定义
+ * <p>当配置 {@code flow.eventing.task=true} 且使用方没有自定义
  * {@link FlowTaskListener} Bean 时，starter 会自动装配该监听器。核心流程引擎触发任务事件后，
  * 该监听器会把事件包装成 {@link NkkFlowTaskEvent} 并发布到 Spring 容器。</p>
  *

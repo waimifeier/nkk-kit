@@ -71,7 +71,7 @@ public class DefaultFlowSubProcessHandler implements FlowSubProcessHandler {
         }
         TaskState taskState = resolveParentTaskState(state);
         List<FlowTask> parentTasks = context.getTaskService().finishCallProcessTask(
-                childInstance.getProcessId(), childInstance.getId(), FlowCreator.ADMIN, taskState);
+                childInstance.getProcessId(), childInstance.getId(), context.getSystemCreator(), taskState);
         if (CollUtil.isEmpty(parentTasks)) {
             return true;
         }
@@ -86,7 +86,7 @@ public class DefaultFlowSubProcessHandler implements FlowSubProcessHandler {
                 args.putAll(childInstance.variableToMap());
                 context.getRuntimeService().addVariable(parentInstance.getId(), args, null);
                 FlowProcessModel parentModel = context.getRuntimeService().getProcessModelByInstanceId(parentInstance.getId());
-                FlowExecution parentExecution = new FlowExecution(context, parentModel, FlowCreator.ADMIN, parentInstance, args);
+                FlowExecution parentExecution = new FlowExecution(context, parentModel, context.getSystemCreator(), parentInstance, args);
                 parentExecution.setFlowTask(parentTask);
                 parentExecution.executeNodeModel(parentTask.getTaskKey());
             } else {
@@ -121,22 +121,22 @@ public class DefaultFlowSubProcessHandler implements FlowSubProcessHandler {
 
     protected void finishParent(FlowContext context, FlowTask parentTask, InstanceState state) {
         if (InstanceState.REJECTED == state || InstanceState.AUTO_REJECT == state) {
-            context.getRuntimeService().reject(parentTask.getInstanceId(), parentTask, FlowCreator.ADMIN);
+            context.getRuntimeService().reject(parentTask.getInstanceId(), parentTask, context.getSystemCreator());
             return;
         }
         if (InstanceState.REVOKED == state) {
-            context.getRuntimeService().revoke(parentTask.getInstanceId(), parentTask, FlowCreator.ADMIN);
+            context.getRuntimeService().revoke(parentTask.getInstanceId(), parentTask, context.getSystemCreator());
             return;
         }
         if (InstanceState.TIMEOUT == state) {
-            context.getRuntimeService().timeout(parentTask.getInstanceId(), parentTask, FlowCreator.ADMIN);
+            context.getRuntimeService().timeout(parentTask.getInstanceId(), parentTask, context.getSystemCreator());
             return;
         }
         if (InstanceState.DESTROYED == state) {
             context.getRuntimeService().destroyByInstanceId(parentTask.getInstanceId(), parentTask.variableToMap());
             return;
         }
-        context.getRuntimeService().terminate(parentTask.getInstanceId(), FlowCreator.ADMIN);
+        context.getRuntimeService().terminate(parentTask.getInstanceId(), context.getSystemCreator());
     }
 }
 

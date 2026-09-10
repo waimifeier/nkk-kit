@@ -24,11 +24,10 @@ mybatis-plus:
   global-config:
     banner: false
 
-nkk:
-  flow:
-    web:
-      enabled: true
-      api-prefix: /nkk/flow
-    eventing:
-      instance: true
-      task: true
+flow:
+  web:
+    enabled: false
+    api-prefix: /flow
+  eventing:
+    instance: true
+    task: true

@@ -122,7 +122,7 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
         processModel.buildParentNode();
         context.cacheProcessModel(modelCacheKey(instanceId), processModel);
         if (updated) {
-            notifyInstance(FlowEventTypeEnum.INSTANCE_MODEL_UPDATED, instanceId, null, FlowCreator.ADMIN);
+            notifyInstance(FlowEventTypeEnum.INSTANCE_MODEL_UPDATED, instanceId, null, context.getSystemCreator());
         }
         return updated;
     }
@@ -139,7 +139,7 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
                 : model.getNodeConfig().insertAfter(task.getTaskKey(), nodeModel);
         if (changed) {
             updateInstanceModelById(task.getInstanceId(), model);
-            notifyInstance(FlowEventTypeEnum.INSTANCE_NODE_APPENDED, task.getInstanceId(), nodeModel, FlowCreator.ADMIN);
+            notifyInstance(FlowEventTypeEnum.INSTANCE_NODE_APPENDED, task.getInstanceId(), nodeModel, context.getSystemCreator());
         }
     }
 
@@ -156,7 +156,7 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
         boolean removed = model.getNodeConfig().removeNode(nodeKey);
         boolean updated = removed && updateInstanceModelById(instanceId, model);
         if (updated) {
-            notifyInstance(FlowEventTypeEnum.INSTANCE_NODE_REMOVED, instanceId, node, FlowCreator.ADMIN);
+            notifyInstance(FlowEventTypeEnum.INSTANCE_NODE_REMOVED, instanceId, node, context.getSystemCreator());
         }
         return updated;
     }
@@ -250,7 +250,7 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
         boolean updated = hisInstanceDao.updateById(his);
         if (updated) {
             notifyInstance(FlowEventTypeEnum.INSTANCE_DESTROYED, his, null,
-                    creator == null ? FlowCreator.ADMIN : creator);
+                    creator == null ? context.getSystemCreator() : creator);
         }
         return updated;
     }
@@ -273,7 +273,7 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
         his.setVariable(update.getVariable());
         hisInstanceDao.updateById(his);
         if (updated) {
-            notifyInstance(FlowEventTypeEnum.INSTANCE_VARIABLE_UPDATED, instanceId, null, FlowCreator.ADMIN);
+            notifyInstance(FlowEventTypeEnum.INSTANCE_VARIABLE_UPDATED, instanceId, null, context.getSystemCreator());
         }
         return updated;
     }
@@ -286,7 +286,7 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
         java.util.List<Long> ids = collectInstanceIds(instanceId);
         for (Long id : ids) {
             notifyInstance(FlowEventTypeEnum.INSTANCE_CASCADE_REMOVED, id, null,
-                    creator == null ? FlowCreator.ADMIN : creator);
+                    creator == null ? context.getSystemCreator() : creator);
         }
         taskService.cascadeRemoveByInstanceIds(ids);
         extInstanceDao.deleteByIds(ids);
@@ -304,7 +304,7 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
             return;
         }
         for (FlowHisInstance instance : instances) {
-            cascadeRemoveByInstanceId(instance.getId(), FlowCreator.ADMIN);
+            cascadeRemoveByInstanceId(instance.getId(), context.getSystemCreator());
         }
     }
 
@@ -495,7 +495,7 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
                                 FlowCreator creator) {
         if (context.getInstanceListener() != null && eventType != null) {
             context.getInstanceListener().notify(eventType, instance, nodeModel,
-                    creator == null ? FlowCreator.ADMIN : creator);
+                    creator == null ? context.getSystemCreator() : creator);
         }
     }
 
@@ -512,7 +512,7 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
             context.getSubProcessHandler().onChildFinished(context, childInstance, childHis, state);
         }
         if (context.getTaskListener() != null) {
-            context.getTaskListener().notify(FlowEventTypeEnum.SUB_PROCESS_ENDED, null, null, null, FlowCreator.ADMIN);
+            context.getTaskListener().notify(FlowEventTypeEnum.SUB_PROCESS_ENDED, null, null, null, context.getSystemCreator());
         }
     }
 

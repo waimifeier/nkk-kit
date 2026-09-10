@@ -82,11 +82,23 @@ public class FlowExampleWebConfiguration {
     }
 
     /**
-     * 提供当前流程操作人，供流程发布接口写入创建人。
+     * 提供当前流程操作人和系统操作人。
+     *
+     * <p>当前操作人用于流程发布接口写入创建人；系统操作人用于自动超时、触发器等无人操作场景。</p>
      */
     @Bean
     public FlowCreatorProvider flowCreatorProvider() {
-        return () -> FlowCreator.of("1", "系统管理员");
+        return new FlowCreatorProvider() {
+            @Override
+            public FlowCreator getCurrentCreator() {
+                return FlowCreator.of("1", "系统管理员");
+            }
+
+            @Override
+            public FlowCreator getSystemCreator() {
+                return FlowCreator.of("0", "系统操作人");
+            }
+        };
     }
 
     private boolean isCreator(FlowCreator creator, FlowInstance instance, FlowHisInstance hisInstance) {

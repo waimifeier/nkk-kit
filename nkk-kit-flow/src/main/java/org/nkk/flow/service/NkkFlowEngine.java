@@ -99,7 +99,7 @@ public interface NkkFlowEngine {
     }
 
     default boolean autoCompleteTask(Long taskId) {
-        return autoCompleteTask(taskId, FlowCreator.ADMIN);
+        return autoCompleteTask(taskId, (FlowCreator) null);
     }
 
     boolean autoRejectTask(FlowTask task, Map<String, Object> args, FlowCreator creator);

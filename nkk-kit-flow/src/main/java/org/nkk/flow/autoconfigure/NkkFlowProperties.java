@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * 审批流 starter 配置。
  */
 @Data
-@ConfigurationProperties(prefix = "nkk.flow")
+@ConfigurationProperties(prefix = "flow")
 public class NkkFlowProperties {
 
     /**

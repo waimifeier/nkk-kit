@@ -28,7 +28,7 @@ import java.util.List;
  * 流程设计器运行时接口。
  */
 @RestController
-@RequestMapping("${nkk.flow.web.api-prefix:/nkk/flow}/designer/runtime")
+@RequestMapping("${flow.web.api-prefix:/flow}/designer/runtime")
 public class FlowDesignerRuntimeController {
 
     private final FlowDesignerRuntimeService runtimeService;

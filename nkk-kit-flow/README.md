@@ -50,12 +50,11 @@ META-INF/nkk-flow/schema-mysql.sql
 可选配置：
 
 ```yaml
-nkk:
-  flow:
-    banner: true
-    eventing:
-      instance: true
-      task: true
+flow:
+  banner: true
+  eventing:
+    instance: true
+    task: true
 ```
 
 启动后会自动装配：
@@ -264,7 +263,7 @@ META-INF/nkk-flow/schema-mysql.sql
 
 当前暴露方式：
 
-- `FlowCreatorProvider`：负责从使用方登录上下文中获取当前流程操作人。显式传入 `FlowCreator` 时优先使用显式参数；未传时才从该扩展点获取。
+- `FlowCreatorProvider`：负责从使用方登录上下文中获取当前流程操作人，以及提供系统操作人身份（用于自动超时、触发器、子流程等无人操作场景）。显式传入 `FlowCreator` 时优先使用显式参数；未传时才从该扩展点获取。
 - `FlowTaskActorProvider`：负责把节点模型解析成任务参与者。使用方可覆盖 `getTaskActors(...)`、`getNodeAssignees(...)`、`getDynamicAssignee(...)`。
 - `FlowActorAccessStrategy`：统一判断当前用户是否命中用户、角色、部门等参与人配置。开始节点发起权限和审批任务办理权限都会委托给它。
 - `FlowStartAccessStrategy`：发起权限内部适配层，默认遍历开始节点 `nodeAssigneeList` 后调用 `FlowActorAccessStrategy`。
@@ -322,7 +321,17 @@ public FlowInstanceAccessStrategy flowInstanceAccessStrategy(UserOrgService user
 ```java
 @Bean
 public FlowCreatorProvider flowCreatorProvider() {
-    return () -> FlowCreator.of("u1", "张三");
+    return new FlowCreatorProvider() {
+        @Override
+        public FlowCreator getCurrentCreator() {
+            return FlowCreator.of("u1", "张三");
+        }
+
+        @Override
+        public FlowCreator getSystemCreator() {
+            return FlowCreator.of("0", "系统操作人");
+        }
+    };
 }
 ```
 
@@ -404,7 +413,7 @@ engine.startInstanceByProcessKey("leave", null, FlowCreator.of("u1", "张三"), 
 
 ## 事件发布
 
-开启 `nkk.flow.eventing.task=true` 后，starter 会把任务事件发布为 `NkkFlowTaskEvent`；开启 `nkk.flow.eventing.instance=true` 后，会把实例事件发布为 `NkkFlowInstanceEvent`。
+开启 `flow.eventing.task=true` 后，starter 会把任务事件发布为 `NkkFlowTaskEvent`；开启 `flow.eventing.instance=true` 后，会把实例事件发布为 `NkkFlowInstanceEvent`。
 
 节点生命周期可以通过注册 `FlowNodeListener` 监听：
 

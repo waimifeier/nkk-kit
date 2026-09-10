@@ -13,8 +13,6 @@ public class FlowCreator implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    public static final FlowCreator ADMIN = FlowCreator.of("0", "admin");
-
     private String tenantId;
 
     private String createId;

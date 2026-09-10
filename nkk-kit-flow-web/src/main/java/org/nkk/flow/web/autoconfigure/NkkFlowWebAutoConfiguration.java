@@ -34,7 +34,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
-@ConditionalOnProperty(prefix = "nkk.flow.web", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "flow.web", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class NkkFlowWebAutoConfiguration {
 
     @Bean
