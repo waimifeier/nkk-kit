@@ -141,6 +141,7 @@ curl "http://localhost:18080/flow/designer/forms/leave-form/fields?formVersion=1
 | 接口 | 说明 |
 | --- | --- |
 | `POST /flow/designer/processes/publish` | 发布流程定义，生成新版本。 |
+| `GET /flow/designer/processes` | 分页查询流程定义原始记录（含草稿/历史版本），支持筛选。 |
 | `GET /flow/designer/processes/categories` | 按流程分类查询当前流程定义，不分页。 |
 | `GET /flow/designer/processes/{processId}` | 查询流程定义详情。 |
 | `POST /flow/designer/processes/{processId}/enable` | 启用流程定义。 |
@@ -183,6 +184,40 @@ curl "http://localhost:18080/flow/designer/forms/leave-form/fields?formVersion=1
 ```bash
 curl http://localhost:18080/flow/designer/processes/categories
 ```
+
+分页查询流程定义（管理后台列表，返回包含草稿、历史版本在内的全部原始记录，不做版本去重）：
+
+```bash
+curl "http://localhost:18080/flow/designer/processes?current=1&size=10&processName=请假&processState=1"
+```
+
+可选筛选参数：
+
+- `current`（必填）：页码，从 1 开始；`size`（必填）：每页条数
+- `processName`：流程名称模糊匹配
+- `processKey`：流程 key 精确匹配
+- `processType`：流程分类精确匹配
+- `processState`：流程状态精确匹配
+- `formSourceType`：表单来源类型精确匹配，取值 `form`（自定义表单）、`business`（业务表单）
+- `tenantId`：租户 ID，为空只查无租户数据
+
+响应结构：
+
+```json
+{
+  "code": 200,
+  "msg": "成功",
+  "data": {
+    "total": 25,
+    "size": 10,
+    "current": 1,
+    "pages": 3,
+    "records": []
+  }
+}
+```
+
+> 分页基于 MyBatis-Plus 分页插件，starter 默认自动注册 `MybatisPlusInterceptor`（含分页拦截器，按数据源自动推断方言）。如果业务系统自定义了 `MybatisPlusInterceptor` Bean，starter 会退让，此时请确保自定义插件链中包含 `PaginationInnerInterceptor`，否则分页不生效。
 
 基础信息修改请求示例：
 

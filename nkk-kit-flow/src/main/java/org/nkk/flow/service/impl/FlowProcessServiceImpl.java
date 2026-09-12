@@ -1,5 +1,9 @@
 package org.nkk.flow.service.impl;
 
+import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.nkk.core.beans.common.PageResult;
 import org.nkk.flow.core.context.FlowContext;
 import org.nkk.flow.core.context.FlowCreator;
 import org.nkk.flow.core.extension.id.FlowIdGenerator;
@@ -178,6 +182,21 @@ public class FlowProcessServiceImpl implements FlowProcessService {
     @Override
     public List<FlowProcess> listCurrentProcesses(String tenantId) {
         return processDao.selectCurrentList(tenantId);
+    }
+
+    @Override
+    public PageResult<FlowProcess> pageProcesses(long current, long size, String tenantId, String processName,
+                                                 String processKey, String processType, Integer processState,
+                                                 String formSourceType) {
+        if (current < 1) {
+            throw new IllegalArgumentException("页码不能小于 1");
+        }
+        if (size < 1) {
+            throw new IllegalArgumentException("每页条数不能小于 1");
+        }
+        IPage<FlowProcess> page = processDao.selectPage(new Page<>(current, size),
+                StrUtil.trimToNull(tenantId), processName, processKey, processType, processState, formSourceType);
+        return PageResult.of(page.getTotal(), page.getCurrent(), page.getSize(), page.getRecords());
     }
 
     @Override

@@ -1,5 +1,7 @@
 package org.nkk.flow.autoconfigure;
 
+import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
+import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import org.mybatis.spring.annotation.MapperScan;
 import org.nkk.flow.dao.FlowExtInstanceDao;
 import org.nkk.flow.dao.FlowHisInstanceDao;
@@ -37,6 +39,24 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnClass(MapperScan.class)
 @MapperScan("org.nkk.flow.mapper")
 public class NkkFlowMybatisPlusConfiguration {
+
+    /**
+     * MyBatis-Plus 插件链，默认注册分页插件。
+     *
+     * <p>{@link PaginationInnerInterceptor} 使用无参构造，方言根据运行时数据源自动推断
+     * （MySQL、H2 等均支持）。宿主项目如果已经自定义了 {@link MybatisPlusInterceptor}
+     * （例如还需要乐观锁、多租户等插件），本 Bean 自动退让；但宿主的插件链中必须包含
+     * {@link PaginationInnerInterceptor}，否则引擎的分页查询不会生效。</p>
+     *
+     * @return MyBatis-Plus 插件拦截器
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public MybatisPlusInterceptor mybatisPlusInterceptor() {
+        MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
+        interceptor.addInnerInterceptor(new PaginationInnerInterceptor());
+        return interceptor;
+    }
 
     @Bean
     @ConditionalOnMissingBean

@@ -1,6 +1,7 @@
 package org.nkk.flow.web.service;
 
 import cn.hutool.core.util.StrUtil;
+import org.nkk.core.beans.common.PageResult;
 import org.nkk.flow.core.context.FlowContext;
 import org.nkk.flow.core.context.FlowCreator;
 import org.nkk.flow.core.extension.identity.FlowCreatorProvider;
@@ -11,6 +12,7 @@ import org.nkk.flow.model.FlowProcessModel;
 import org.nkk.flow.service.NkkFlowEngine;
 import org.nkk.flow.web.model.FlowProcessCategoryResponse;
 import org.nkk.flow.web.model.FlowProcessInfoUpdateRequest;
+import org.nkk.flow.web.model.FlowProcessPageRequest;
 import org.nkk.flow.web.model.FlowProcessPublishRequest;
 import org.nkk.flow.web.model.FlowProcessVO;
 
@@ -83,6 +85,24 @@ public class FlowDesignerProcessService {
      */
     public FlowProcess getProcess(Long processId) {
         return flowEngine.processService().getProcessById(processId);
+    }
+
+    /**
+     * 分页查询流程定义原始记录（包含全部版本、草稿和历史记录）。
+     *
+     * @param request 分页查询请求
+     * @return 流程定义分页结果
+     */
+    public PageResult<FlowProcessVO> pageProcesses(FlowProcessPageRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("分页查询参数不能为空");
+        }
+        PageResult<FlowProcess> page = flowEngine.processService().pageProcesses(
+                request.getCurrent(), request.getSize(),
+                StrUtil.trimToNull(request.getTenantId()),
+                request.getProcessName(), request.getProcessKey(),
+                request.getProcessType(), request.getProcessState(), request.getFormSourceType());
+        return page.map(FlowProcessVO::of);
     }
 
     /**

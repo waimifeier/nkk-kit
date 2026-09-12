@@ -26,6 +26,14 @@
             <artifactId>lombok</artifactId>
         </dependency>
 
+        <!-- PageResult 的 @JsonInclude 注解；纯注解包，运行时由使用方的 jackson-databind 提供 -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>${jackson.version}</version>
+            <optional>true</optional>
+        </dependency>
+
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-core</artifactId>

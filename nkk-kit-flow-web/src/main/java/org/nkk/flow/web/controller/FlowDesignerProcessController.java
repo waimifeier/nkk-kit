@@ -1,9 +1,11 @@
 package org.nkk.flow.web.controller;
 
+import org.nkk.core.beans.common.PageResult;
 import org.nkk.core.beans.common.Result;
 import org.nkk.flow.entity.FlowProcess;
 import org.nkk.flow.web.model.FlowProcessCategoryResponse;
 import org.nkk.flow.web.model.FlowProcessInfoUpdateRequest;
+import org.nkk.flow.web.model.FlowProcessPageRequest;
 import org.nkk.flow.web.model.FlowProcessPublishRequest;
 import org.nkk.flow.web.model.FlowProcessVO;
 import org.nkk.flow.web.service.FlowDesignerProcessService;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.validation.Valid;
 import java.util.List;
 
 /**
@@ -44,6 +47,32 @@ public class FlowDesignerProcessController {
     @PostMapping("/publish")
     public Result<FlowProcess> publish(@RequestBody FlowProcessPublishRequest request) {
         return Result.ok(processService.publish(request));
+    }
+
+    /**
+     * 分页查询流程定义。
+     *
+     * <p>返回 {@code flow_process} 原始记录，包含全部版本、草稿和历史版本，
+     * 不做"每个流程 key 最新版本"去重；去重分组列表请使用分类查询接口。</p>
+     *
+     * <p>查询参数示例：{@code GET /flow/designer/processes?current=1&size=10&processName=请假&processState=1}</p>
+     * <ul>
+     *     <li>{@code current}：页码，从 1 开始，必填</li>
+     *     <li>{@code size}：每页条数，必填</li>
+     *     <li>{@code tenantId}：租户 ID，可选，为空只查无租户数据</li>
+     *     <li>{@code processName}：流程名称，模糊匹配，可选</li>
+     *     <li>{@code processKey}：流程 key，精确匹配，可选</li>
+     *     <li>{@code processType}：流程分类，精确匹配，可选</li>
+     *     <li>{@code processState}：流程状态，可选；示例值：{@code 1}（启用）</li>
+     *     <li>{@code formSourceType}：表单来源类型，可选；示例值：{@code form}（自定义表单）、{@code business}（业务表单）</li>
+     * </ul>
+     *
+     * @param request 分页查询请求
+     * @return 流程定义分页结果
+     */
+    @GetMapping
+    public Result<PageResult<FlowProcessVO>> page(@Valid FlowProcessPageRequest request) {
+        return Result.ok(processService.pageProcesses(request));
     }
 
     /**

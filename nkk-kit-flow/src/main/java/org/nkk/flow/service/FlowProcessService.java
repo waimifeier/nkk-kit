@@ -1,5 +1,6 @@
 package org.nkk.flow.service;
 
+import org.nkk.core.beans.common.PageResult;
 import org.nkk.flow.core.context.FlowCreator;
 import org.nkk.flow.entity.FlowProcess;
 
@@ -58,6 +59,23 @@ public interface FlowProcessService {
      * @return 当前流程定义列表
      */
     List<FlowProcess> listCurrentProcesses(String tenantId);
+
+    /**
+     * 分页查询流程定义原始记录（包含全部版本、草稿和历史记录）。
+     *
+     * @param current     页码，从 1 开始
+     * @param size        每页条数
+     * @param tenantId    租户 ID，为空时只查无租户数据
+     * @param processName 流程名称，模糊匹配，为空不过滤
+     * @param processKey  流程 key，精确匹配，为空不过滤
+     * @param processType 流程分类，精确匹配，为空不过滤
+     * @param processState 流程状态，精确匹配，为空不过滤
+     * @param formSourceType 表单来源类型（form/business），精确匹配，为空不过滤
+     * @return 流程定义分页结果
+     */
+    PageResult<FlowProcess> pageProcesses(long current, long size, String tenantId, String processName,
+                                          String processKey, String processType, Integer processState,
+                                          String formSourceType);
 
     /**
      * 查询流程定义的全部版本记录。
