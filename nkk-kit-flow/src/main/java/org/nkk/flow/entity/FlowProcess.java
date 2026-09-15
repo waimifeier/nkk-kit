@@ -76,7 +76,7 @@ public class FlowProcess extends FlowEntity {
     private Integer sort;
 
     /**
-     * 表单来源类型，取值：form(自定义表单)、business(业务表单)。
+     * 表单来源类型，示例值：{@code form}（自定义表单）、{@code business}（业务表单）。
      */
     private String formSourceType;
 

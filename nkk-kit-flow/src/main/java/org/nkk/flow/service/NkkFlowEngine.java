@@ -40,12 +40,21 @@ public interface NkkFlowEngine {
         return getContext().getQueryService();
     }
 
+    /**
+     * 发起流程实例（按流程 key）。
+     *
+     * @return 正常发起时返回实例；业务表单（business）配置了 triggerExpression 且条件不满足时返回 empty，
+     *         此时不会创建任何流程数据，引擎已直接派发 INSTANCE_ENDED（审批通过）业务回调
+     */
     Optional<FlowInstance> startInstanceByProcessKey(String processKey, Integer version, FlowCreator creator, Map<String, Object> args);
 
     default Optional<FlowInstance> startInstanceByProcessKey(String processKey, Integer version, Map<String, Object> args) {
         return startInstanceByProcessKey(processKey, version, null, args);
     }
 
+    /**
+     * 发起流程实例（按流程 key，完整参数）。empty 语义同 {@link #startInstanceByProcessKey(String, Integer, FlowCreator, Map)}。
+     */
     Optional<FlowInstance> startInstanceByProcessKey(String processKey, Integer version, FlowCreator creator,
                                                      Map<String, Object> args, boolean saveAsDraft,
                                                      Consumer<FlowNodeModel> checkNodeModel,
@@ -55,12 +64,18 @@ public interface NkkFlowEngine {
         return startInstanceByProcessKey(processKey, version, creator, null, false, null, () -> FlowInstance.of(businessKey));
     }
 
+    /**
+     * 发起流程实例（按流程定义 ID）。empty 语义同 {@link #startInstanceByProcessKey(String, Integer, FlowCreator, Map)}。
+     */
     Optional<FlowInstance> startInstanceById(Long processId, FlowCreator creator, Map<String, Object> args);
 
     default Optional<FlowInstance> startInstanceById(Long processId, Map<String, Object> args) {
         return startInstanceById(processId, null, args);
     }
 
+    /**
+     * 发起流程实例（按流程定义 ID，完整参数）。empty 语义同 {@link #startInstanceByProcessKey(String, Integer, FlowCreator, Map)}。
+     */
     Optional<FlowInstance> startInstanceById(Long processId, FlowCreator creator, Map<String, Object> args,
                                              boolean saveAsDraft,
                                              Consumer<FlowNodeModel> checkNodeModel,

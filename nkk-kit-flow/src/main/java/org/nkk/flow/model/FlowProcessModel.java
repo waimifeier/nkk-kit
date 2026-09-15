@@ -8,6 +8,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import org.nkk.flow.model.node.FlowNodeModel;
+import org.nkk.flow.model.node.router.FlowCondition;
 import org.nkk.flow.model.node.router.FlowConditionNode;
 
 /**
@@ -55,6 +56,27 @@ public class FlowProcessModel implements Serializable {
      * （form_source_type/form_key/form_version/form_id/form_name）。</p>
      */
     private List<FlowFieldMeta> metaFields;
+
+    /**
+     * 业务审批触发条件（二维条件组：组间 OR、组内 AND）。
+     *
+     * <p>仅设计器回显使用，不参与运行时判定；运行时以 {@link #triggerExpression} 为准。
+     * 仅当 {@code flow_process.form_source_type = business} 时有意义。</p>
+     */
+    private List<List<FlowCondition>> triggerConfig;
+
+    /**
+     * 业务审批触发条件的 SpEL 表达式字符串。
+     *
+     * <p>仅当 {@code flow_process.form_source_type = business} 且本字段非空时生效：
+     * 发起流程时以传入的流程变量为上下文求值，结果为 true 才创建审批实例；
+     * 为 false 则不发起审批流程，直接按「审批通过」通知业务方。</p>
+     *
+     * <p>表达式由设计器根据 {@link #triggerConfig} 单向派生，例如：
+     * {@code (#department_id == 12 and #outbound_code.contains('SN0023'))}。
+     * 字段以 {@code #变量名} 引用，同时兼容直接以变量名作为根对象属性的写法。</p>
+     */
+    private String triggerExpression;
 
     /**
      * 根据节点编码查找流程节点。

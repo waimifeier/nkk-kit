@@ -222,6 +222,12 @@ public class FlowApprovalAutoStartAspect {
     private void doStart(FlowStartProcessRequest request, String methodSignature) {
         try {
             FlowRuntimeResponse response = runtimeService.start(request);
+            if (Boolean.FALSE.equals(response.getStarted())) {
+                // 业务触发条件不满足：未发起审批流程，引擎已直接按「审批通过」通知业务回调
+                log.info("[FlowApproval] ⏭️ 触发条件不满足，跳过审批流程（按审批通过处理），method={}, processKey={}, businessKey={}",
+                        methodSignature, request.getProcessKey(), request.getBusinessKey());
+                return;
+            }
             log.info("[FlowApproval] ✅ 自动发起审批成功，method={}, processKey={}, businessKey={}, instanceId={}",
                     methodSignature, request.getProcessKey(), request.getBusinessKey(), response.getInstanceId());
         } catch (Exception e) {

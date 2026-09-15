@@ -4,6 +4,8 @@ import cn.hutool.core.util.StrUtil;
 import org.nkk.flow.core.context.FlowContext;
 import org.nkk.flow.core.context.FlowCreator;
 import org.nkk.flow.core.context.FlowExecution;
+import org.nkk.flow.core.extension.condition.SpelTriggerExpression;
+import org.nkk.flow.entity.FlowHisInstance;
 import org.nkk.flow.entity.FlowInstance;
 import org.nkk.flow.entity.FlowProcess;
 import org.nkk.flow.entity.FlowHisTask;
@@ -11,7 +13,9 @@ import org.nkk.flow.entity.FlowHisTaskActor;
 import org.nkk.flow.entity.FlowTask;
 import org.nkk.flow.entity.FlowTaskActor;
 import org.nkk.flow.enums.runtime.FlowEventTypeEnum;
+import org.nkk.flow.enums.runtime.FlowExecuteTypeEnum;
 import org.nkk.flow.enums.node.FlowNodeTypeEnum;
+import org.nkk.flow.enums.core.FlowInstanceEnum.InstanceState;
 import org.nkk.flow.enums.core.FlowTaskEnum.PerformType;
 import org.nkk.flow.enums.node.FlowRejectStrategyEnum;
 import org.nkk.flow.enums.core.FlowTaskEnum.TaskState;
@@ -23,8 +27,11 @@ import org.nkk.flow.model.node.task.FlowSignPolicy;
 import org.nkk.flow.model.node.task.StartNodeModel;
 import org.nkk.flow.model.node.task.TaskNodeModel;
 import org.nkk.flow.service.NkkFlowEngine;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -39,6 +46,13 @@ import java.util.function.Supplier;
  * 默认 NKK 审批流引擎。
  */
 public class NkkFlowEngineImpl implements NkkFlowEngine {
+
+    private static final Logger log = LoggerFactory.getLogger(NkkFlowEngineImpl.class);
+
+    /**
+     * 业务审批触发条件 SpEL 求值器（无状态，可复用）。
+     */
+    private final SpelTriggerExpression triggerExpression = new SpelTriggerExpression();
 
     private FlowContext context;
 
@@ -99,6 +113,15 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
         if (checkNodeModel != null) {
             checkNodeModel.accept(startNode);
         }
+        // 业务审批触发条件（仅正式发起时判断；暂存草稿不执行流程，无需判断）：
+        // 条件不满足 → 不创建任何流程数据，直接派发「审批通过」业务通知并返回 empty
+        if (!saveAsDraft && !isTriggerMatched(process, model, args)) {
+            String businessKey = resolveBusinessKey(supplier);
+            log.info("[NkkFlowEngine] 业务审批触发条件不满足，跳过审批流程并按审批通过通知业务，processKey={}, businessKey={}",
+                    process.getProcessKey(), businessKey);
+            notifyTriggerAutoApproved(process, creator, args, businessKey);
+            return Optional.empty();
+        }
         FlowInstance instance = runtimeService().createInstance(process, creator, args, startNode, null, saveAsDraft, supplier);
         if (saveAsDraft) {
             return Optional.of(instance);
@@ -106,6 +129,63 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
         FlowExecution execution = new FlowExecution(context, model, creator, instance, args);
         startNode.execute(context, execution);
         return Optional.of(instance);
+    }
+
+    /**
+     * 判断业务审批触发条件是否满足。
+     *
+     * <p>仅 {@code form_source_type=business} 且模型中 {@code triggerExpression} 非空白时才求值，
+     * 其他情况一律放行。表达式非法或求值异常由 SpEL 求值器抛出 {@link IllegalStateException}。</p>
+     */
+    private boolean isTriggerMatched(FlowProcess process, FlowProcessModel model, Map<String, Object> args) {
+        if (!"business".equalsIgnoreCase(process.getFormSourceType())) {
+            return true;
+        }
+        if (model == null || StrUtil.isBlank(model.getTriggerExpression())) {
+            return true;
+        }
+        return triggerExpression.match(model.getTriggerExpression(), args);
+    }
+
+    /**
+     * 触发条件不满足时的「自动审批通过」通知。
+     *
+     * <p>不落库任何实例/任务数据，仅合成一个状态为
+     * {@link InstanceState#COMPLETED 审批通过} 的实例快照，通过 {@code INSTANCE_ENDED}
+     * 实例事件派发给业务回调（Spring 桥接后触发 FlowApprovalCallbackHandler.onInstanceComplete）。
+     * 快照 id 为 null，业务方应以 businessKey/processKey 识别业务单据。</p>
+     */
+    private void notifyTriggerAutoApproved(FlowProcess process, FlowCreator creator, Map<String, Object> args,
+                                           String businessKey) {
+        if (context.getInstanceListener() == null) {
+            return;
+        }
+        Date now = context.getCreateTimeHandler().getCurrentTime(FlowExecuteTypeEnum.START, null, null);
+        FlowHisInstance snapshot = new FlowHisInstance();
+        snapshot.setTenantId(creator.getTenantId());
+        snapshot.setCreateId(creator.getCreateId());
+        snapshot.setCreateBy(creator.getCreateBy());
+        snapshot.setProcessId(process.getId());
+        snapshot.setProcessKey(process.getProcessKey());
+        snapshot.setBusinessKey(businessKey);
+        snapshot.setVariable(FlowContext.toJson(args == null ? Collections.emptyMap() : args));
+        snapshot.setCreateTime(now);
+        snapshot.setEndTime(now);
+        snapshot.setLastUpdateBy(creator.getCreateBy());
+        snapshot.setLastUpdateTime(now);
+        snapshot.setInstanceState(InstanceState.COMPLETED.value());
+        context.getInstanceListener().notify(FlowEventTypeEnum.INSTANCE_ENDED, snapshot, null, creator);
+    }
+
+    /**
+     * 从实例供应器中提取 businessKey（不产生持久化副作用）。
+     */
+    private String resolveBusinessKey(Supplier<FlowInstance> supplier) {
+        if (supplier == null) {
+            return null;
+        }
+        FlowInstance supplied = supplier.get();
+        return supplied == null ? null : supplied.getBusinessKey();
     }
 
     @Override

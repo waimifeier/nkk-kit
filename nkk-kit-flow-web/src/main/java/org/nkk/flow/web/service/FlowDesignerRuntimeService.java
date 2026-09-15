@@ -70,8 +70,26 @@ public class FlowDesignerRuntimeService {
                     request.getProcessVersion(), null, variables, saveAsDraft,
                 null, instanceSupplier(request.getBusinessKey()));
         }
-        FlowInstance instance = optional.orElseThrow(() -> new IllegalStateException("发起流程失败"));
+        // 业务审批触发条件不满足时引擎返回 empty：未创建实例，引擎已直接派发「审批通过」业务回调
+        if (!optional.isPresent()) {
+            return triggerSkippedResponse(request);
+        }
+        FlowInstance instance = optional.get();
         return runtimeResponse(instance.getId());
+    }
+
+    /**
+     * 构造触发条件不满足（跳过审批）的响应。
+     *
+     * <p>无实例数据：instanceId 为空、started=false、instanceState=审批通过，
+     * 业务方据此直接按审批通过处理，无需再查询流程实例。</p>
+     */
+    private FlowRuntimeResponse triggerSkippedResponse(FlowStartProcessRequest request) {
+        FlowRuntimeResponse response = new FlowRuntimeResponse();
+        response.setStarted(false);
+        response.setBusinessKey(request.getBusinessKey());
+        response.setInstanceState(InstanceState.COMPLETED.value());
+        return response;
     }
 
     /**

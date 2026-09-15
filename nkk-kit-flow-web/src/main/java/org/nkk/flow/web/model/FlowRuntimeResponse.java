@@ -47,6 +47,15 @@ public class FlowRuntimeResponse implements Serializable {
     private Integer instanceState;
 
     /**
+     * 审批流程是否实际发起。
+     *
+     * <p>true=已创建审批实例；false=业务审批触发条件（triggerExpression）不满足，
+     * 未发起审批流程，引擎已直接派发「审批通过」业务回调。
+     * 此时 instanceId 为 null、instanceState=1（审批通过），业务方应直接按通过处理。</p>
+     */
+    private Boolean started = true;
+
+    /**
      * 当前活动任务。
      */
     private List<Task> task = new ArrayList<>();
