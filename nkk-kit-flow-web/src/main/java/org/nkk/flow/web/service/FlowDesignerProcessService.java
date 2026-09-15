@@ -10,6 +10,8 @@ import org.nkk.flow.enums.core.FlowProcessEnum.ProcessState;
 import org.nkk.flow.model.node.FlowNodeModel;
 import org.nkk.flow.model.FlowProcessModel;
 import org.nkk.flow.service.NkkFlowEngine;
+import org.nkk.flow.web.model.FlowInstancePageRequest;
+import org.nkk.flow.web.model.FlowInstanceRecordVO;
 import org.nkk.flow.web.model.FlowProcessCategoryResponse;
 import org.nkk.flow.web.model.FlowProcessInfoUpdateRequest;
 import org.nkk.flow.web.model.FlowProcessPageRequest;
@@ -104,6 +106,39 @@ public class FlowDesignerProcessService {
                 request.getProcessName(), request.getProcessKey(),
                 request.getProcessType(), request.getProcessState(), request.getFormSourceType());
         return page.map(FlowProcessVO::of);
+    }
+
+    /**
+     * 按流程定义 ID 分页查询已发起的流程实例。
+     *
+     * <p>返回的每条记录含流程名称（由 processId 反查 flow_process 填充）。</p>
+     *
+     * @param processId 流程定义 ID，必填
+     * @param request   分页查询请求（包含分页参数和可选筛选条件）
+     * @return 实例记录分页结果
+     */
+    public PageResult<FlowInstanceRecordVO> pageInstances(Long processId, FlowInstancePageRequest request) {
+        if (processId == null) {
+            throw new IllegalArgumentException("流程定义 ID 不能为空");
+        }
+        if (request == null) {
+            throw new IllegalArgumentException("分页查询参数不能为空");
+        }
+        PageResult<org.nkk.flow.entity.FlowHisInstance> page = flowEngine.processService().pageInstances(
+                request.getCurrent(), request.getSize(), processId,
+                StrUtil.trimToNull(request.getStarterName()),
+                request.getStartTime(), request.getEndTime(),
+                request.getInstanceState(), request.getInstanceId());
+        // 反查流程定义，统一填充流程名称
+        FlowProcess process = flowEngine.processService().getProcessById(processId);
+        String processName = process == null ? null : process.getProcessName();
+        return page.map(instance -> {
+            FlowInstanceRecordVO vo = FlowInstanceRecordVO.of(instance);
+            if (vo != null) {
+                vo.setProcessName(processName);
+            }
+            return vo;
+        });
     }
 
     /**

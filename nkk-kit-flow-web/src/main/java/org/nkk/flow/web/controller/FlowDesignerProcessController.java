@@ -3,6 +3,8 @@ package org.nkk.flow.web.controller;
 import org.nkk.core.beans.common.PageResult;
 import org.nkk.core.beans.common.Result;
 import org.nkk.flow.entity.FlowProcess;
+import org.nkk.flow.web.model.FlowInstancePageRequest;
+import org.nkk.flow.web.model.FlowInstanceRecordVO;
 import org.nkk.flow.web.model.FlowProcessCategoryResponse;
 import org.nkk.flow.web.model.FlowProcessInfoUpdateRequest;
 import org.nkk.flow.web.model.FlowProcessPageRequest;
@@ -101,6 +103,35 @@ public class FlowDesignerProcessController {
     @GetMapping("/{processId}")
     public Result<FlowProcess> get(@PathVariable Long processId) {
         return Result.ok(processService.getProcess(processId));
+    }
+
+    /**
+     * 按流程定义 ID 分页查询已发起的流程实例。
+     *
+     * <p>查询参数示例：{@code GET /flow/designer/processes/1785467714628/instances?current=1&size=10&starterName=张&instanceState=0}</p>
+     * <ul>
+     *     <li>{@code current}：页码，从 1 开始，必填</li>
+     *     <li>{@code size}：每页条数，必填</li>
+     *     <li>{@code starterName}：发起人名称，模糊匹配，可选</li>
+     *     <li>{@code startTime}：发起开始时间（提交时间下限，含），格式 {@code yyyy-MM-dd HH:mm:ss}，可选</li>
+     *     <li>{@code endTime}：发起结束时间（提交时间上限，含），格式 {@code yyyy-MM-dd HH:mm:ss}，可选</li>
+     *     <li>{@code instanceState}：实例状态，可选；取值见 {@link org.nkk.flow.enums.core.FlowInstanceEnum.InstanceState}：
+     *          0-审批中、1-审批通过、2-审批驳回、3-已撤销</li>
+     *     <li>{@code instanceId}：实例 ID，精确匹配，可选</li>
+     * </ul>
+     *
+     * <p>返回字段：{@code instanceId}(实例ID)、{@code starterName}(发起人名字)、
+     * {@code processName}(流程名称)、{@code submitTime}(提交时间)、
+     * {@code instanceState}(审批状态)、{@code summary}(摘要，预留字段固定返回空值)。</p>
+     *
+     * @param processId 流程定义 ID（路径参数，必填）；示例值：{@code 1785467714628}
+     * @param request   分页查询请求
+     * @return 实例记录分页结果
+     */
+    @GetMapping("/{processId}/instances")
+    public Result<PageResult<FlowInstanceRecordVO>> pageInstances(@PathVariable Long processId,
+                                                                  @Valid FlowInstancePageRequest request) {
+        return Result.ok(processService.pageInstances(processId, request));
     }
 
     /**

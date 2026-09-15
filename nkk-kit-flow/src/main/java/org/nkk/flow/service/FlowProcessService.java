@@ -2,8 +2,10 @@ package org.nkk.flow.service;
 
 import org.nkk.core.beans.common.PageResult;
 import org.nkk.flow.core.context.FlowCreator;
+import org.nkk.flow.entity.FlowHisInstance;
 import org.nkk.flow.entity.FlowProcess;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -76,6 +78,26 @@ public interface FlowProcessService {
     PageResult<FlowProcess> pageProcesses(long current, long size, String tenantId, String processName,
                                           String processKey, String processType, Integer processState,
                                           String formSourceType);
+
+    /**
+     * 按流程定义 ID 分页查询已发起的流程实例（含审批中、已通过、已驳回、已撤回等全部状态）。
+     *
+     * <p>实例记录来自历史实例表，覆盖实例全生命周期。返回结果含流程定义名称（由 processId 反查填充）。</p>
+     *
+     * @param current      页码，从 1 开始
+     * @param size         每页条数
+     * @param processId    流程定义 ID，必填
+     * @param starterName  发起人名称，模糊匹配，为空不过滤
+     * @param startTime    发起开始时间（提交时间下限，含），为空不过滤
+     * @param endTime      发起结束时间（提交时间上限，含），为空不过滤
+     * @param instanceState 实例状态，精确匹配，为空不过滤；取值见
+     *                      {@link org.nkk.flow.enums.core.FlowInstanceEnum.InstanceState}：
+     *                      0-审批中、1-审批通过、2-审批驳回、3-已撤销
+     * @param instanceId   实例 ID，精确匹配，为空不过滤
+     * @return 流程实例分页结果，每条记录含流程名称
+     */
+    PageResult<FlowHisInstance> pageInstances(long current, long size, Long processId, String starterName,
+                                              Date startTime, Date endTime, Integer instanceState, Long instanceId);
 
     /**
      * 查询流程定义的全部版本记录。

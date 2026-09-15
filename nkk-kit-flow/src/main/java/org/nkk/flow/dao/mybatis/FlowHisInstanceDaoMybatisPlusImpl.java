@@ -1,10 +1,13 @@
 package org.nkk.flow.dao.mybatis;
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import org.nkk.flow.dao.FlowHisInstanceDao;
 import org.nkk.flow.entity.FlowHisInstance;
 import org.nkk.flow.mapper.FlowHisInstanceMapper;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -68,6 +71,22 @@ public class FlowHisInstanceDaoMybatisPlusImpl implements FlowHisInstanceDao {
     @Override
     public List<FlowHisInstance> selectListByBusinessKey(String businessKey) {
         return mapper.selectList(new QueryWrapper<FlowHisInstance>().eq("business_key", businessKey));
+    }
+
+    @Override
+    public IPage<FlowHisInstance> selectPage(IPage<FlowHisInstance> page, Long processId, String starterName,
+                                              Date startTime, Date endTime, Integer instanceState, Long instanceId) {
+        QueryWrapper<FlowHisInstance> wrapper = new QueryWrapper<>();
+        wrapper.eq("process_id", processId);
+        wrapper.like(StrUtil.isNotBlank(starterName), "create_by", StrUtil.trim(starterName));
+        wrapper.ge(startTime != null, "create_time", startTime);
+        wrapper.le(endTime != null, "create_time", endTime);
+        wrapper.eq(instanceState != null, "instance_state", instanceState);
+        wrapper.eq(instanceId != null, "id", instanceId);
+        // 默认按提交时间倒序，最新实例在前
+        wrapper.orderByDesc("create_time");
+        wrapper.orderByDesc("id");
+        return mapper.selectPage(page, wrapper);
     }
 }
 

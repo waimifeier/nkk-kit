@@ -11,6 +11,7 @@ import org.nkk.flow.core.extension.id.FlowIdGenerator;
 import org.nkk.flow.dao.FlowHisInstanceDao;
 import org.nkk.flow.dao.FlowInstanceDao;
 import org.nkk.flow.dao.FlowProcessDao;
+import org.nkk.flow.entity.FlowHisInstance;
 import org.nkk.flow.entity.FlowProcess;
 import org.nkk.flow.enums.core.FlowProcessEnum.ProcessState;
 import org.nkk.flow.model.FlowModelValidator;
@@ -233,6 +234,23 @@ public class FlowProcessServiceImpl implements FlowProcessService {
         }
         IPage<FlowProcess> page = processDao.selectPage(new Page<>(current, size),
                 StrUtil.trimToNull(tenantId), processName, processKey, processType, processState, formSourceType);
+        return PageResult.of(page.getTotal(), page.getCurrent(), page.getSize(), page.getRecords());
+    }
+
+    @Override
+    public PageResult<FlowHisInstance> pageInstances(long current, long size, Long processId, String starterName,
+                                                     Date startTime, Date endTime, Integer instanceState, Long instanceId) {
+        if (current < 1) {
+            throw new IllegalArgumentException("页码不能小于 1");
+        }
+        if (size < 1) {
+            throw new IllegalArgumentException("每页条数不能小于 1");
+        }
+        if (processId == null) {
+            throw new IllegalArgumentException("流程定义 ID 不能为空");
+        }
+        IPage<FlowHisInstance> page = hisInstanceDao.selectPage(new Page<>(current, size), processId,
+                StrUtil.trimToNull(starterName), startTime, endTime, instanceState, instanceId);
         return PageResult.of(page.getTotal(), page.getCurrent(), page.getSize(), page.getRecords());
     }
 
