@@ -103,6 +103,17 @@ public interface FlowProcessService {
     boolean disableProcess(Long id);
 
     /**
+     * 删除草稿流程定义。
+     *
+     * <p>仅草稿状态（{@link org.nkk.flow.enums.core.FlowProcessEnum.ProcessState#DRAFT}）
+     * 且没有发起过流程实例时允许删除；已发布、已停用、历史版本或已有实例的流程均不允许删除。</p>
+     *
+     * @param id 流程定义 ID
+     * @return 是否删除成功
+     */
+    boolean deleteDraft(Long id);
+
+    /**
      * 更新流程定义基础资料，不修改流程模型和版本。
      *
      * @param process 包含流程定义 ID 和待更新资料的对象

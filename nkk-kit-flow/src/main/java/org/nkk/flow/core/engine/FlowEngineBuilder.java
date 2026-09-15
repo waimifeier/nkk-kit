@@ -268,7 +268,7 @@ public class FlowEngineBuilder {
         context.setFlowAiHandler(flowAiHandler);
 
         FlowTaskServiceImpl taskService = new FlowTaskServiceImpl(context, idGenerator, taskDao, taskActorDao, hisTaskDao, hisTaskActorDao);
-        FlowProcessServiceImpl processService = new FlowProcessServiceImpl(processDao, idGenerator);
+        FlowProcessServiceImpl processService = new FlowProcessServiceImpl(processDao, idGenerator, instanceDao, hisInstanceDao);
         FlowRuntimeServiceImpl runtimeService = new FlowRuntimeServiceImpl(context, idGenerator, instanceDao, hisInstanceDao, extInstanceDao, taskDao, taskService);
         FlowQueryServiceImpl queryService = new FlowQueryServiceImpl(instanceDao, hisInstanceDao, extInstanceDao,
                 taskDao, taskActorDao, hisTaskDao, hisTaskActorDao);

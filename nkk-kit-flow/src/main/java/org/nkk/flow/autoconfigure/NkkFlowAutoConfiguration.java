@@ -169,8 +169,9 @@ public class NkkFlowAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public FlowProcessService flowProcessService(FlowProcessDao processDao, FlowIdGenerator idGenerator) {
-        return new FlowProcessServiceImpl(processDao, idGenerator);
+    public FlowProcessService flowProcessService(FlowProcessDao processDao, FlowIdGenerator idGenerator,
+                                                 FlowInstanceDao instanceDao, FlowHisInstanceDao hisInstanceDao) {
+        return new FlowProcessServiceImpl(processDao, idGenerator, instanceDao, hisInstanceDao);
     }
 
     @Bean

@@ -1,8 +1,11 @@
 package org.nkk.flow.entity;
 
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 import org.nkk.flow.core.context.FlowContext;
 import org.nkk.flow.enums.core.FlowProcessEnum.ProcessState;
 import org.nkk.flow.model.FlowProcessModel;
@@ -80,6 +83,7 @@ public class FlowProcess extends FlowEntity {
     /**
      * 表单ID。
      */
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long formId;
 
     /**
@@ -90,7 +94,7 @@ public class FlowProcess extends FlowEntity {
     /**
      * 表单版本。
      */
-    private Integer formVersion;
+    private String formVersion;
 
     /**
      * 表单名称。

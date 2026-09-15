@@ -31,7 +31,7 @@ CREATE TABLE `flow_process`
     `form_source_type` varchar(32)          DEFAULT NULL COMMENT '表单来源类型 form/business',
     `form_id`         bigint                DEFAULT NULL COMMENT '表单ID',
     `form_key`        varchar(100)          DEFAULT NULL COMMENT '表单编码',
-    `form_version`    int                   DEFAULT 1 COMMENT '表单版本',
+    `form_version`    varchar(32)           DEFAULT '1' COMMENT '表单版本',
     `form_name`       varchar(100)          DEFAULT NULL COMMENT '表单名称',
     PRIMARY KEY (`id`),
     KEY `idx_flow_process_key_version` (`tenant_id`, `process_key`, `process_version`),

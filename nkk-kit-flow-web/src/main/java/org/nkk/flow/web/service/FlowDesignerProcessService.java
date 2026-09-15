@@ -72,6 +72,7 @@ public class FlowDesignerProcessService {
         update.setFormKey(StrUtil.trimToNull(request.getFormKey()));
         update.setFormVersion(request.getFormVersion());
         update.setFormName(StrUtil.trimToNull(request.getFormName()));
+        update.setSort(request.getSort());
         flowEngine.processService().updateProcessInfo(update);
 
         return flowEngine.processService().getProcessById(processId);
@@ -180,6 +181,73 @@ public class FlowDesignerProcessService {
         long leftId = left.getId() == null ? 0L : left.getId();
         long rightId = right.getId() == null ? 0L : right.getId();
         return Long.compare(leftId, rightId);
+    }
+
+    /**
+     * 删除草稿流程定义。
+     *
+     * <p>仅草稿状态且没有发起过流程实例时允许删除。</p>
+     *
+     * @param processId 流程定义 ID
+     */
+    public void deleteProcess(Long processId) {
+        if (processId == null) {
+            throw new IllegalArgumentException("流程定义 ID 不能为空");
+        }
+        flowEngine.processService().deleteDraft(processId);
+    }
+
+    /**
+     * 复制流程定义。
+     *
+     * <p>按流程 key 查找最新版本，创建一份新的副本：流程 key 追加 {@code _copyN}（N 从 1 递增直到不重复），
+     * 流程名称追加" 复制N"，状态固定为草稿。其余参数（模型 JSON、表单元数据、分类、图标等）保持不变。
+     * 复制操作不做任何状态校验。</p>
+     *
+     * @param tenantId 租户 ID
+     * @param processKey 流程 key
+     * @return 复制后的草稿流程定义
+     */
+    public FlowProcess copyProcess(String tenantId, String processKey) {
+        if (StrUtil.isBlank(processKey)) {
+            throw new IllegalArgumentException("流程 key 不能为空");
+        }
+        String trimmedTenantId = StrUtil.trimToNull(tenantId);
+        String key = StrUtil.trim(processKey);
+        List<FlowProcess> versions = flowEngine.processService().getProcessVersions(trimmedTenantId, key);
+        if (versions == null || versions.isEmpty()) {
+            throw new IllegalArgumentException("流程定义不存在，processKey=" + key);
+        }
+        FlowProcess source = versions.get(0);
+
+        String baseName = StrUtil.trim(source.getProcessName());
+        String baseKey = source.getProcessKey();
+        int suffix = 1;
+        while (true) {
+            String candidateKey = baseKey + "_copy" + suffix;
+            List<FlowProcess> existing = flowEngine.processService().getProcessVersions(trimmedTenantId, candidateKey);
+            if (existing == null || existing.isEmpty()) {
+                break;
+            }
+            suffix++;
+        }
+
+        FlowProcessPublishRequest request = new FlowProcessPublishRequest();
+        request.setProcessName(baseName + " 复制" + suffix);
+        request.setProcessKey(baseKey + "_copy" + suffix);
+        request.setProcessIcon(source.getProcessIcon());
+        request.setProcessType(source.getProcessType());
+        request.setRemark(source.getRemark());
+        request.setInstanceUrl(source.getInstanceUrl());
+        request.setFormSourceType(source.getFormSourceType());
+        request.setFormId(source.getFormId());
+        request.setFormKey(source.getFormKey());
+        request.setFormVersion(source.getFormVersion());
+        request.setFormName(source.getFormName());
+        request.setModelContent(source.getModelContent());
+        request.setSaveAsDraft(true);
+        request.setRepeat(true);
+        return publish(request);
     }
 
     /**

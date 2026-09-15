@@ -1,5 +1,7 @@
 package org.nkk.flow.web.model;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.Data;
 import org.nkk.flow.core.context.FlowContext;
 import org.nkk.flow.model.FlowFieldMeta;
@@ -17,11 +19,12 @@ public class FlowMetaFormVO implements Serializable {
 
     private String sourceType;
 
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long formId;
 
     private String formKey;
 
-    private Integer formVersion;
+    private String formVersion;
 
     private String formName;
 

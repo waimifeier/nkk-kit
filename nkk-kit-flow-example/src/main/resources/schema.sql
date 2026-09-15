@@ -28,7 +28,7 @@ CREATE TABLE flow_process
     form_source_type VARCHAR(32),
     form_id         BIGINT,
     form_key        VARCHAR(100),
-    form_version    INT          DEFAULT 1,
+    form_version    VARCHAR(32) DEFAULT '1',
     form_name       VARCHAR(100),
     PRIMARY KEY (id)
 );

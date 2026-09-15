@@ -60,7 +60,7 @@ public class FlowProcessPublishRequest implements Serializable {
     /**
      * 表单版本号。
      */
-    private Integer formVersion;
+    private String formVersion;
 
     /**
      * 表单名称。
@@ -74,6 +74,11 @@ public class FlowProcessPublishRequest implements Serializable {
      *
      */
     private Object modelContent;
+
+    /**
+     * 排序值，值越小越靠前。为空时保留默认值。
+     */
+    private Integer sort;
 
     /**
      * 是否保存为草稿。

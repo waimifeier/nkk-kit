@@ -1,5 +1,6 @@
 package org.nkk.flow.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -7,6 +8,8 @@ import org.nkk.core.beans.common.PageResult;
 import org.nkk.flow.core.context.FlowContext;
 import org.nkk.flow.core.context.FlowCreator;
 import org.nkk.flow.core.extension.id.FlowIdGenerator;
+import org.nkk.flow.dao.FlowHisInstanceDao;
+import org.nkk.flow.dao.FlowInstanceDao;
 import org.nkk.flow.dao.FlowProcessDao;
 import org.nkk.flow.entity.FlowProcess;
 import org.nkk.flow.enums.core.FlowProcessEnum.ProcessState;
@@ -26,9 +29,16 @@ public class FlowProcessServiceImpl implements FlowProcessService {
 
     private final FlowIdGenerator idGenerator;
 
-    public FlowProcessServiceImpl(FlowProcessDao processDao, FlowIdGenerator idGenerator) {
+    private final FlowInstanceDao instanceDao;
+
+    private final FlowHisInstanceDao hisInstanceDao;
+
+    public FlowProcessServiceImpl(FlowProcessDao processDao, FlowIdGenerator idGenerator,
+                                  FlowInstanceDao instanceDao, FlowHisInstanceDao hisInstanceDao) {
         this.processDao = processDao;
         this.idGenerator = idGenerator;
+        this.instanceDao = instanceDao;
+        this.hisInstanceDao = hisInstanceDao;
     }
 
     @Override
@@ -49,6 +59,30 @@ public class FlowProcessServiceImpl implements FlowProcessService {
         }
 
         List<FlowProcess> exists = processDao.selectListByProcessKeyAndVersion(creator.getTenantId(), model.getKey(), null);
+
+        // repeat=false：始终操作同一条记录，只切换状态，不增版本
+        if (!repeat) {
+            FlowProcess target = latestActive(exists);
+            ProcessState targetState = saveAsDraft ? ProcessState.DRAFT : ProcessState.ENABLED;
+            if (target == null) {
+                return insertProcess(model, creator, 1, targetState);
+            }
+            FlowProcess update = new FlowProcess();
+            update.setId(target.getId());
+            update.setProcessName(model.getName());
+            update.setInstanceUrl(model.getInstanceUrl());
+            update.setModelContent(FlowContext.toJson(model.cleanParentNode()));
+            update.setProcessState(targetState.value());
+            if (!processDao.updateById(update)) {
+                throw new IllegalStateException("更新流程定义失败");
+            }
+            if (!saveAsDraft) {
+                archiveCurrentProcesses(exists, target.getId());
+            }
+            return target.getId();
+        }
+
+        // repeat=true：版本管理，草稿优先
         FlowProcess latest = latestProcess(exists);
         FlowProcess draft = latestDraft(exists);
         if (saveAsDraft) {
@@ -67,18 +101,6 @@ public class FlowProcessServiceImpl implements FlowProcessService {
             update.setProcessState(ProcessState.ENABLED.value());
             processDao.updateById(update);
             return draft.getId();
-        }
-
-        if (latest != null && !repeat) {
-            FlowProcess update = new FlowProcess();
-            update.setId(latest.getId());
-            update.setProcessName(model.getName());
-            update.setInstanceUrl(model.getInstanceUrl());
-            update.setModelContent(FlowContext.toJson(model.cleanParentNode()));
-            if (!processDao.updateById(update)) {
-                throw new IllegalStateException("更新流程定义失败");
-            }
-            return latest.getId();
         }
 
         archiveCurrentProcesses(exists, null);
@@ -119,6 +141,21 @@ public class FlowProcessServiceImpl implements FlowProcessService {
 
     private FlowProcess latestProcess(List<FlowProcess> processes) {
         return processes == null || processes.isEmpty() ? null : processes.get(0);
+    }
+
+    /**
+     * 查找最新的非历史版本记录，用于 repeat=false 时操作同一条记录。
+     */
+    private FlowProcess latestActive(List<FlowProcess> processes) {
+        if (processes == null) {
+            return null;
+        }
+        for (FlowProcess process : processes) {
+            if (!ProcessState.HISTORY.value().equals(process.getProcessState())) {
+                return process;
+            }
+        }
+        return null;
     }
 
     private FlowProcess latestDraft(List<FlowProcess> processes) {
@@ -235,6 +272,19 @@ public class FlowProcessServiceImpl implements FlowProcessService {
     }
 
     @Override
+    public boolean deleteDraft(Long id) {
+        FlowProcess process = getProcessById(id);
+        if (!ProcessState.DRAFT.value().equals(process.getProcessState())) {
+            throw new IllegalStateException("仅草稿状态允许删除，id=" + id);
+        }
+        if (CollUtil.isNotEmpty(instanceDao.selectListByProcessId(id))
+                || CollUtil.isNotEmpty(hisInstanceDao.selectListByProcessId(id))) {
+            throw new IllegalStateException("该流程已发起过实例，不允许删除，id=" + id);
+        }
+        return processDao.deleteById(id);
+    }
+
+    @Override
     public boolean updateProcessInfo(FlowProcess process) {
         if (process == null || process.getId() == null) {
             throw new IllegalArgumentException("流程定义 ID 不能为空");
@@ -251,6 +301,7 @@ public class FlowProcessServiceImpl implements FlowProcessService {
         update.setFormKey(process.getFormKey());
         update.setFormVersion(process.getFormVersion());
         update.setFormName(process.getFormName());
+        update.setSort(process.getSort());
         return processDao.updateById(update);
     }
 }

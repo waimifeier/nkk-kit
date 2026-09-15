@@ -56,5 +56,10 @@ public class FlowInstanceDaoMybatisPlusImpl implements FlowInstanceDao {
     public List<FlowInstance> selectListByBusinessKey(String businessKey) {
         return mapper.selectList(new QueryWrapper<FlowInstance>().eq("business_key", businessKey));
     }
+
+    @Override
+    public List<FlowInstance> selectListByProcessId(Long processId) {
+        return mapper.selectList(new QueryWrapper<FlowInstance>().eq("process_id", processId));
+    }
 }
 

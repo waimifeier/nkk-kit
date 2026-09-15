@@ -9,6 +9,7 @@ import org.nkk.flow.web.model.FlowProcessPageRequest;
 import org.nkk.flow.web.model.FlowProcessPublishRequest;
 import org.nkk.flow.web.model.FlowProcessVO;
 import org.nkk.flow.web.service.FlowDesignerProcessService;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -139,6 +140,38 @@ public class FlowDesignerProcessController {
     public Result<FlowProcess> updateInfo(@PathVariable Long processId,
                                           @RequestBody FlowProcessInfoUpdateRequest request) {
         return Result.ok(processService.updateInfo(processId, request));
+    }
+
+    /**
+     * 删除草稿流程定义。
+     *
+     * <p>仅草稿状态且没有发起过流程实例时允许删除；
+     * 已发布、已停用、历史版本或已有实例的流程均不允许删除。</p>
+     *
+     * @param processId 流程定义 ID；示例值：{@code 1785467714628}
+     * @return 操作结果
+     */
+    @DeleteMapping("/{processId}")
+    public Result<Void> delete(@PathVariable Long processId) {
+        processService.deleteProcess(processId);
+        return Result.ok("成功");
+    }
+
+    /**
+     * 复制流程定义。
+     *
+     * <p>按流程 key 查找最新版本，创建一份新的副本：流程 key 追加 {@code _copyN}（N 从 1 递增直到不重复），
+     * 流程名称追加" 复制N"，状态固定为草稿。其余参数（模型 JSON、表单元数据、分类、图标等）保持不变。
+     * 复制操作不做任何状态校验。</p>
+     *
+     * @param processKey 流程 key；示例值：{@code leave}
+     * @param tenantId 租户 ID；示例值：{@code tenant-001}
+     * @return 复制后的草稿流程定义
+     */
+    @PostMapping("/key/{processKey}/copy")
+    public Result<FlowProcess> copy(@PathVariable String processKey,
+                                    @RequestParam(required = false) String tenantId) {
+        return Result.ok(processService.copyProcess(tenantId, processKey));
     }
 
     /**
