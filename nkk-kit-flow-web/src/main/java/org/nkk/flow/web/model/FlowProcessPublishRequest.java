@@ -43,7 +43,7 @@ public class FlowProcessPublishRequest implements Serializable {
     private String instanceUrl;
 
     /**
-     * 表单来源类型。例如 FORM、URL、CUSTOM。
+     * 表单来源类型。示例值：{@code form}（自定义表单）、{@code business}（业务表单）
      */
     private String formSourceType;
 

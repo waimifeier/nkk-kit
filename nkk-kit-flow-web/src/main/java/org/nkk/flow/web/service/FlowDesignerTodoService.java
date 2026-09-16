@@ -2,6 +2,7 @@ package org.nkk.flow.web.service;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
+import org.nkk.core.beans.common.PageResult;
 import org.nkk.flow.core.context.FlowCreator;
 import org.nkk.flow.core.extension.identity.FlowCreatorProvider;
 import org.nkk.flow.dao.FlowHisInstanceDao;
@@ -18,6 +19,7 @@ import org.nkk.flow.entity.FlowTaskActor;
 import org.nkk.flow.enums.core.FlowInstanceEnum.InstanceState;
 import org.nkk.flow.enums.core.FlowTaskEnum.TaskType;
 import org.nkk.flow.service.NkkFlowEngine;
+import org.nkk.flow.web.model.FlowTodoPageRequest;
 import org.nkk.flow.web.model.FlowTodoRecordResponse;
 import org.nkk.flow.enums.core.FlowTodoTypeEnum;
 
@@ -59,28 +61,32 @@ public class FlowDesignerTodoService {
     }
 
     /**
-     * 查询待办中心记录。
+     * 分页查询待办中心记录。
      *
-     * @param type 查询类型
-     * @param userId 用户 ID，为空时从 {@link FlowCreatorProvider} 获取
-     * @return 待办中心记录
+     * <p>待办数据涉及任务参与者权限策略的内存筛选，无法直接下推 SQL 分页，
+     * 故先按现有规则查出当前用户可见记录并排序，再在内存中分页。</p>
+     *
+     * @param request 分页查询请求
+     * @return 待办中心记录分页结果
      */
-    public List<FlowTodoRecordResponse> list(Integer type, String userId) {
-        FlowTodoTypeEnum todoType = FlowTodoTypeEnum.of(type);
-        String actualUserId = resolveUserId(userId);
+    public PageResult<FlowTodoRecordResponse> page(FlowTodoPageRequest request) {
+        FlowTodoTypeEnum todoType = FlowTodoTypeEnum.of(request.getType());
+        String actualUserId = resolveUserId(request.getUserId());
+
+        List<FlowTodoRecordResponse> records;
         if (todoType == FlowTodoTypeEnum.MY_APPLY) {
-            return myApply(todoType, actualUserId);
+            records = myApply(actualUserId, request.getInstanceState());
+        } else if (todoType == FlowTodoTypeEnum.PENDING) {
+            records = pending(actualUserId);
+        } else if (todoType == FlowTodoTypeEnum.APPROVED) {
+            records = approved(actualUserId);
+        } else {
+            records = copy(actualUserId);
         }
-        if (todoType == FlowTodoTypeEnum.PENDING) {
-            return pending(todoType, actualUserId);
-        }
-        if (todoType == FlowTodoTypeEnum.APPROVED) {
-            return approved(todoType, actualUserId);
-        }
-        return copy(todoType, actualUserId);
+        return paginate(records, request.getCurrent(), request.getSize());
     }
 
-    private List<FlowTodoRecordResponse> myApply(FlowTodoTypeEnum todoType, String userId) {
+    private List<FlowTodoRecordResponse> myApply(String userId, Integer instanceState) {
         List<FlowHisInstance> instances = hisInstanceDao.selectListByCreateId(userId);
         if (CollUtil.isEmpty(instances)) {
             return Collections.emptyList();
@@ -88,12 +94,20 @@ public class FlowDesignerTodoService {
         Map<Long, FlowProcess> processMap = new LinkedHashMap<>();
         List<FlowTodoRecordResponse> records = new ArrayList<>();
         for (FlowHisInstance instance : instances) {
-            records.add(recordWithCurrentTask(todoType, instance, processMap));
+            // instanceState 为空查询全部；非空时按审批状态精确过滤：0-审批中、1-审批通过、2-审批拒绝、3-已撤销
+            if (instanceState != null && !instanceState.equals(instance.getInstanceState())) {
+                continue;
+            }
+            records.add(recordWithCurrentTask(instance, processMap));
         }
+        // 按发起时间倒序，保证分页顺序稳定
+        records.sort(Comparator
+                .comparing(FlowTodoRecordResponse::getStartTime, Comparator.nullsLast(Comparator.reverseOrder()))
+                .thenComparing(FlowTodoRecordResponse::getInstanceId, Comparator.nullsLast(Comparator.reverseOrder())));
         return records;
     }
 
-    private List<FlowTodoRecordResponse> pending(FlowTodoTypeEnum todoType, String userId) {
+    private List<FlowTodoRecordResponse> pending(String userId) {
         List<FlowTask> tasks = allowedActiveTasks(userId);
         List<FlowTodoRecordResponse> records = new ArrayList<>();
         Map<Long, FlowProcess> processMap = new LinkedHashMap<>();
@@ -105,12 +119,12 @@ public class FlowDesignerTodoService {
             if (instance == null) {
                 continue;
             }
-            records.add(recordWithTask(todoType, instance, task, processMap));
+            records.add(recordWithTask(instance, task, processMap));
         }
         return sortByTaskTime(records);
     }
 
-    private List<FlowTodoRecordResponse> approved(FlowTodoTypeEnum todoType, String userId) {
+    private List<FlowTodoRecordResponse> approved(String userId) {
         List<FlowHisTask> tasks = hisTaskDao.selectListByCreateId(userId);
         if (CollUtil.isEmpty(tasks)) {
             return Collections.emptyList();
@@ -125,12 +139,12 @@ public class FlowDesignerTodoService {
             if (instance == null) {
                 continue;
             }
-            records.add(recordWithCurrentTask(todoType, instance, processMap));
+            records.add(recordWithCurrentTask(instance, processMap));
         }
         return sortByTaskTime(records);
     }
 
-    private List<FlowTodoRecordResponse> copy(FlowTodoTypeEnum todoType, String userId) {
+    private List<FlowTodoRecordResponse> copy(String userId) {
         List<FlowTodoRecordResponse> records = new ArrayList<>();
         Map<Long, FlowProcess> processMap = new LinkedHashMap<>();
         for (FlowTask task : allowedActiveTasks(userId)) {
@@ -139,13 +153,13 @@ public class FlowDesignerTodoService {
             }
             FlowHisInstance instance = hisInstanceDao.selectById(task.getInstanceId());
             if (instance != null) {
-                records.add(recordWithCurrentTask(todoType, instance, processMap));
+                records.add(recordWithCurrentTask(instance, processMap));
             }
         }
         for (FlowHisTask task : allowedHisCopyTasks(userId)) {
             FlowHisInstance instance = hisInstanceDao.selectById(task.getInstanceId());
             if (instance != null) {
-                records.add(recordWithCurrentTask(todoType, instance, processMap));
+                records.add(recordWithCurrentTask(instance, processMap));
             }
         }
         return sortByTaskTime(records);
@@ -204,14 +218,14 @@ public class FlowDesignerTodoService {
         return actorMap;
     }
 
-    private FlowTodoRecordResponse recordWithCurrentTask(FlowTodoTypeEnum type, FlowHisInstance instance,
-                                                        Map<Long, FlowProcess> processMap) {
-        return recordWithTask(type, instance, currentActiveTask(instance.getId()), processMap);
+    private FlowTodoRecordResponse recordWithCurrentTask(FlowHisInstance instance,
+                                                         Map<Long, FlowProcess> processMap) {
+        return recordWithTask(instance, currentActiveTask(instance.getId()), processMap);
     }
 
-    private FlowTodoRecordResponse recordWithTask(FlowTodoTypeEnum type, FlowHisInstance instance, FlowTask task,
-                                              Map<Long, FlowProcess> processMap) {
-        FlowTodoRecordResponse record = baseRecord(type, instance, processMap);
+    private FlowTodoRecordResponse recordWithTask(FlowHisInstance instance, FlowTask task,
+                                                  Map<Long, FlowProcess> processMap) {
+        FlowTodoRecordResponse record = baseRecord(instance, processMap);
         if (task == null) {
             return record;
         }
@@ -237,28 +251,25 @@ public class FlowDesignerTodoService {
         return tasks.get(0);
     }
 
-    private FlowTodoRecordResponse baseRecord(FlowTodoTypeEnum type, FlowHisInstance instance,
-                                              Map<Long, FlowProcess> processMap) {
+    private FlowTodoRecordResponse baseRecord(FlowHisInstance instance, Map<Long, FlowProcess> processMap) {
         FlowProcess process = process(instance.getProcessId(), processMap);
         FlowTodoRecordResponse record = new FlowTodoRecordResponse();
-        record.setType(type.value());
-        record.setTypeName(type.label());
-        FlowTodoRecordResponse.Instance instanceData = new FlowTodoRecordResponse.Instance();
-        instanceData.setInstanceId(instance.getId());
-        instanceData.setBusinessKey(instance.getBusinessKey());
-        instanceData.setProcessId(instance.getProcessId());
-        instanceData.setProcessKey(process == null ? null : process.getProcessKey());
-        instanceData.setProcessName(process == null ? null : process.getProcessName());
-        instanceData.setProcessVersion(process == null ? null : process.getProcessVersion());
-        instanceData.setInstanceState(instance.getInstanceState());
-        instanceData.setInstanceStateName(instanceStateLabel(instance.getInstanceState()));
-        instanceData.setStartUserId(instance.getCreateId());
-        instanceData.setStartUserName(instance.getCreateBy());
-        instanceData.setStartTime(instance.getCreateTime());
-        instanceData.setCurrentNodeKey(instance.getCurrentNodeKey());
-        instanceData.setCurrentNodeName(instance.getCurrentNodeName());
-        instanceData.setDuration(duration(instance));
-        record.setInstance(instanceData);
+        record.setInstanceId(instance.getId());
+        record.setBusinessKey(instance.getBusinessKey());
+        record.setProcessId(instance.getProcessId());
+        record.setProcessKey(process == null ? null : process.getProcessKey());
+        record.setProcessName(process == null ? null : process.getProcessName());
+        record.setProcessType(process == null ? null : process.getProcessType());
+        record.setSourceType(process == null ? null : process.getFormSourceType());
+        record.setProcessVersion(process == null ? null : process.getProcessVersion());
+        record.setInstanceState(instance.getInstanceState());
+        record.setInstanceStateName(instanceStateLabel(instance.getInstanceState()));
+        record.setStartUserId(instance.getCreateId());
+        record.setStartUserName(instance.getCreateBy());
+        record.setStartTime(instance.getCreateTime());
+        record.setCurrentNodeKey(instance.getCurrentNodeKey());
+        record.setCurrentNodeName(instance.getCurrentNodeName());
+        record.setDuration(duration(instance));
         return record;
     }
 
@@ -309,7 +320,7 @@ public class FlowDesignerTodoService {
     private List<FlowTodoRecordResponse> sortByTaskTime(List<FlowTodoRecordResponse> records) {
         records.sort(Comparator
                 .comparing(this::taskCreateTime, Comparator.nullsLast(Comparator.reverseOrder()))
-                .thenComparing(this::instanceId, Comparator.nullsLast(Comparator.reverseOrder())));
+                .thenComparing(FlowTodoRecordResponse::getInstanceId, Comparator.nullsLast(Comparator.reverseOrder())));
         return records;
     }
 
@@ -317,7 +328,18 @@ public class FlowDesignerTodoService {
         return record == null || record.getTask() == null ? null : record.getTask().getTaskCreateTime();
     }
 
-    private Long instanceId(FlowTodoRecordResponse record) {
-        return record == null || record.getInstance() == null ? null : record.getInstance().getInstanceId();
+    /**
+     * 对已排序的记录做内存分页。
+     *
+     * @param records 已排序的全量记录
+     * @param current 页码，从 1 开始
+     * @param size    每页条数
+     * @return 分页结果
+     */
+    private PageResult<FlowTodoRecordResponse> paginate(List<FlowTodoRecordResponse> records, int current, int size) {
+        int total = records.size();
+        int from = Math.min((current - 1) * size, total);
+        int to = Math.min(from + size, total);
+        return PageResult.of(total, current, size, new ArrayList<>(records.subList(from, to)));
     }
 }

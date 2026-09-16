@@ -20,7 +20,7 @@ public final class FlowInstanceEnum {
     public enum InstanceState implements IEnum<Integer> {
 
         SUSPENDED(-2, "已暂停"),
-        DRAFT(-1, "暂存"),
+        DRAFT(-1, "草稿"),
         ACTIVE(0, "审批中"),
         COMPLETED(1, "审批通过"),
         REJECTED(2, "审批拒绝"),
