@@ -2,6 +2,8 @@ package org.nkk.flow.web.service;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.nkk.core.beans.common.PageResult;
 import org.nkk.flow.core.context.FlowCreator;
 import org.nkk.flow.core.extension.identity.FlowCreatorProvider;
@@ -13,17 +15,21 @@ import org.nkk.flow.dao.FlowTaskActorDao;
 import org.nkk.flow.dao.FlowTaskDao;
 import org.nkk.flow.entity.FlowHisInstance;
 import org.nkk.flow.entity.FlowHisTask;
+import org.nkk.flow.entity.FlowHisTaskActor;
 import org.nkk.flow.entity.FlowProcess;
 import org.nkk.flow.entity.FlowTask;
 import org.nkk.flow.entity.FlowTaskActor;
 import org.nkk.flow.enums.core.FlowInstanceEnum.InstanceState;
 import org.nkk.flow.enums.core.FlowTaskEnum.TaskType;
 import org.nkk.flow.service.NkkFlowEngine;
-import org.nkk.flow.web.model.FlowTodoPageRequest;
+import org.nkk.flow.web.model.FlowApprovedPageRequest;
+import org.nkk.flow.web.model.FlowCopiedPageRequest;
+import org.nkk.flow.web.model.FlowMyAppliedPageRequest;
+import org.nkk.flow.web.model.FlowPendingPageRequest;
 import org.nkk.flow.web.model.FlowTodoRecordResponse;
-import org.nkk.flow.enums.core.FlowTodoTypeEnum;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -31,9 +37,12 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 流程待办中心查询服务。
+ *
+ * <p>拆分为 4 个独立方法，每个方法返回分页结果，SQL 分页优先，仅在任务参与者权限筛选环节使用内存过滤。</p>
  */
 public class FlowDesignerTodoService {
 
@@ -60,138 +69,259 @@ public class FlowDesignerTodoService {
         this.hisTaskActorDao = hisTaskActorDao;
     }
 
+    // ==================== 1. 我发起的 ====================
+
     /**
-     * 分页查询待办中心记录。
-     *
-     * <p>待办数据涉及任务参与者权限策略的内存筛选，无法直接下推 SQL 分页，
-     * 故先按现有规则查出当前用户可见记录并排序，再在内存中分页。</p>
-     *
-     * @param request 分页查询请求
-     * @return 待办中心记录分页结果
+     * 分页查询当前登录用户发起的流程实例。
      */
-    public PageResult<FlowTodoRecordResponse> page(FlowTodoPageRequest request) {
-        FlowTodoTypeEnum todoType = FlowTodoTypeEnum.of(request.getType());
-        String actualUserId = resolveUserId(request.getUserId());
+    public PageResult<FlowTodoRecordResponse> myApplied(FlowMyAppliedPageRequest request) {
+        String userId = currentUserId();
+        Page<FlowHisInstance> page = new Page<>(request.getCurrent(), request.getSize());
+        IPage<FlowHisInstance> result = hisInstanceDao.selectPageByCreateId(page, userId,
+                request.getInstanceState(), request.getStartTime(), request.getEndTime());
 
-        List<FlowTodoRecordResponse> records;
-        if (todoType == FlowTodoTypeEnum.MY_APPLY) {
-            records = myApply(actualUserId, request.getInstanceState());
-        } else if (todoType == FlowTodoTypeEnum.PENDING) {
-            records = pending(actualUserId);
-        } else if (todoType == FlowTodoTypeEnum.APPROVED) {
-            records = approved(actualUserId);
-        } else {
-            records = copy(actualUserId);
+        if (result == null || CollUtil.isEmpty(result.getRecords())) {
+            return PageResult.empty(request.getCurrent(), request.getSize());
         }
-        return paginate(records, request.getCurrent(), request.getSize());
+
+        Map<Long, FlowProcess> processMap = batchFetchProcesses(result.getRecords());
+        List<FlowTodoRecordResponse> records = new ArrayList<>(result.getRecords().size());
+        for (FlowHisInstance instance : result.getRecords()) {
+            records.add(baseRecord(instance, processMap));
+        }
+        return PageResult.of(result.getTotal(), result.getCurrent(), result.getSize(), records);
     }
 
-    private List<FlowTodoRecordResponse> myApply(String userId, Integer instanceState) {
-        List<FlowHisInstance> instances = hisInstanceDao.selectListByCreateId(userId);
-        if (CollUtil.isEmpty(instances)) {
-            return Collections.emptyList();
-        }
-        Map<Long, FlowProcess> processMap = new LinkedHashMap<>();
-        List<FlowTodoRecordResponse> records = new ArrayList<>();
-        for (FlowHisInstance instance : instances) {
-            // instanceState 为空查询全部；非空时按审批状态精确过滤：0-审批中、1-审批通过、2-审批拒绝、3-已撤销
-            if (instanceState != null && !instanceState.equals(instance.getInstanceState())) {
-                continue;
-            }
-            records.add(recordWithCurrentTask(instance, processMap));
-        }
-        // 按发起时间倒序，保证分页顺序稳定
-        records.sort(Comparator
-                .comparing(FlowTodoRecordResponse::getStartTime, Comparator.nullsLast(Comparator.reverseOrder()))
-                .thenComparing(FlowTodoRecordResponse::getInstanceId, Comparator.nullsLast(Comparator.reverseOrder())));
-        return records;
-    }
+    // ==================== 2. 待我审批 ====================
 
-    private List<FlowTodoRecordResponse> pending(String userId) {
-        List<FlowTask> tasks = allowedActiveTasks(userId);
-        List<FlowTodoRecordResponse> records = new ArrayList<>();
-        Map<Long, FlowProcess> processMap = new LinkedHashMap<>();
+    /**
+     * 分页查询当前登录人需要审批的活动任务对应的流程实例。
+     */
+    public PageResult<FlowTodoRecordResponse> pending(FlowPendingPageRequest request) {
+        String userId = currentUserId();
+
+        // Step1: 通过权限策略找到允许的任务 ID
+        List<FlowTaskActor> actors = taskActorDao.selectListByActorId(userId);
+        Map<Long, List<FlowTaskActor>> actorMap = groupActorsByTaskId(actors);
+        if (actorMap.isEmpty()) {
+            return PageResult.empty(request.getCurrent(), request.getSize());
+        }
+        LinkedHashSet<Long> allowedTaskIds = allowedTaskIds(userId, actorMap);
+        if (allowedTaskIds.isEmpty()) {
+            return PageResult.empty(request.getCurrent(), request.getSize());
+        }
+
+        // Step2: 查活动任务，排除 COPY，收集 instanceId + task 映射
+        List<FlowTask> tasks = taskDao.selectListByIds(new ArrayList<>(allowedTaskIds));
+        Map<Long, FlowTask> instanceToTask = new LinkedHashMap<>();
+        LinkedHashSet<Long> instanceIds = new LinkedHashSet<>();
         for (FlowTask task : tasks) {
             if (TaskType.COPY.value().equals(task.getTaskType())) {
                 continue;
             }
-            FlowHisInstance instance = hisInstanceDao.selectById(task.getInstanceId());
-            if (instance == null) {
-                continue;
+            if (task.getInstanceId() != null) {
+                instanceToTask.put(task.getInstanceId(), task);
+                instanceIds.add(task.getInstanceId());
             }
+        }
+        if (instanceIds.isEmpty()) {
+            return PageResult.empty(request.getCurrent(), request.getSize());
+        }
+
+        // Step3: sourceType/processType → processIds
+        List<Long> processIds = resolveProcessIds(request.getSourceType(), request.getProcessType());
+
+        // Step4: SQL 分页查询实例
+        Page<FlowHisInstance> page = new Page<>(request.getCurrent(), request.getSize());
+        IPage<FlowHisInstance> result = hisInstanceDao.selectPageByInstanceIds(page,
+                instanceIds, request.getInstanceId(), request.getStartUserName(),
+                request.getStartTime(), request.getEndTime(), processIds);
+
+        if (result == null || CollUtil.isEmpty(result.getRecords())) {
+            return PageResult.empty(request.getCurrent(), request.getSize());
+        }
+
+        Map<Long, FlowProcess> processMap = batchFetchProcesses(result.getRecords());
+        List<FlowTodoRecordResponse> records = new ArrayList<>(result.getRecords().size());
+        for (FlowHisInstance instance : result.getRecords()) {
+            FlowTask task = instanceToTask.get(instance.getId());
             records.add(recordWithTask(instance, task, processMap));
         }
-        return sortByTaskTime(records);
+        return PageResult.of(result.getTotal(), result.getCurrent(), result.getSize(), records);
     }
 
-    private List<FlowTodoRecordResponse> approved(String userId) {
-        List<FlowHisTask> tasks = hisTaskDao.selectListByCreateId(userId);
-        if (CollUtil.isEmpty(tasks)) {
-            return Collections.emptyList();
-        }
-        List<FlowTodoRecordResponse> records = new ArrayList<>();
-        Map<Long, FlowProcess> processMap = new LinkedHashMap<>();
-        for (FlowHisTask task : tasks) {
-            if (TaskType.START.value().equals(task.getTaskType()) || TaskType.COPY.value().equals(task.getTaskType())) {
-                continue;
+    // ==================== 3. 抄送给我 ====================
+
+    /**
+     * 分页查询抄送给当前登录人的记录（活动抄送 + 历史抄送）。
+     */
+    public PageResult<FlowTodoRecordResponse> copied(FlowCopiedPageRequest request) {
+        String userId = currentUserId();
+
+        // Step1: 活动抄送任务
+        List<FlowTaskActor> activeActors = taskActorDao.selectListByActorId(userId);
+        LinkedHashSet<Long> activeTaskIds = new LinkedHashSet<>();
+        for (FlowTaskActor actor : activeActors) {
+            if (actor.getTaskId() != null) {
+                activeTaskIds.add(actor.getTaskId());
             }
-            FlowHisInstance instance = hisInstanceDao.selectById(task.getInstanceId());
+        }
+
+        // Step2: 历史抄送任务
+        List<FlowHisTaskActor> hisActors = hisTaskActorDao.selectListByActorId(userId);
+        LinkedHashSet<Long> hisTaskIds = new LinkedHashSet<>();
+        for (FlowHisTaskActor actor : hisActors) {
+            if (actor.getTaskId() != null) {
+                hisTaskIds.add(actor.getTaskId());
+            }
+        }
+
+        // Step3: 查任务详情，过滤 COPY 类型 + 抄送时间范围，收集 instanceId + task 映射
+        Map<Long, FlowTodoRecordResponse.Task> instanceToTask = new LinkedHashMap<>();
+        LinkedHashSet<Long> instanceIds = new LinkedHashSet<>();
+
+        // 活动抄送
+        if (!activeTaskIds.isEmpty()) {
+            List<FlowTask> tasks = taskDao.selectListByIds(new ArrayList<>(activeTaskIds));
+            for (FlowTask task : tasks) {
+                if (!TaskType.COPY.value().equals(task.getTaskType())) {
+                    continue;
+                }
+                if (!inTimeRange(task.getCreateTime(), request.getStartTime(), request.getEndTime())) {
+                    continue;
+                }
+                if (task.getInstanceId() != null) {
+                    instanceToTask.put(task.getInstanceId(), toTaskData(task));
+                    instanceIds.add(task.getInstanceId());
+                }
+            }
+        }
+
+        // 历史抄送
+        if (!hisTaskIds.isEmpty()) {
+            List<FlowHisTask> tasks = hisTaskDao.selectListByIds(new ArrayList<>(hisTaskIds));
+            for (FlowHisTask task : tasks) {
+                if (!TaskType.COPY.value().equals(task.getTaskType())) {
+                    continue;
+                }
+                if (!inTimeRange(task.getCreateTime(), request.getStartTime(), request.getEndTime())) {
+                    continue;
+                }
+                if (task.getInstanceId() != null) {
+                    instanceToTask.putIfAbsent(task.getInstanceId(), toTaskData(task));
+                    instanceIds.add(task.getInstanceId());
+                }
+            }
+        }
+
+        if (instanceIds.isEmpty()) {
+            return PageResult.empty(request.getCurrent(), request.getSize());
+        }
+
+        // Step4: sourceType/processType → processIds
+        List<Long> processIds = resolveProcessIds(request.getSourceType(), request.getProcessType());
+
+        // Step5: SQL 分页查询实例（不传时间范围，时间已在任务层过滤）
+        Page<FlowHisInstance> page = new Page<>(request.getCurrent(), request.getSize());
+        IPage<FlowHisInstance> result = hisInstanceDao.selectPageByInstanceIds(page,
+                instanceIds, request.getInstanceId(), request.getStartUserName(),
+                null, null, processIds);
+
+        if (result == null || CollUtil.isEmpty(result.getRecords())) {
+            return PageResult.empty(request.getCurrent(), request.getSize());
+        }
+
+        Map<Long, FlowProcess> processMap = batchFetchProcesses(result.getRecords());
+        List<FlowTodoRecordResponse> records = new ArrayList<>(result.getRecords().size());
+        for (FlowHisInstance instance : result.getRecords()) {
+            FlowTodoRecordResponse record = baseRecord(instance, processMap);
+            record.setTask(instanceToTask.get(instance.getId()));
+            records.add(record);
+        }
+        return PageResult.of(result.getTotal(), result.getCurrent(), result.getSize(), records);
+    }
+
+    // ==================== 4. 审批记录 ====================
+
+    /**
+     * 分页查询当前登录人已经审批过的历史任务。
+     */
+    public PageResult<FlowTodoRecordResponse> approved(FlowApprovedPageRequest request) {
+        String userId = currentUserId();
+
+        // Step1: 前置过滤 — startUserName / sourceType / processType / instanceId
+        List<Long> preFilterInstanceIds = null;
+        boolean hasPreFilter = StrUtil.isNotBlank(request.getStartUserName())
+                || StrUtil.isNotBlank(request.getSourceType())
+                || StrUtil.isNotBlank(request.getProcessType())
+                || request.getInstanceId() != null;
+
+        if (hasPreFilter) {
+            List<Long> processIds = resolveProcessIds(request.getSourceType(), request.getProcessType());
+            if (request.getInstanceId() != null) {
+                // 精确 instanceId 优先，直接使用
+                preFilterInstanceIds = Collections.singletonList(request.getInstanceId());
+            } else {
+                preFilterInstanceIds = hisInstanceDao.selectIdsByCreateByLikeAndProcessIds(
+                        request.getStartUserName(), processIds);
+            }
+            if (CollUtil.isEmpty(preFilterInstanceIds)) {
+                return PageResult.empty(request.getCurrent(), request.getSize());
+            }
+        }
+
+        // Step2: SQL 分页查询历史任务
+        List<Integer> excludeTypes = CollUtil.newArrayList(TaskType.START.value(), TaskType.COPY.value());
+        Page<FlowHisTask> page = new Page<>(request.getCurrent(), request.getSize());
+        IPage<FlowHisTask> result = hisTaskDao.selectPageByCreateId(page, userId,
+                excludeTypes, request.getStartTime(), request.getEndTime(), preFilterInstanceIds);
+
+        if (result == null || CollUtil.isEmpty(result.getRecords())) {
+            return PageResult.empty(request.getCurrent(), request.getSize());
+        }
+
+        // Step3: 批量查实例 + 流程定义
+        List<Long> instanceIds = result.getRecords().stream()
+                .map(FlowHisTask::getInstanceId)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+
+        Map<Long, FlowHisInstance> instanceMap = new LinkedHashMap<>();
+        if (!instanceIds.isEmpty()) {
+            for (Long id : instanceIds) {
+                FlowHisInstance instance = hisInstanceDao.selectById(id);
+                if (instance != null) {
+                    instanceMap.put(id, instance);
+                }
+            }
+        }
+
+        Map<Long, FlowProcess> processMap = batchFetchProcesses(new ArrayList<>(instanceMap.values()));
+
+        // Step4: 构建 response
+        List<FlowTodoRecordResponse> records = new ArrayList<>(result.getRecords().size());
+        for (FlowHisTask task : result.getRecords()) {
+            FlowHisInstance instance = instanceMap.get(task.getInstanceId());
             if (instance == null) {
                 continue;
             }
-            records.add(recordWithCurrentTask(instance, processMap));
+            FlowTodoRecordResponse record = baseRecord(instance, processMap);
+            record.setTask(toTaskData(task));
+            record.setApproveTime(task.getFinishTime());
+            records.add(record);
         }
-        return sortByTaskTime(records);
+        return PageResult.of(result.getTotal(), result.getCurrent(), result.getSize(), records);
     }
 
-    private List<FlowTodoRecordResponse> copy(String userId) {
-        List<FlowTodoRecordResponse> records = new ArrayList<>();
-        Map<Long, FlowProcess> processMap = new LinkedHashMap<>();
-        for (FlowTask task : allowedActiveTasks(userId)) {
-            if (!TaskType.COPY.value().equals(task.getTaskType())) {
-                continue;
-            }
-            FlowHisInstance instance = hisInstanceDao.selectById(task.getInstanceId());
-            if (instance != null) {
-                records.add(recordWithCurrentTask(instance, processMap));
-            }
-        }
-        for (FlowHisTask task : allowedHisCopyTasks(userId)) {
-            FlowHisInstance instance = hisInstanceDao.selectById(task.getInstanceId());
-            if (instance != null) {
-                records.add(recordWithCurrentTask(instance, processMap));
-            }
-        }
-        return sortByTaskTime(records);
-    }
+    // ==================== 公共方法 ====================
 
-    private List<FlowTask> allowedActiveTasks(String userId) {
-        Map<Long, List<FlowTaskActor>> actorMap = groupActors(taskActorDao.selectList());
-        if (actorMap.isEmpty()) {
-            return Collections.emptyList();
+    private String currentUserId() {
+        FlowCreator creator = creatorProvider == null ? null : creatorProvider.getCurrentCreator();
+        if (creator == null || StrUtil.isBlank(creator.getCreateId())) {
+            throw new IllegalStateException("未配置 FlowCreatorProvider 或当前用户为空");
         }
-        List<Long> taskIds = new ArrayList<>(allowedTaskIds(userId, actorMap));
-        List<FlowTask> tasks = taskDao.selectListByIds(taskIds);
-        tasks.sort(Comparator
-                .comparing(FlowTask::getCreateTime, Comparator.nullsLast(Comparator.reverseOrder()))
-                .thenComparing(FlowTask::getId, Comparator.nullsLast(Comparator.reverseOrder())));
-        return tasks;
-    }
-
-    private List<FlowHisTask> allowedHisCopyTasks(String userId) {
-        Map<Long, List<FlowTaskActor>> actorMap = groupActors(new ArrayList<FlowTaskActor>(hisTaskActorDao.selectList()));
-        if (actorMap.isEmpty()) {
-            return Collections.emptyList();
-        }
-        List<Long> taskIds = new ArrayList<>(allowedTaskIds(userId, actorMap));
-        List<FlowHisTask> tasks = hisTaskDao.selectListByIds(taskIds);
-        List<FlowHisTask> copies = new ArrayList<>();
-        for (FlowHisTask task : tasks) {
-            if (TaskType.COPY.value().equals(task.getTaskType())) {
-                copies.add(task);
-            }
-        }
-        return copies;
+        return creator.getCreateId();
     }
 
     private LinkedHashSet<Long> allowedTaskIds(String userId, Map<Long, List<FlowTaskActor>> actorMap) {
@@ -204,60 +334,99 @@ public class FlowDesignerTodoService {
         return taskIds;
     }
 
-    private Map<Long, List<FlowTaskActor>> groupActors(List<? extends FlowTaskActor> actors) {
-        Map<Long, List<FlowTaskActor>> actorMap = new LinkedHashMap<>();
+    private Map<Long, List<FlowTaskActor>> groupActorsByTaskId(List<? extends FlowTaskActor> actors) {
+        Map<Long, List<FlowTaskActor>> map = new LinkedHashMap<>();
         if (CollUtil.isEmpty(actors)) {
-            return actorMap;
+            return map;
         }
         for (FlowTaskActor actor : actors) {
             if (actor == null || actor.getTaskId() == null) {
                 continue;
             }
-            actorMap.computeIfAbsent(actor.getTaskId(), key -> new ArrayList<>()).add(actor);
+            map.computeIfAbsent(actor.getTaskId(), k -> new ArrayList<>()).add(actor);
         }
-        return actorMap;
+        return map;
     }
 
-    private FlowTodoRecordResponse recordWithCurrentTask(FlowHisInstance instance,
-                                                         Map<Long, FlowProcess> processMap) {
-        return recordWithTask(instance, currentActiveTask(instance.getId()), processMap);
+    private List<Long> resolveProcessIds(String sourceType, String processType) {
+        if (StrUtil.isBlank(sourceType) && StrUtil.isBlank(processType)) {
+            return null;
+        }
+        List<FlowProcess> processes = processDao.selectListByProcessTypeAndFormSourceType(processType, sourceType);
+        if (CollUtil.isEmpty(processes)) {
+            return Collections.emptyList();
+        }
+        return processes.stream().map(FlowProcess::getId).collect(Collectors.toList());
+    }
+
+    private Map<Long, FlowProcess> batchFetchProcesses(List<FlowHisInstance> instances) {
+        List<Long> processIds = instances.stream()
+                .map(FlowHisInstance::getProcessId)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        if (processIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<FlowProcess> processes = processDao.selectListByIds(processIds);
+        Map<Long, FlowProcess> map = new LinkedHashMap<>();
+        for (FlowProcess p : processes) {
+            map.put(p.getId(), p);
+        }
+        return map;
+    }
+
+    private boolean inTimeRange(Date time, Date startTime, Date endTime) {
+        if (time == null) {
+            return startTime == null && endTime == null;
+        }
+        if (startTime != null && time.before(startTime)) {
+            return false;
+        }
+        if (endTime != null && time.after(endTime)) {
+            return false;
+        }
+        return true;
+    }
+
+    private FlowTodoRecordResponse.Task toTaskData(FlowTask task) {
+        FlowTodoRecordResponse.Task td = new FlowTodoRecordResponse.Task();
+        td.setTaskId(task.getId());
+        td.setTaskKey(task.getTaskKey());
+        td.setTaskName(task.getTaskName());
+        td.setTaskType(task.getTaskType());
+        td.setTaskCreateTime(task.getCreateTime());
+        td.setViewed(task.getViewed());
+        return td;
+    }
+
+    private FlowTodoRecordResponse.Task toTaskData(FlowHisTask task) {
+        FlowTodoRecordResponse.Task td = new FlowTodoRecordResponse.Task();
+        td.setTaskId(task.getId());
+        td.setTaskKey(task.getTaskKey());
+        td.setTaskName(task.getTaskName());
+        td.setTaskType(task.getTaskType());
+        td.setTaskCreateTime(task.getCreateTime());
+        td.setViewed(task.getViewed());
+        return td;
     }
 
     private FlowTodoRecordResponse recordWithTask(FlowHisInstance instance, FlowTask task,
                                                   Map<Long, FlowProcess> processMap) {
         FlowTodoRecordResponse record = baseRecord(instance, processMap);
-        if (task == null) {
-            return record;
+        if (task != null) {
+            record.setTask(toTaskData(task));
         }
-        FlowTodoRecordResponse.Task taskData = new FlowTodoRecordResponse.Task();
-        taskData.setTaskId(task.getId());
-        taskData.setTaskKey(task.getTaskKey());
-        taskData.setTaskName(task.getTaskName());
-        taskData.setTaskType(task.getTaskType());
-        taskData.setTaskCreateTime(task.getCreateTime());
-        taskData.setViewed(task.getViewed());
-        record.setTask(taskData);
         return record;
     }
 
-    private FlowTask currentActiveTask(Long instanceId) {
-        List<FlowTask> tasks = taskDao.selectListByInstanceId(instanceId);
-        if (CollUtil.isEmpty(tasks)) {
-            return null;
-        }
-        tasks.sort(Comparator
-                .comparing(FlowTask::getCreateTime, Comparator.nullsLast(Comparator.reverseOrder()))
-                .thenComparing(FlowTask::getId, Comparator.nullsLast(Comparator.reverseOrder())));
-        return tasks.get(0);
-    }
-
     private FlowTodoRecordResponse baseRecord(FlowHisInstance instance, Map<Long, FlowProcess> processMap) {
-        FlowProcess process = process(instance.getProcessId(), processMap);
+        FlowProcess process = instance.getProcessId() == null ? null : processMap.get(instance.getProcessId());
         FlowTodoRecordResponse record = new FlowTodoRecordResponse();
         record.setInstanceId(instance.getId());
         record.setBusinessKey(instance.getBusinessKey());
         record.setProcessId(instance.getProcessId());
-        record.setProcessKey(process == null ? null : process.getProcessKey());
+        record.setProcessKey(process == null ? instance.getProcessKey() : process.getProcessKey());
         record.setProcessName(process == null ? null : process.getProcessName());
         record.setProcessType(process == null ? null : process.getProcessType());
         record.setSourceType(process == null ? null : process.getFormSourceType());
@@ -271,27 +440,6 @@ public class FlowDesignerTodoService {
         record.setCurrentNodeName(instance.getCurrentNodeName());
         record.setDuration(duration(instance));
         return record;
-    }
-
-    private FlowProcess process(Long processId, Map<Long, FlowProcess> processMap) {
-        if (processId == null) {
-            return null;
-        }
-        if (!processMap.containsKey(processId)) {
-            processMap.put(processId, processDao.selectById(processId));
-        }
-        return processMap.get(processId);
-    }
-
-    private String resolveUserId(String userId) {
-        if (StrUtil.isNotBlank(userId)) {
-            return StrUtil.trim(userId);
-        }
-        FlowCreator creator = creatorProvider == null ? null : creatorProvider.getCurrentCreator();
-        if (creator == null || StrUtil.isBlank(creator.getCreateId())) {
-            throw new IllegalStateException("用户 ID 不能为空，且未配置 FlowCreatorProvider 获取当前用户");
-        }
-        return creator.getCreateId();
     }
 
     private Long duration(FlowHisInstance instance) {
@@ -315,31 +463,5 @@ public class FlowDesignerTodoService {
             }
         }
         return String.valueOf(state);
-    }
-
-    private List<FlowTodoRecordResponse> sortByTaskTime(List<FlowTodoRecordResponse> records) {
-        records.sort(Comparator
-                .comparing(this::taskCreateTime, Comparator.nullsLast(Comparator.reverseOrder()))
-                .thenComparing(FlowTodoRecordResponse::getInstanceId, Comparator.nullsLast(Comparator.reverseOrder())));
-        return records;
-    }
-
-    private Date taskCreateTime(FlowTodoRecordResponse record) {
-        return record == null || record.getTask() == null ? null : record.getTask().getTaskCreateTime();
-    }
-
-    /**
-     * 对已排序的记录做内存分页。
-     *
-     * @param records 已排序的全量记录
-     * @param current 页码，从 1 开始
-     * @param size    每页条数
-     * @return 分页结果
-     */
-    private PageResult<FlowTodoRecordResponse> paginate(List<FlowTodoRecordResponse> records, int current, int size) {
-        int total = records.size();
-        int from = Math.min((current - 1) * size, total);
-        int to = Math.min(from + size, total);
-        return PageResult.of(total, current, size, new ArrayList<>(records.subList(from, to)));
     }
 }

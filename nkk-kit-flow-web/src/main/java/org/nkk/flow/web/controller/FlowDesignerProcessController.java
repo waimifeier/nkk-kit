@@ -7,6 +7,7 @@ import org.nkk.flow.web.model.FlowInstancePageRequest;
 import org.nkk.flow.web.model.FlowInstanceRecordVO;
 import org.nkk.flow.web.model.FlowProcessCategoryResponse;
 import org.nkk.flow.web.model.FlowProcessInfoUpdateRequest;
+import org.nkk.flow.web.model.FlowProcessNodeMapResponse;
 import org.nkk.flow.web.model.FlowProcessPageRequest;
 import org.nkk.flow.web.model.FlowProcessPublishRequest;
 import org.nkk.flow.web.model.FlowProcessVO;
@@ -103,6 +104,32 @@ public class FlowDesignerProcessController {
     @GetMapping("/{processId}")
     public Result<FlowProcess> get(@PathVariable Long processId) {
         return Result.ok(processService.getProcess(processId));
+    }
+
+    /**
+     * 查询流程节点小地图。
+     *
+     * <p>根据流程定义 ID 解析模型 JSON，返回段式结构的节点小地图。</p>
+     *
+     * <p>请求示例：{@code GET /flow/designer/processes/1785467714628/node-map}</p>
+     *
+     * <p>返回 {@code List<FlowProcessNodeMapResponse>}，每个段通过 {@code kind} 区分类型：
+     * <ul>
+     *     <li>{@code kind=node} — 普通节点，包含 {@code nodeKey/nodeName/type/typeName}，
+     *         任务类节点额外携带 {@code setType/setTypeName/examineMode/examineModeName/assignees}。</li>
+     *     <li>{@code kind=branch} — 分支点（路由容器），携带 {@code branches} 列表，
+     *         每个分支含 {@code branchKey/branchName/priorityLevel/defaultBranch/conditionList} 和
+     *         {@code segments}（分支内的段列表，支持嵌套路由）。</li>
+     * </ul>
+     * 分支点之后紧跟的下一个段即为各分支汇聚后的主链后继。
+     * 前端在分支点切换 tab 时，直接替换显示对应 branch 的 segments 即可。</p>
+     *
+     * @param processId 流程定义 ID（路径参数，必填）；示例值：{@code 1785467714628}
+     * @return 段式结构小地图
+     */
+    @GetMapping("/{processId}/node-map")
+    public Result<List<FlowProcessNodeMapResponse>> nodeMap(@PathVariable Long processId) {
+        return Result.ok(processService.getNodeMap(processId));
     }
 
     /**

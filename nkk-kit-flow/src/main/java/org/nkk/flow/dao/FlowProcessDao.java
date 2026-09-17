@@ -19,6 +19,17 @@ public interface FlowProcessDao {
 
     FlowProcess selectById(Long id);
 
+    List<FlowProcess> selectListByIds(List<Long> ids);
+
+    /**
+     * 按流程分类和表单来源类型查询流程定义列表（用于待办中心间接过滤实例）。
+     *
+     * @param processType    流程分类，为空不过滤
+     * @param formSourceType 表单来源类型，为空不过滤
+     * @return 流程定义列表
+     */
+    List<FlowProcess> selectListByProcessTypeAndFormSourceType(String processType, String formSourceType);
+
     List<FlowProcess> selectCurrentList(String tenantId);
 
     /**

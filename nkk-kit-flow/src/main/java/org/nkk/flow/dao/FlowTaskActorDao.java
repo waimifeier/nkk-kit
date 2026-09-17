@@ -27,6 +27,8 @@ public interface FlowTaskActorDao {
 
     List<FlowTaskActor> selectList();
 
+    List<FlowTaskActor> selectListByActorId(String actorId);
+
     List<FlowTaskActor> selectListByInstanceId(Long instanceId);
 
     List<FlowTaskActor> selectListByTaskIdAndActorId(Long taskId, String actorId);

@@ -8,9 +8,14 @@ import org.nkk.flow.core.extension.identity.FlowCreatorProvider;
 import org.nkk.flow.entity.FlowProcess;
 import org.nkk.flow.enums.core.FlowProcessEnum.ProcessState;
 import org.nkk.flow.model.node.FlowNodeModel;
+import org.nkk.flow.model.node.router.FlowConditionNode;
+import org.nkk.flow.model.node.task.FlowNodeAssignee;
+import org.nkk.flow.model.node.task.TaskNodeModel;
 import org.nkk.flow.model.FlowProcessModel;
 import org.nkk.flow.service.NkkFlowEngine;
 import org.nkk.flow.web.model.FlowInstancePageRequest;
+import org.nkk.flow.web.model.FlowProcessNodeMapResponse;
+import org.nkk.flow.web.model.FlowProcessNodeMapResponse.Assignee;
 import org.nkk.flow.web.model.FlowInstanceRecordVO;
 import org.nkk.flow.web.model.FlowProcessCategoryResponse;
 import org.nkk.flow.web.model.FlowProcessInfoUpdateRequest;
@@ -19,6 +24,7 @@ import org.nkk.flow.web.model.FlowProcessPublishRequest;
 import org.nkk.flow.web.model.FlowProcessVO;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +94,125 @@ public class FlowDesignerProcessService {
      */
     public FlowProcess getProcess(Long processId) {
         return flowEngine.processService().getProcessById(processId);
+    }
+
+    /**
+     * 查询流程节点小地图。
+     *
+     * <p>解析流程定义的模型 JSON，返回段式结构：顶层是段列表，每个段通过 {@code kind} 区分
+     * 普通节点（node）或分支点（branch）。分支点段携带 {@code branches} 列表，
+     * 每个分支内部的 {@code segments} 也是段列表，支持嵌套路由。
+     * 前端在分支点切换 tab 时，直接替换显示对应 branch 的 segments 即可。</p>
+     *
+     * @param processId 流程定义 ID
+     * @return 段式结构小地图
+     */
+    public List<FlowProcessNodeMapResponse> getNodeMap(Long processId) {
+        if (processId == null) {
+            throw new IllegalArgumentException("流程定义 ID 不能为空");
+        }
+        FlowProcess process = flowEngine.processService().getProcessById(processId);
+        if (process == null) {
+            throw new IllegalArgumentException("流程定义不存在，processId=" + processId);
+        }
+        FlowProcessModel model = process.model();
+        if (model == null || model.getNodeConfig() == null) {
+            throw new IllegalStateException("流程模型为空或解析失败，processId=" + processId);
+        }
+        List<FlowProcessNodeMapResponse> segments = new ArrayList<>();
+        collectSegments(model.getNodeConfig(), segments);
+        return segments;
+    }
+
+    /**
+     * 沿 childNode 链收集段列表。
+     *
+     * 遇到路由容器（conditionNodes 非空）时：只输出一个 branch 段（branch 段自身携带
+     * 容器的 nodeKey/nodeName/type，并携带各分支的 segments），
+     * 然后继续收集容器汇聚后的 childNode。</p>
+     *
+     * @param nodeModel 当前链起点
+     * @param out       输出段列表
+     */
+    private void collectSegments(FlowNodeModel nodeModel, List<FlowProcessNodeMapResponse> out) {
+        while (nodeModel != null) {
+            List<FlowConditionNode> branchNodes = nodeModel.getBranchNodes();
+            if (branchNodes != null && !branchNodes.isEmpty()) {
+                // 路由容器：只输出 branch 段（branch 段自身已携带容器标识）
+                out.add(toBranchSegment(nodeModel, branchNodes));
+                // 汇聚后的顺序后继
+                nodeModel = nodeModel.getChildNode();
+            } else {
+                out.add(toNodeSegment(nodeModel));
+                nodeModel = nodeModel.getChildNode();
+            }
+        }
+    }
+
+    /**
+     * 构建普通节点段（精简版）。
+     */
+    private FlowProcessNodeMapResponse toNodeSegment(FlowNodeModel nodeModel) {
+        FlowProcessNodeMapResponse seg = new FlowProcessNodeMapResponse();
+        seg.setKind("node");
+        seg.setNodeKey(nodeModel.getNodeKey());
+        seg.setNodeName(nodeModel.getNodeName());
+        seg.setType(nodeModel.getType());
+
+        if (nodeModel instanceof TaskNodeModel) {
+            TaskNodeModel taskNode = (TaskNodeModel) nodeModel;
+            seg.setAssignees(buildAssignees(taskNode.getNodeAssigneeList()));
+        }
+        return seg;
+    }
+
+    /**
+     * 构建分支点段（精简版），各分支内递归收集段列表。
+     */
+    private FlowProcessNodeMapResponse toBranchSegment(FlowNodeModel container, List<FlowConditionNode> branchNodes) {
+        FlowProcessNodeMapResponse seg = new FlowProcessNodeMapResponse();
+        seg.setKind("branch");
+        seg.setNodeKey(container.getNodeKey());
+        seg.setNodeName(container.getNodeName());
+        seg.setType(container.getType());
+
+        List<FlowProcessNodeMapResponse.Branch> branches = new ArrayList<>();
+        List<FlowConditionNode> sorted = new ArrayList<>(branchNodes);
+        sorted.sort(Comparator.comparing(
+                b -> b.getPriorityLevel() == null ? Integer.MAX_VALUE : b.getPriorityLevel()));
+        for (FlowConditionNode bn : sorted) {
+            FlowProcessNodeMapResponse.Branch branch = new FlowProcessNodeMapResponse.Branch();
+            branch.setBranchKey(bn.getNodeKey());
+            branch.setBranchName(bn.getNodeName());
+
+            List<FlowProcessNodeMapResponse> branchSegments = new ArrayList<>();
+            collectSegments(bn.getChildNode(), branchSegments);
+            branch.setSegments(branchSegments);
+            branches.add(branch);
+        }
+        seg.setBranches(branches);
+        return seg;
+    }
+
+    /**
+     * 构建候选办理人简要名单（仅保留 id/name）。
+     */
+    private List<Assignee> buildAssignees(List<FlowNodeAssignee> assigneeList) {
+        if (assigneeList == null || assigneeList.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<Assignee> assignees = new ArrayList<>(assigneeList.size());
+        for (FlowNodeAssignee item : assigneeList) {
+            if (item == null) {
+                continue;
+            }
+            Assignee assignee = new Assignee();
+            assignee.setId(item.getId());
+            assignee.setName(item.getName());
+            assignee.setActorType(item.getActorType());
+            assignees.add(assignee);
+        }
+        return assignees;
     }
 
     /**

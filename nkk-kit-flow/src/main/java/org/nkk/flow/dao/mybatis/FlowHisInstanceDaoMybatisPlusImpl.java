@@ -1,5 +1,6 @@
 package org.nkk.flow.dao.mybatis;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -7,6 +8,8 @@ import org.nkk.flow.dao.FlowHisInstanceDao;
 import org.nkk.flow.entity.FlowHisInstance;
 import org.nkk.flow.mapper.FlowHisInstanceMapper;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -87,6 +90,62 @@ public class FlowHisInstanceDaoMybatisPlusImpl implements FlowHisInstanceDao {
         wrapper.orderByDesc("create_time");
         wrapper.orderByDesc("id");
         return mapper.selectPage(page, wrapper);
+    }
+
+    @Override
+    public IPage<FlowHisInstance> selectPageByCreateId(IPage<FlowHisInstance> page, String createId,
+                                                        Integer instanceState, Date startTime, Date endTime) {
+        QueryWrapper<FlowHisInstance> wrapper = new QueryWrapper<>();
+        wrapper.eq("create_id", createId);
+        wrapper.eq(instanceState != null, "instance_state", instanceState);
+        wrapper.ge(startTime != null, "create_time", startTime);
+        wrapper.le(endTime != null, "create_time", endTime);
+        wrapper.orderByDesc("create_time");
+        wrapper.orderByDesc("id");
+        return mapper.selectPage(page, wrapper);
+    }
+
+    @Override
+    public IPage<FlowHisInstance> selectPageByInstanceIds(IPage<FlowHisInstance> page,
+                                                           Collection<Long> instanceIds, Long instanceId,
+                                                           String starterName, Date startTime, Date endTime,
+                                                           Collection<Long> processIds) {
+        if (CollUtil.isEmpty(instanceIds)) {
+            return page;
+        }
+        QueryWrapper<FlowHisInstance> wrapper = new QueryWrapper<>();
+        wrapper.in("id", instanceIds);
+        wrapper.eq(instanceId != null, "id", instanceId);
+        wrapper.like(StrUtil.isNotBlank(starterName), "create_by", StrUtil.trim(starterName));
+        wrapper.ge(startTime != null, "create_time", startTime);
+        wrapper.le(endTime != null, "create_time", endTime);
+        if (CollUtil.isNotEmpty(processIds)) {
+            wrapper.in("process_id", processIds);
+        }
+        wrapper.orderByDesc("create_time");
+        wrapper.orderByDesc("id");
+        return mapper.selectPage(page, wrapper);
+    }
+
+    @Override
+    public List<Long> selectIdsByCreateByLikeAndProcessIds(String createByLike, Collection<Long> processIds) {
+        QueryWrapper<FlowHisInstance> wrapper = new QueryWrapper<>();
+        wrapper.like(StrUtil.isNotBlank(createByLike), "create_by", StrUtil.trim(createByLike));
+        if (CollUtil.isNotEmpty(processIds)) {
+            wrapper.in("process_id", processIds);
+        }
+        wrapper.select("id");
+        List<FlowHisInstance> list = mapper.selectList(wrapper);
+        if (CollUtil.isEmpty(list)) {
+            return Collections.emptyList();
+        }
+        List<Long> ids = new java.util.ArrayList<>(list.size());
+        for (FlowHisInstance instance : list) {
+            if (instance.getId() != null) {
+                ids.add(instance.getId());
+            }
+        }
+        return ids;
     }
 }
 

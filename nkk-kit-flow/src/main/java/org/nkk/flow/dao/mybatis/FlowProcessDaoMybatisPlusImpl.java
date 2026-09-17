@@ -1,5 +1,6 @@
 package org.nkk.flow.dao.mybatis;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -8,6 +9,7 @@ import org.nkk.flow.entity.FlowProcess;
 import org.nkk.flow.enums.core.FlowProcessEnum.ProcessState;
 import org.nkk.flow.mapper.FlowProcessMapper;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,6 +42,22 @@ public class FlowProcessDaoMybatisPlusImpl implements FlowProcessDao {
     @Override
     public FlowProcess selectById(Long id) {
         return mapper.selectById(id);
+    }
+
+    @Override
+    public List<FlowProcess> selectListByIds(List<Long> ids) {
+        if (CollUtil.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
+        return mapper.selectBatchIds(ids);
+    }
+
+    @Override
+    public List<FlowProcess> selectListByProcessTypeAndFormSourceType(String processType, String formSourceType) {
+        QueryWrapper<FlowProcess> wrapper = new QueryWrapper<>();
+        wrapper.eq(StrUtil.isNotBlank(processType), "process_type", StrUtil.trim(processType));
+        wrapper.eq(StrUtil.isNotBlank(formSourceType), "form_source_type", StrUtil.trim(formSourceType));
+        return mapper.selectList(wrapper);
     }
 
     @Override

@@ -77,6 +77,14 @@ public class FlowTaskActorDaoMybatisPlusImpl implements FlowTaskActorDao {
     }
 
     @Override
+    public List<FlowTaskActor> selectListByActorId(String actorId) {
+        if (actorId == null) {
+            return Collections.emptyList();
+        }
+        return mapper.selectList(new QueryWrapper<FlowTaskActor>().eq("actor_id", actorId));
+    }
+
+    @Override
     public List<FlowTaskActor> selectListByInstanceId(Long instanceId) {
         return mapper.selectList(new QueryWrapper<FlowTaskActor>().eq("instance_id", instanceId));
     }

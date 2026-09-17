@@ -96,6 +96,12 @@ public class FlowTodoRecordResponse implements Serializable {
     private Long duration;
 
     /**
+     * 审批记录时间（flow_his_task.finish_time）。
+     * 仅"审批记录"接口填充，其他接口为 null。
+     */
+    private Date approveTime;
+
+    /**
      * 当前流程正在执行的活动任务信息；流程已结束时为空。
      */
     private Task task;

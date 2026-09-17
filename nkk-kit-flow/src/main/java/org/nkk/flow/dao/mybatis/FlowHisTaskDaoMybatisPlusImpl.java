@@ -1,11 +1,15 @@
 package org.nkk.flow.dao.mybatis;
 
+import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import org.nkk.flow.dao.FlowHisTaskDao;
 import org.nkk.flow.entity.FlowHisTask;
 import org.nkk.flow.mapper.FlowHisTaskMapper;
 
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -75,6 +79,25 @@ public class FlowHisTaskDaoMybatisPlusImpl implements FlowHisTaskDao {
     @Override
     public List<FlowHisTask> selectListByTaskKey(Long instanceId, String taskKey) {
         return mapper.selectList(new QueryWrapper<FlowHisTask>().eq("instance_id", instanceId).eq("task_key", taskKey));
+    }
+
+    @Override
+    public IPage<FlowHisTask> selectPageByCreateId(IPage<FlowHisTask> page, String createId,
+                                                    List<Integer> excludeTaskTypes, Date startTime, Date endTime,
+                                                    Collection<Long> instanceIds) {
+        QueryWrapper<FlowHisTask> wrapper = new QueryWrapper<>();
+        wrapper.eq("create_id", createId);
+        if (CollUtil.isNotEmpty(excludeTaskTypes)) {
+            wrapper.notIn("task_type", excludeTaskTypes);
+        }
+        wrapper.ge(startTime != null, "finish_time", startTime);
+        wrapper.le(endTime != null, "finish_time", endTime);
+        if (CollUtil.isNotEmpty(instanceIds)) {
+            wrapper.in("instance_id", instanceIds);
+        }
+        wrapper.orderByDesc("finish_time");
+        wrapper.orderByDesc("id");
+        return mapper.selectPage(page, wrapper);
     }
 }
 
