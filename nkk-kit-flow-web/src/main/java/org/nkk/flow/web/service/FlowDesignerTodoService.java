@@ -429,6 +429,7 @@ public class FlowDesignerTodoService {
         record.setProcessKey(process == null ? instance.getProcessKey() : process.getProcessKey());
         record.setProcessName(process == null ? null : process.getProcessName());
         record.setProcessType(process == null ? null : process.getProcessType());
+        record.setInstanceUrl(process == null ? null : process.getInstanceUrl());
         record.setSourceType(process == null ? null : process.getFormSourceType());
         record.setProcessVersion(process == null ? null : process.getProcessVersion());
         record.setInstanceState(instance.getInstanceState());

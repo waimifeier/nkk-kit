@@ -45,7 +45,15 @@ public class JacksonDateSerializer extends JsonSerializer<Date> implements Conte
             return;
         }
 
-        gen.writeString(createDateFormat().format(value));
+        SimpleDateFormat dateFormat = createDateFormat();
+        // 未显式指定时区时，尊重 ObjectMapper 的 time-zone 配置（spring.jackson.time-zone）
+        if (isDefaultJsonFormatValue(timezone)) {
+            TimeZone tz = serializers.getConfig().getTimeZone();
+            if (tz != null) {
+                dateFormat.setTimeZone(tz);
+            }
+        }
+        gen.writeString(dateFormat.format(value));
     }
 
     @Override

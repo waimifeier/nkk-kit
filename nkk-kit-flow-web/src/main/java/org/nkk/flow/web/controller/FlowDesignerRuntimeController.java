@@ -6,7 +6,6 @@ import org.nkk.flow.entity.FlowTask;
 import org.nkk.flow.entity.FlowTaskActor;
 import org.nkk.flow.web.model.FlowInstanceApprovalRecordResponse;
 import org.nkk.flow.web.model.FlowRuntimeResponse;
-import org.nkk.flow.web.model.FlowInstanceDetailResponse;
 import org.nkk.flow.web.model.FlowStartProcessRequest;
 import org.nkk.flow.web.model.FlowTaskAddSignRequest;
 import org.nkk.flow.web.model.FlowTaskAssignRequest;
@@ -57,7 +56,7 @@ public class FlowDesignerRuntimeController {
      * @return 实例、当前任务、任务参与人和历史任务
      */
     @GetMapping("/instances/{instanceId}")
-    public Result<FlowInstanceDetailResponse> detail(@PathVariable Long instanceId) {
+    public Result<FlowRuntimeResponse> detail(@PathVariable Long instanceId) {
         return Result.ok(runtimeService.detail(instanceId));
     }
 
@@ -341,7 +340,7 @@ public class FlowDesignerRuntimeController {
      * @return 终止后的实例详情
      */
     @PostMapping("/tasks/{taskId}/terminate")
-    public Result<FlowInstanceDetailResponse> terminate(@PathVariable Long taskId,
+    public Result<FlowRuntimeResponse> terminate(@PathVariable Long taskId,
                                                         @RequestBody(required = false) FlowTaskOperateRequest request) {
         return Result.ok(runtimeService.terminateByTask(taskId, request));
     }

@@ -46,6 +46,11 @@ public class FlowTodoRecordResponse implements Serializable {
     private String processType;
 
     /**
+     * 流程详情页路由模板（flow_process.instance_url），宿主可直接使用或自行替换 {instanceId}。
+     */
+    private String instanceUrl;
+
+    /**
      * 表单来源类型（flow_process.form_source_type），示例值：{@code form}（自定义表单）、{@code business}（业务表单）。
      */
     private String sourceType;

@@ -27,6 +27,11 @@ public class FlowRuntimeResponse implements Serializable {
     private String tenantId;
 
     /**
+     * 流程定义信息。
+     */
+    private Process process;
+
+    /**
      * 业务主键。
      */
     private String businessKey;
@@ -47,6 +52,26 @@ public class FlowRuntimeResponse implements Serializable {
     private Integer instanceState;
 
     /**
+     * 创建人 ID。
+     */
+    private String createId;
+
+    /**
+     * 发起人。
+     */
+    private String createBy;
+
+    /**
+     * 发起时间。
+     */
+    private java.util.Date createTime;
+
+    /**
+     * 流程结束时间（审批中为 null）。
+     */
+    private java.util.Date endTime;
+
+    /**
      * 审批流程是否实际发起。
      *
      * <p>true=已创建审批实例；false=业务审批触发条件（triggerExpression）不满足，
@@ -59,6 +84,39 @@ public class FlowRuntimeResponse implements Serializable {
      * 当前活动任务。
      */
     private List<Task> task = new ArrayList<>();
+
+    /**
+     * 流程定义信息。
+     */
+    @Data
+    public static class Process implements Serializable {
+
+        private static final long serialVersionUID = 1L;
+
+        /** 流程定义 ID。 */
+        private Long processId;
+
+        /** 流程定义名称。 */
+        private String processName;
+
+        /** 流程图标。 */
+        private String processIcon;
+
+        /** 流程类型。 */
+        private String processType;
+
+        /** 流程版本。 */
+        private Integer processVersion;
+
+        /** 实例跳转地址模板。 */
+        private String instanceUrl;
+
+        /** 流程备注。 */
+        private String remark;
+
+        /** 表单来源类型。 */
+        private String formSourceType;
+    }
 
     /**
      * 当前活动任务。

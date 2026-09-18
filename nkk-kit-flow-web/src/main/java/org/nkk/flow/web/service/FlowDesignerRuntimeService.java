@@ -7,6 +7,7 @@ import org.nkk.flow.entity.FlowExtInstance;
 import org.nkk.flow.entity.FlowHisInstance;
 import org.nkk.flow.entity.FlowHisTask;
 import org.nkk.flow.entity.FlowInstance;
+import org.nkk.flow.entity.FlowProcess;
 import org.nkk.flow.entity.FlowTask;
 import org.nkk.flow.entity.FlowTaskActor;
 import org.nkk.flow.enums.core.FlowInstanceEnum.InstanceState;
@@ -18,8 +19,8 @@ import org.nkk.flow.model.node.task.ApprovalNodeModel;
 import org.nkk.flow.model.node.task.FlowNodeAssignee;
 import org.nkk.flow.model.node.FlowNodeModel;
 import org.nkk.flow.service.NkkFlowEngine;
+import org.nkk.flow.web.enums.ApprovalNodeStatusEnum;
 import org.nkk.flow.web.model.FlowInstanceApprovalRecordResponse;
-import org.nkk.flow.web.model.FlowInstanceDetailResponse;
 import org.nkk.flow.web.model.FlowRuntimeResponse;
 import org.nkk.flow.web.model.FlowStartProcessRequest;
 import org.nkk.flow.web.model.FlowTaskAddSignRequest;
@@ -98,26 +99,11 @@ public class FlowDesignerRuntimeService {
      * @param instanceId 流程实例 ID
      * @return 实例详情
      */
-    public FlowInstanceDetailResponse detail(Long instanceId) {
+    public FlowRuntimeResponse detail(Long instanceId) {
         if (instanceId == null) {
             throw new IllegalArgumentException("流程实例 ID 不能为空");
         }
-        FlowInstance instance = flowEngine.queryService().getInstance(instanceId);
-        FlowHisInstance hisInstance = flowEngine.queryService().getHisInstance(instanceId);
-        if (instance == null && hisInstance == null) {
-            throw new IllegalArgumentException("流程实例不存在，instanceId=" + instanceId);
-        }
-        FlowExtInstance extInstance = flowEngine.queryService().getExtInstance(instanceId);
-        List<FlowTask> tasks = flowEngine.queryService().getTasksByInstanceId(instanceId);
-        List<FlowHisTask> hisTasks = flowEngine.queryService().getHisTasksByInstanceId(instanceId);
-        FlowInstanceDetailResponse response = new FlowInstanceDetailResponse();
-        response.setInstance(instance);
-        response.setHisInstance(hisInstance);
-        response.setExtInstance(extInstance);
-        response.setTasks(tasks);
-        response.setTaskActors(taskActors(tasks));
-        response.setHisTasks(hisTasks);
-        return response;
+        return runtimeResponse(instanceId);
     }
 
     public List<FlowTask> tasks(Long instanceId) {
@@ -256,7 +242,7 @@ public class FlowDesignerRuntimeService {
         return runtimeResponse(hisTask.getInstanceId());
     }
 
-    public FlowInstanceDetailResponse terminateByTask(Long taskId, FlowTaskOperateRequest request) {
+    public FlowRuntimeResponse terminateByTask(Long taskId, FlowTaskOperateRequest request) {
         FlowTask task = task(taskId);
         assertHisInstanceState(task.getInstanceId(), InstanceState.ACTIVE, "只有审批中的流程才能终止");
         flowEngine.terminateByTask(taskId, null, variables(request == null ? null : request.getVariables()));
@@ -351,9 +337,9 @@ public class FlowDesignerRuntimeService {
                     flowEngine.queryService().getTaskActorsByTaskId(task.getId()),
                     null, null));
         }
-        records.sort(Comparator
-                .comparing(FlowInstanceApprovalRecordResponse::getCreateTime, Comparator.nullsLast(Date::compareTo))
-                .thenComparing(FlowInstanceApprovalRecordResponse::getId, Comparator.nullsLast(Long::compareTo)));
+        records.sort(Comparator.comparing(
+                FlowInstanceApprovalRecordResponse::getCreateTime,
+                Comparator.nullsLast(Comparator.naturalOrder())));
         return records;
     }
 
@@ -582,15 +568,43 @@ public class FlowDesignerRuntimeService {
         if (currentInstance == null && hisInstance == null) {
             throw new IllegalArgumentException("流程实例不存在，instanceId=" + instanceId);
         }
-        FlowInstance source = currentInstance == null ? hisInstance : currentInstance;
+        FlowInstance source = currentInstance != null ? currentInstance : hisInstance;
         List<FlowTask> tasks = flowEngine.queryService().getTasksByInstanceId(instanceId);
         FlowRuntimeResponse response = new FlowRuntimeResponse();
         response.setInstanceId(instanceId);
-        response.setTenantId(source == null ? null : source.getTenantId());
-        response.setBusinessKey(source == null ? null : source.getBusinessKey());
+        // source 已通过上方 throw 保证非 null，直接取值
+        response.setTenantId(source.getTenantId());
+        response.setBusinessKey(source.getBusinessKey());
+        response.setCreateId(source.getCreateId());
+        response.setCreateBy(source.getCreateBy());
+        response.setCreateTime(source.getCreateTime());
         response.setCurrentNodeName(currentNodeName(currentInstance, hisInstance, source));
         response.setCurrentNodeKey(currentNodeKey(currentInstance, hisInstance, source));
-        response.setInstanceState(hisInstance == null ? null : hisInstance.getInstanceState());
+        // hisInstance 在审批中（未结束）为 null，用 Optional 兜底
+        java.util.Optional.ofNullable(hisInstance)
+                .ifPresent(h -> {
+                    response.setInstanceState(h.getInstanceState());
+                    response.setEndTime(h.getEndTime());
+                });
+        // process 信息（从 FlowProcess 定义表组装）
+        java.util.Optional.ofNullable(source.getProcessId())
+                .ifPresent(pid -> {
+                    try {
+                        FlowProcess p = flowEngine.processService().getProcessById(pid);
+                        FlowRuntimeResponse.Process process = new FlowRuntimeResponse.Process();
+                        process.setProcessId(p.getId());
+                        process.setProcessName(p.getProcessName());
+                        process.setProcessIcon(p.getProcessIcon());
+                        process.setProcessType(p.getProcessType());
+                        process.setProcessVersion(p.getProcessVersion());
+                        process.setInstanceUrl(p.getInstanceUrl());
+                        process.setRemark(p.getRemark());
+                        process.setFormSourceType(p.getFormSourceType());
+                        response.setProcess(process);
+                    } catch (Exception ignore) {
+                        // process 查不到时保持 null，不影响实例主信息
+                    }
+                });
         response.setTask(currentTasks(tasks));
         return response;
     }
@@ -627,57 +641,97 @@ public class FlowDesignerRuntimeService {
         return fallback == null ? null : fallback.getCurrentNodeKey();
     }
 
-    private FlowInstanceApprovalRecordResponse toApprovalRecord(FlowTask task, List<? extends FlowTaskActor> actors,
+    /**
+     * 引擎 TaskState → 审批轨迹节点状态映射。
+     *
+     * <p>引擎 TaskState 有 18 种取值（COMPLETED=2, AUTO_COMPLETED=8,
+     * REJECTED=3, REJECT_END=7, AUTO_REJECTED=9, REVOKED=4, WITHDRAWN=16,
+     * RECLAIMED=15, TERMINATED=6, DESTROYED=18, JUMP=1, AUTO_JUMP=10 …），
+     * 审批轨迹统一归并为 {@link ApprovalNodeStatusEnum} 6 种终态。</p>
+     */
+    private static ApprovalNodeStatusEnum mapTaskStateToNodeStatus(Integer taskState) {
+        if (taskState == null) {
+            return ApprovalNodeStatusEnum.IN_PROGRESS;
+        }
+        switch (taskState) {
+            // 正常完成
+            case 2:  // COMPLETED
+            case 8:  // AUTO_COMPLETED
+                return ApprovalNodeStatusEnum.COMPLETED;
+            // 驳回
+            case 3:  // REJECTED
+            case 7:  // REJECT_END
+            case 9:  // AUTO_REJECTED
+                return ApprovalNodeStatusEnum.REJECTED;
+            // 撤回
+            case 4:  // REVOKED
+            case 16: // WITHDRAWN
+            case 15: // RECLAIMED
+                return ApprovalNodeStatusEnum.REVOKED;
+            // 终止/作废
+            case 6:  // TERMINATED
+            case 18: // DESTROYED
+                return ApprovalNodeStatusEnum.TERMINATED;
+            // 跳过类：跳转、自动通过、路由跳转等
+            case 1:  // JUMP
+            case 10: // AUTO_JUMP
+            case 11: // REJECT_JUMP
+            case 12: // RE_APPROVE_JUMP
+            case 13: // ROUTE_JUMP
+            case 14: // TRIGGER_JUMP
+            case 17: // RESUMED
+                return ApprovalNodeStatusEnum.SKIPPED;
+            default:
+                return ApprovalNodeStatusEnum.COMPLETED;
+        }
+    }
+
+    private FlowInstanceApprovalRecordResponse toApprovalRecord(FlowTask task,
+                                                               List<? extends FlowTaskActor> actors,
                                                                Integer taskState, Date finishTime) {
-        FlowInstanceApprovalRecordResponse response = new FlowInstanceApprovalRecordResponse();
-        response.setId(task.getId());
-        response.setCreateId(task.getCreateId());
-        response.setCreateBy(task.getCreateBy());
-        response.setCreateTime(task.getCreateTime());
-        response.setInstanceId(task.getInstanceId());
-        response.setTaskId(task.getId());
-        response.setTaskName(task.getTaskName());
-        response.setTaskKey(task.getTaskKey());
-        response.setType(task.getTaskType());
-        response.setTaskType(task.getTaskType());
-        response.setTaskState(taskState);
-        response.setFinishTime(finishTime);
-        response.setContent(approvalRecordContent(task, actors));
-        return response;
+        FlowInstanceApprovalRecordResponse r = new FlowInstanceApprovalRecordResponse();
+        r.setNodeKey(task.getTaskKey());
+        r.setNodeName(task.getTaskName());
+        // taskType 与 FlowNodeMap 的 FlowNodeTypeEnum 值完全一致，直接用
+        r.setType(task.getTaskType());
+
+        ApprovalNodeStatusEnum status = mapTaskStateToNodeStatus(taskState);
+        r.setNodeStatus(status.getValue());
+        r.setNodeStatusText(status.getLabel());
+
+        r.setCreateTime(task.getCreateTime());
+        r.setFinishTime(finishTime);
+
+        // 最后办理人（活动节点取 createBy，历史节点取他处）
+        r.setActorId(task.getCreateId());
+        r.setActorName(task.getCreateBy());
+
+        // 审批意见（只有非 START 节点且有意见时展示）
+        if (task.getOpinion() != null) {
+            r.setOpinion(task.getOpinion());
+        }
+
+        // 完整办理人列表
+        r.setAssignees(toAssignees(actors));
+        return r;
     }
 
-    private FlowInstanceApprovalRecordResponse.Content approvalRecordContent(FlowTask task,
-                                                                            List<? extends FlowTaskActor> actors) {
-        if (TaskType.START.value().equals(task.getTaskType())) {
-            return null;
-        }
-        List<FlowInstanceApprovalRecordResponse.NodeUser> nodeUsers = nodeUsers(actors);
-        if (task.getOpinion() == null && nodeUsers.isEmpty()) {
-            return null;
-        }
-        FlowInstanceApprovalRecordResponse.Content content = new FlowInstanceApprovalRecordResponse.Content();
-        content.setOpinion(task.getOpinion());
-        content.setNodeUserList(nodeUsers);
-        return content;
-    }
-
-    private List<FlowInstanceApprovalRecordResponse.NodeUser> nodeUsers(List<? extends FlowTaskActor> actors) {
-        List<FlowInstanceApprovalRecordResponse.NodeUser> users = new ArrayList<>();
+    private List<FlowInstanceApprovalRecordResponse.Assignee> toAssignees(List<? extends FlowTaskActor> actors) {
+        List<FlowInstanceApprovalRecordResponse.Assignee> result = new ArrayList<>();
         if (actors == null) {
-            return users;
+            return result;
         }
         for (FlowTaskActor actor : actors) {
             if (actor == null) {
                 continue;
             }
-            FlowInstanceApprovalRecordResponse.NodeUser user = new FlowInstanceApprovalRecordResponse.NodeUser();
-            user.setId(actor.getActorId());
-            user.setName(actor.getActorName());
-            user.setWeight(actor.getWeight());
-            user.setActorType(actor.getActorType());
-            users.add(user);
+            FlowInstanceApprovalRecordResponse.Assignee a = new FlowInstanceApprovalRecordResponse.Assignee();
+            a.setId(actor.getActorId());
+            a.setName(actor.getActorName());
+            a.setActorType(actor.getActorType());
+            result.add(a);
         }
-        return users;
+        return result;
     }
 
 }
