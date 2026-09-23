@@ -92,6 +92,26 @@ public class FlowTaskServiceImpl implements FlowTaskService {
             return Collections.singletonList(task);
         }
 
+        if (PerformType.COPY == performType) {
+            // 抄送节点：生成抄送任务后立即完成并归档（活动任务表不保留、不更新当前节点），流程不阻塞
+            List<FlowTaskActor> ccActors = execution.getProviderTaskActors(nodeModel);
+            if ((ccActors == null || ccActors.isEmpty())
+                    && context.getTaskActorProvider().abnormal(task, ccActors, execution, nodeModel)) {
+                return Collections.emptyList();
+            }
+            if (ccActors == null || ccActors.isEmpty()) {
+                return Collections.emptyList();
+            }
+            task.setPerformType(performType.value());
+            taskDao.insert(task);
+            for (FlowTaskActor actor : ccActors) {
+                assignTask(task, actor);
+            }
+            List<FlowTaskActor> archivedActors = moveToHisTask(task, TaskState.COMPLETED, execution.getFlowCreator());
+            notifyTask(FlowEventTypeEnum.TASK_COPIED, task, archivedActors, nodeModel, execution.getFlowCreator());
+            return Collections.emptyList();
+        }
+
         List<FlowTaskActor> actors = execution.getProviderTaskActors(nodeModel);
         if ((actors == null || actors.isEmpty()) && context.getTaskActorProvider().abnormal(task, actors, execution, nodeModel)) {
             return Collections.emptyList();
@@ -341,17 +361,45 @@ public class FlowTaskServiceImpl implements FlowTaskService {
 
     @Override
     public boolean viewTask(Long taskId, FlowCreator creator) {
-        FlowTask task = getAllowedTask(taskId, creator);
-        task.setViewed(1);
-        taskDao.updateById(task);
-        notifyTaskChanged(FlowEventTypeEnum.TASK_VIEWED, task, creator);
+        FlowTask task = taskDao.selectById(taskId);
+        if (task != null) {
+            if (isAllowed(task, creator.getCreateId()) == null) {
+                throw new IllegalStateException("当前用户无权操作任务，taskId=" + taskId);
+            }
+            task.setViewed(1);
+            taskDao.updateById(task);
+            notifyTaskChanged(FlowEventTypeEnum.TASK_VIEWED, task, creator);
+            return true;
+        }
+        // 已归档的抄送任务（节点抄送即建即归档、手动抄送直接入历史）在历史表标记已读
+        FlowHisTask hisTask = hisTaskDao.selectById(taskId);
+        if (hisTask == null || !TaskType.COPY.value().equals(hisTask.getTaskType())) {
+            throw new IllegalArgumentException("任务不存在，taskId=" + taskId);
+        }
+        // 查全部历史参与者用于权限判断，让自定义 FlowTaskAccessStrategy 生效（如宿主项目放行抄送任务）
+        List<FlowHisTaskActor> allHisActors = hisTaskActorDao.selectListByTaskId(taskId);
+        if (context.getTaskAccessStrategy().isAllowed(hisTask, creator.getCreateId(),
+                new ArrayList<FlowTaskActor>(allHisActors)) == null) {
+            throw new IllegalStateException("当前用户无权操作任务，taskId=" + taskId);
+        }
+        // 通知仍只传当前用户的 actor（保持原行为，避免给所有抄送人发已读通知）
+        List<FlowHisTaskActor> viewerActors = allHisActors.stream()
+                .filter(a -> creator.getCreateId().equals(a.getActorId()))
+                .collect(Collectors.toList());
+        hisTask.setViewed(1);
+        hisTaskDao.updateById(hisTask);
+        notifyTask(FlowEventTypeEnum.TASK_VIEWED, hisTask, new ArrayList<FlowTaskActor>(viewerActors), null, creator);
         return true;
     }
 
     @Override
     public boolean copyTask(Long taskId, List<FlowTaskActor> actors, FlowCreator creator, Map<String, Object> args,
                             String opinion) {
-        FlowTask task = getAllowedTask(taskId, creator);
+        // 手动抄送是通知性质操作，不走审批权限检查；节点级操作权限由 web 层 assertNodeOperationAllowed 控制
+        FlowTask task = taskDao.selectById(taskId);
+        if (task == null) {
+            throw new IllegalArgumentException("任务不存在，taskId=" + taskId);
+        }
         if (actors == null || actors.isEmpty()) {
             throw new IllegalArgumentException("抄送人员不能为空");
         }
@@ -492,7 +540,7 @@ public class FlowTaskServiceImpl implements FlowTaskService {
 
     @Override
     public FlowTaskActor isAllowed(FlowTask task, String userId) {
-        return context.getTaskAccessStrategy().isAllowed(userId, taskActorDao.selectListByTaskId(task.getId()));
+        return context.getTaskAccessStrategy().isAllowed(task, userId, taskActorDao.selectListByTaskId(task.getId()));
     }
 
     private FlowTask getAllowedTask(Long taskId, FlowCreator creator) {

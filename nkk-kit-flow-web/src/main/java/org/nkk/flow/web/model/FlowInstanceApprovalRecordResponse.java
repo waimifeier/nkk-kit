@@ -35,6 +35,30 @@ public class FlowInstanceApprovalRecordResponse implements Serializable {
     private Integer type;
 
     /**
+     * 审批人设置类型，取值见 {@link org.nkk.flow.enums.node.FlowNodeSetTypeEnum}：
+     * 1=指定成员、2=主管、3=角色、4=发起人自选、5=发起人本人、7=部门、8=候选人。
+     * 仅任务节点（审批/发起/抄送等）有值，路由/结束等节点为 null。
+     */
+    private Integer setType;
+
+    /**
+     * 审批人设置类型中文名（指定成员、主管、角色…），前端直接展示。
+     */
+    private String setTypeName;
+
+    /**
+     * 审批方式（执行类型），取值见 {@link org.nkk.flow.enums.core.FlowTaskEnum.PerformType}：
+     * 1=顺序审批、2=会签、3=或签、4=票签。
+     * 路由/结束等非任务节点为 null。
+     */
+    private Integer performType;
+
+    /**
+     * 审批方式中文名（顺序审批、会签、或签、票签…），前端直接展示。
+     */
+    private String performTypeName;
+
+    /**
      * 节点状态（统一枚举，前端直接映射颜色和标签）：
      * <ul>
      *     <li>0 — 已完成（正常走完）</li>
@@ -48,9 +72,16 @@ public class FlowInstanceApprovalRecordResponse implements Serializable {
     private Integer nodeStatus;
 
     /**
-     * 节点状态中文标签（审批中、已通过、已驳回…），前端直接显示。
+     * 状态中文标签（审批中、已通过、已驳回…），前端直接显示。
      */
     private String nodeStatusText;
+
+    /**
+     * 节点副标题（仅结束节点使用，描述流程终结原因）：
+     * 如 "审批通过，流程结束" / "流程已撤回" / "审批被驳回，流程结束"。
+     * 普通节点为 null，由后端按实例终态在合成结束节点时填充。
+     */
+    private String subtitle;
 
     /**
      * 任务到达时间（create_time）。发起节点即发起时间。
@@ -83,7 +114,7 @@ public class FlowInstanceApprovalRecordResponse implements Serializable {
     private List<Assignee> assignees = new ArrayList<>();
 
     /**
-     * 节点办理人/候选人。
+     * 节点办理人/候选人，合并同 nodeKey 后每人携带各自的任务详情。
      */
     @Data
     public static class Assignee implements Serializable {
@@ -98,5 +129,20 @@ public class FlowInstanceApprovalRecordResponse implements Serializable {
 
         /** 参与人类型：0=用户，1=角色，2=部门。 */
         private Integer actorType;
+
+        /** 关联的任务 ID（FlowTask.id / FlowHisTask.id），用于定位该人的办理详情。 */
+        private Long taskId;
+
+        /** 该参与人的任务状态（引擎 TaskState：2=已完成，3=已驳回，null=待处理）。 */
+        private Integer taskStatus;
+
+        /** 该参与人的状态中文名（待处理 / 已通过 / 已驳回）。 */
+        private String taskStatusText;
+
+        /** 该参与人的审批意见（待处理时为 null）。 */
+        private String opinion;
+
+        /** 该参与人的任务完成时间（待处理时为 null）。 */
+        private Date finishTime;
     }
 }

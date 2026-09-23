@@ -137,9 +137,15 @@ public abstract class FlowNodeModel implements Serializable {
         if (this instanceof RouteRouterNodeModel) {
             return executeRouteNode(context, execution);
         }
-        if (this instanceof StartNodeModel || this instanceof CopyNodeModel) {
+        if (this instanceof StartNodeModel) {
             context.createTask(execution, (TaskNodeModel) this);
             return nextNode().map(next -> next.execute(context, execution)).orElse(true);
+        }
+        if (this instanceof CopyNodeModel) {
+            // 抄送节点任务即建即归档，继续推进；无后续节点时结束实例
+            context.createTask(execution, (TaskNodeModel) this);
+            return nextNode().map(next -> next.execute(context, execution))
+                    .orElseGet(() -> execution.endInstance(this, InstanceState.COMPLETED));
         }
         if (this instanceof TimerNodeModel || this instanceof TriggerNodeModel || this instanceof ApprovalNodeModel) {
             context.createTask(execution, (TaskNodeModel) this);

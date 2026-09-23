@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 历史任务 MyBatis-Plus DAO。
@@ -84,7 +85,8 @@ public class FlowHisTaskDaoMybatisPlusImpl implements FlowHisTaskDao {
     @Override
     public IPage<FlowHisTask> selectPageByCreateId(IPage<FlowHisTask> page, String createId,
                                                     List<Integer> excludeTaskTypes, Date startTime, Date endTime,
-                                                    Collection<Long> instanceIds) {
+                                                    Collection<Long> instanceIds,
+                                                    Collection<Integer> excludeInstanceStates) {
         QueryWrapper<FlowHisTask> wrapper = new QueryWrapper<>();
         wrapper.eq("create_id", createId);
         if (CollUtil.isNotEmpty(excludeTaskTypes)) {
@@ -94,6 +96,15 @@ public class FlowHisTaskDaoMybatisPlusImpl implements FlowHisTaskDao {
         wrapper.le(endTime != null, "finish_time", endTime);
         if (CollUtil.isNotEmpty(instanceIds)) {
             wrapper.in("instance_id", instanceIds);
+        }
+        if (CollUtil.isNotEmpty(excludeInstanceStates)) {
+            // flow_his_task 不携带 instance_state，通过子查询 flow_his_instance 过滤掉
+            // 撤销/作废等实例的已审批任务（参数为 Integer 枚举值，无注入风险）
+            String states = excludeInstanceStates.stream()
+                    .map(String::valueOf)
+                    .collect(Collectors.joining(","));
+            wrapper.notInSql("instance_id",
+                    "SELECT id FROM flow_his_instance WHERE instance_state IN (" + states + ")");
         }
         wrapper.orderByDesc("finish_time");
         wrapper.orderByDesc("id");

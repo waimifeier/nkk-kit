@@ -270,11 +270,13 @@ public class FlowDesignerTodoService {
             }
         }
 
-        // Step2: SQL 分页查询历史任务
+        // Step2: SQL 分页查询历史任务；审批记录只看实例最终生效的决定，排除已撤销的实例
         List<Integer> excludeTypes = CollUtil.newArrayList(TaskType.START.value(), TaskType.COPY.value());
+        List<Integer> excludeInstanceStates = Collections.singletonList(InstanceState.REVOKED.value());
         Page<FlowHisTask> page = new Page<>(request.getCurrent(), request.getSize());
         IPage<FlowHisTask> result = hisTaskDao.selectPageByCreateId(page, userId,
-                excludeTypes, request.getStartTime(), request.getEndTime(), preFilterInstanceIds);
+                excludeTypes, request.getStartTime(), request.getEndTime(), preFilterInstanceIds,
+                excludeInstanceStates);
 
         if (result == null || CollUtil.isEmpty(result.getRecords())) {
             return PageResult.empty(request.getCurrent(), request.getSize());
