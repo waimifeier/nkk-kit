@@ -81,7 +81,7 @@ public final class FlowTaskEnum {
     public enum PerformType implements IEnum<Integer> {
 
         START(0, "发起"),
-        SEQUENTIAL(1, "顺序审批"),
+        SEQUENTIAL(1, "顺序签"),
         COUNTERSIGN(2, "会签"),
         OR_SIGN(3, "或签"),
         VOTE_SIGN(4, "票签"),

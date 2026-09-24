@@ -199,7 +199,7 @@ META-INF/nkk-flow/schema-mysql.sql
 | 发起流程实例 | 插入 `flow_instance`、`flow_his_instance`、`flow_ext_instance` | 活动实例、历史生命周期、实例模型快照同时创建。 |
 | 暂存草稿 | 插入 `flow_instance`、`flow_his_instance`、`flow_ext_instance` | 历史实例状态为暂存待审，后续可恢复继续流转。 |
 | 创建审批任务 | 插入 `flow_task`、`flow_task_actor`；更新 `flow_instance`、`flow_his_instance` 当前节点 | 普通审批、抄送、定时器、触发器、子流程等待都会落活动任务。 |
-| 顺序审批 | 插入 1 条 `flow_task` 和当前顺序办理人的 `flow_task_actor` | 当前人完成后再创建下一个顺序办理人的任务。 |
+| 顺序签 | 插入 1 条 `flow_task` 和当前顺序办理人的 `flow_task_actor` | 当前人完成后再创建下一个顺序办理人的任务。 |
 | 会签/票签 | 可能按参与人插入多条 `flow_task` 和多条 `flow_task_actor` | 每个参与人独立处理，完成后根据会签、票签规则判断是否收口。 |
 | 或签 | 通常插入 1 条 `flow_task` 和多个 `flow_task_actor` | 任一允许参与者处理后，任务进入历史并继续流转。 |
 | 完成任务 | 插入 `flow_his_task`、`flow_his_task_actor`；删除 `flow_task_actor`、`flow_task` | 活动任务转历史任务。完成后继续执行下一个节点。 |
@@ -595,7 +595,7 @@ engine.abstainTask(taskId, FlowCreator.of("u3", "王五"), variables);
 - 活动表、历史表流转模型。
 - 发起、审批、抄送、条件分支、并行分支、包容分支、自动通过、自动拒绝、结束节点。
 - 路由分支，可根据条件或 AI 决策跳到目标节点，并记录路由跳转历史状态。
-- 会签、或签、顺序审批、票签任务创建和完成后收口。
+- 会签、或签、顺序签、票签任务创建和完成后收口。
 - 驳回到指定节点、发起人、上级审批节点、上一审批节点、终止审批。
 - 转办、委派、归还、代理、认领、加签、减签。
 - 撤回、拿回、恢复实例。

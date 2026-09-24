@@ -14,6 +14,7 @@ import org.nkk.flow.enums.core.FlowInstanceEnum.InstanceState;
 import org.nkk.flow.enums.core.FlowTaskEnum;
 import org.nkk.flow.enums.core.FlowTaskEnum.TaskType;
 import org.nkk.flow.enums.core.FlowTaskEnum.PerformType;
+import org.nkk.flow.enums.core.FlowTaskActorEnum;
 import org.nkk.flow.enums.node.FlowNodeSetTypeEnum;
 import org.nkk.flow.enums.node.FlowNodeTypeEnum;
 import org.nkk.flow.model.FlowProcessModel;
@@ -35,6 +36,7 @@ import org.nkk.flow.web.model.FlowTaskRemoveSignRequest;
 import org.nkk.flow.web.model.FlowTaskRollbackRequest;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -129,6 +131,33 @@ public class FlowDesignerRuntimeService {
 
     public List<FlowTaskActor> taskActors(Long taskId) {
         return flowEngine.queryService().getTaskActorsByTaskId(task(taskId).getId());
+    }
+
+    /**
+     * 认领任务。
+     *
+     * <p>当审批人配置为角色或部门时，任务参与者为角色/部门，需由具体用户认领后方可办理。
+     * 认领后任务参与者替换为当前用户。根据参与者类型自动选择认领方式：
+     * 角色参与者走 {@code claimRole}，部门参与者走 {@code claimDepartment}，其他走 {@code claimTask}。</p>
+     *
+     * @param taskId 任务 ID
+     * @return 认领后的运行时信息
+     */
+    public FlowRuntimeResponse claim(Long taskId) {
+        FlowTask task = task(taskId);
+        List<FlowTaskActor> actors = flowEngine.queryService().getTaskActorsByTaskId(task.getId());
+        boolean hasRole = actors.stream()
+                .anyMatch(a -> FlowTaskActorEnum.ActorType.ROLE.value().equals(a.getActorType()));
+        boolean hasDepartment = actors.stream()
+                .anyMatch(a -> FlowTaskActorEnum.ActorType.DEPARTMENT.value().equals(a.getActorType()));
+        if (hasRole) {
+            flowEngine.claimRole(taskId, null);
+        } else if (hasDepartment) {
+            flowEngine.claimDepartment(taskId, null);
+        } else {
+            flowEngine.claimTask(taskId, null);
+        }
+        return runtimeResponse(task.getInstanceId());
     }
 
     public FlowRuntimeResponse complete(Long taskId, FlowTaskOperateRequest request) {
@@ -374,14 +403,14 @@ public class FlowDesignerRuntimeService {
     }
 
     /**
-     * 合并同 nodeKey 的并行审批记录（会签/或签/票签），保留每人的 task 级办理详情。
+     * 合并同 nodeKey 的审批记录（顺序/会签/或签/票签），保留每人的 task 级办理详情。
      *
      * <p>合并规则：</p>
      * <ul>
-     *     <li>多人审批节点（performType=2 会签 / 3 或签 / 4 票签）按 {@code nodeKey} 合并，
+     *     <li>审批节点（performType=1 顺序 / 2 会签 / 3 或签 / 4 票签）按 {@code nodeKey} 合并，
      *     不区分 nodeStatus —— 允许 1 人已完成 + 1 人待办合并在同一节点下。</li>
-     *     <li>其他节点（顺序审批、单人审批等）按 {@code nodeKey + "#" + nodeStatus} 合并，
-     *     不同状态（驳回后重新审批）保持独立。</li>
+     *     <li>其他节点（发起、抄送等非任务节点）按 {@code nodeKey + "#" + nodeStatus} 合并，
+     *     不同状态保持独立。</li>
      * </ul>
      *
      * <p>合并后 nodeStatus 优先级：IN_PROGRESS &gt; REJECTED &gt; COMPLETED，
@@ -398,10 +427,11 @@ public class FlowDesignerRuntimeService {
             if (r.getType() != null && r.getType() == -1) {
                 continue;
             }
-            // 多人审批节点（会签=2 / 或签=3 / 票签=4）按 nodeKey 合并；其他按 nodeKey + nodeStatus
-            boolean isMultiPersonSign = r.getPerformType() != null
-                    && (r.getPerformType() == 2 || r.getPerformType() == 3 || r.getPerformType() == 4);
-            String key = isMultiPersonSign ? r.getNodeKey() : r.getNodeKey() + "#" + r.getNodeStatus();
+            // 审批节点（顺序=1 / 会签=2 / 或签=3 / 票签=4）按 nodeKey 合并；其他按 nodeKey + nodeStatus
+            boolean isApprovalNode = r.getPerformType() != null
+                    && (r.getPerformType() == 1 || r.getPerformType() == 2
+                            || r.getPerformType() == 3 || r.getPerformType() == 4);
+            String key = isApprovalNode ? r.getNodeKey() : r.getNodeKey() + "#" + r.getNodeStatus();
 
             FlowInstanceApprovalRecordResponse existing = merged.get(key);
             if (existing == null) {
@@ -428,17 +458,35 @@ public class FlowDesignerRuntimeService {
                 if (aggStatus != null) {
                     existing.setNodeStatusText(resolveNodeStatusText(existing.getType(), aggStatus));
                 }
-                // record 级 actorId/actorName/opinion 优先取有意见的（实际审批人）
-                if (r.getOpinion() != null && existing.getOpinion() == null) {
-                    existing.setActorId(r.getActorId());
-                    existing.setActorName(r.getActorName());
-                    existing.setOpinion(r.getOpinion());
-                }
             }
         }
 
         // 为每个 assignee 填充 task 级办理详情
-        for (FlowInstanceApprovalRecordResponse r : merged.values()) {
+        fillAssigneeDetails(merged.values(), taskDetailMap);
+
+        // 按 createTime 排序回原顺序
+        List<FlowInstanceApprovalRecordResponse> result = new ArrayList<>(merged.values());
+        result.sort(Comparator.comparing(
+                FlowInstanceApprovalRecordResponse::getCreateTime,
+                Comparator.nullsLast(Comparator.naturalOrder())));
+        return result;
+    }
+
+    /**
+     * 为合并后的每条记录的 assignee 填充 task 级办理详情（状态、意见、完成时间）。
+     *
+     * <p>按节点类型分派不同的解析策略，核心区别在于 {@code detail.actorId}
+     * （即任务 createId）在不同节点类型下语义不同：</p>
+     * <ul>
+     *     <li>抄送节点（COPY）→ createId 是抄送发起人，所有 assignee 直接取 task 详情</li>
+     *     <li>或签节点（performType=3）→ 同一 task 多人共享，按 createId 区分操作人/未操作人</li>
+     *     <li>其他节点（顺序/会签/票签/发起人/单人审批）→ 每人独立 task，直接取详情</li>
+     * </ul>
+     */
+    private void fillAssigneeDetails(
+            Collection<FlowInstanceApprovalRecordResponse> records,
+            Map<Long, TaskDetail> taskDetailMap) {
+        for (FlowInstanceApprovalRecordResponse r : records) {
             for (FlowInstanceApprovalRecordResponse.Assignee a : r.getAssignees()) {
                 if (a.getTaskId() == null) {
                     continue;
@@ -447,31 +495,56 @@ public class FlowDesignerRuntimeService {
                 if (detail == null) {
                     continue;
                 }
-                if (detail.actorId == null) {
-                    // 活动任务，无人操作 → 待处理
-                    a.setTaskStatus(null);
-                    a.setTaskStatusText(ApprovalNodeStatusEnum.IN_PROGRESS.getLabel());
-                } else if (detail.actorId.equals(a.getId())) {
-                    // 此人是实际操作人 → 填充详情
-                    ApprovalNodeStatusEnum status = mapTaskStateToNodeStatus(detail.taskState);
-                    a.setTaskStatus(detail.taskState);
-                    a.setTaskStatusText(resolveNodeStatusText(r.getType(), status));
-                    a.setOpinion(detail.opinion);
-                    a.setFinishTime(detail.finishTime);
-                } else {
-                    // 同一 task 被他人操作（或签：1 个 task 多人共享，1 人办理后其他人跳过）
-                    a.setTaskStatus(null);
-                    a.setTaskStatusText(ApprovalNodeStatusEnum.SKIPPED.getLabel());
-                }
+                fillAssigneeDetail(a, r, detail);
             }
         }
+    }
 
-        // 按 createTime 排序回原顺序
-        List<FlowInstanceApprovalRecordResponse> result = new ArrayList<>(merged.values());
-        result.sort(Comparator.comparing(
-                FlowInstanceApprovalRecordResponse::getCreateTime,
-                Comparator.nullsLast(Comparator.naturalOrder())));
-        return result;
+    /**
+     * 按 nodeType + performType 分派策略，填充单个 assignee 的办理详情。
+     *
+     * <p>策略优先级：</p>
+     * <ol>
+     *     <li>活动任务（detail.actorId 为空）→ 待处理</li>
+     *     <li>或签 + 非操作人 → 已跳过</li>
+     *     <li>其他（含抄送/顺序/会签/票签/发起人/操作人）→ 直接取 task 详情</li>
+     * </ol>
+     */
+    private void fillAssigneeDetail(
+            FlowInstanceApprovalRecordResponse.Assignee a,
+            FlowInstanceApprovalRecordResponse r,
+            TaskDetail detail) {
+        // 活动任务（在活动表中，无人操作）→ 待处理
+        if (detail.actorId == null) {
+            a.setTaskStatus(null);
+            a.setTaskStatusText(ApprovalNodeStatusEnum.IN_PROGRESS.getLabel());
+            return;
+        }
+        // 或签节点：同一 task 多人共享，createId 是实际操作人，其余人标记跳过
+        if (isOrSign(r.getPerformType()) && !detail.actorId.equals(a.getId())) {
+            a.setTaskStatus(null);
+            a.setTaskStatusText(ApprovalNodeStatusEnum.SKIPPED.getLabel());
+            return;
+        }
+        // 抄送/顺序/会签/票签/发起人/单人审批 → 直接取 task 详情
+        applyTaskDetail(a, r.getType(), detail);
+    }
+
+    /** 或签：performType=3，同一 task 多个 assignee 共享，1 人办理后其余人跳过。 */
+    private boolean isOrSign(Integer performType) {
+        return performType != null && performType == 3;
+    }
+
+    /** 将 TaskDetail 的状态、意见、完成时间写入 assignee。 */
+    private void applyTaskDetail(
+            FlowInstanceApprovalRecordResponse.Assignee a,
+            Integer nodeType,
+            TaskDetail detail) {
+        ApprovalNodeStatusEnum status = mapTaskStateToNodeStatus(detail.taskState);
+        a.setTaskStatus(detail.taskState);
+        a.setTaskStatusText(resolveNodeStatusText(nodeType, status));
+        a.setOpinion(detail.opinion);
+        a.setFinishTime(detail.finishTime);
     }
 
     /**
@@ -978,11 +1051,6 @@ public class FlowDesignerRuntimeService {
         // 最后办理人（活动节点取 createBy，历史节点取他处）
         r.setActorId(task.getCreateId());
         r.setActorName(task.getCreateBy());
-
-        // 审批意见（只有非 START 节点且有意见时展示）
-        if (task.getOpinion() != null) {
-            r.setOpinion(task.getOpinion());
-        }
 
         // 节点 setType：从流程模型取任务节点配置，映射出枚举值与中文名
         applySetType(r, processModel, task.getTaskKey());

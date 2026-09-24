@@ -196,6 +196,20 @@ public class FlowDesignerRuntimeController {
     }
 
     /**
+     * 认领任务。
+     *
+     * <p>当审批人配置为角色或部门时，任务参与者为角色/部门，需由具体用户认领后方可办理。
+     * 后端根据参与者类型自动选择认领方式（角色/部门/通用）。</p>
+     *
+     * @param taskId 任务 ID；示例值：{@code 1785467714628}
+     * @return 认领后的实例详情
+     */
+    @PostMapping("/tasks/{taskId}/claim")
+    public Result<FlowRuntimeResponse> claim(@PathVariable Long taskId) {
+        return Result.ok(runtimeService.claim(taskId));
+    }
+
+    /**
      * 驳回任务。
      *
      * <p>请求体示例：{@code {"nodeKey":"flk_start","opinion":"资料不完整","variables":{"day":3}}}</p>

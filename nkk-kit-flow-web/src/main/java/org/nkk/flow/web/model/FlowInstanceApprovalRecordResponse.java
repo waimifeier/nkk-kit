@@ -48,13 +48,13 @@ public class FlowInstanceApprovalRecordResponse implements Serializable {
 
     /**
      * 审批方式（执行类型），取值见 {@link org.nkk.flow.enums.core.FlowTaskEnum.PerformType}：
-     * 1=顺序审批、2=会签、3=或签、4=票签。
+     * 1=顺序签、2=会签、3=或签、4=票签。
      * 路由/结束等非任务节点为 null。
      */
     private Integer performType;
 
     /**
-     * 审批方式中文名（顺序审批、会签、或签、票签…），前端直接展示。
+     * 审批方式中文名（顺序签、会签、或签、票签…），前端直接展示。
      */
     private String performTypeName;
 
@@ -102,11 +102,6 @@ public class FlowInstanceApprovalRecordResponse implements Serializable {
      * 最后办理人名称或当前待办人名称。
      */
     private String actorName;
-
-    /**
-     * 审批意见（history 节点有值，活动节点为 null）。
-     */
-    private String opinion;
 
     /**
      * 节点办理人列表（展示完整候选人/参与人）。
