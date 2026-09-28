@@ -30,8 +30,6 @@ public interface FlowTaskDao {
 
     List<FlowTask> selectListByParentTaskId(Long parentTaskId);
 
-    List<FlowTask> selectListByCallProcessIdAndCallInstanceId(Long callProcessId, Long callInstanceId);
-
     List<FlowTask> selectTimeoutOrRemindTasks(Date now);
 }
 

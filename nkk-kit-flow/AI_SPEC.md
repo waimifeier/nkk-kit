@@ -55,7 +55,6 @@ org.nkk.flow
 │       ├── json/FlowJsonHandler.java
 │       ├── listener/                  # 监听器接口（Instance/Task/Node）
 │       ├── schedule/                  # 调度（Trigger/Reminder/JobLock）
-│       ├── subprocess/FlowSubProcessHandler.java
 │       ├── task/FlowCreateTaskHandler.java + Interceptor
 │       └── time/FlowCreateTimeHandler.java
 │
@@ -200,9 +199,8 @@ nkk-kit-flow 是核心引擎包，**不能** import `org.springframework.web`、
 ### 4.2 后端执行层
 
 - [ ] 在 `FlowNodeModel.executeInternal()` 按 type 添加执行分支
-- [ ] 如果是网关类节点（并行/包容/路由），在 `FlowNodeModel` 添加对应分支数组字段
+- [ ] 如果是网关类节点（并行/包容），在 `FlowNodeModel` 添加对应分支数组字段
 - [ ] 如果需要条件判断，实现 `FlowConditionHandler` 接口的对应方法
-- [ ] 如果需要子流程调用，使用 `FlowSubProcessHandler` 接口
 
 ### 4.3 前端同步
 
@@ -277,8 +275,7 @@ public enum FlowNodeTypeEnum implements IEnum<Integer> {
 
 | 接口 | 位置 | 作用 | 可被替换 |
 |------|------|------|---------|
-| `FlowConditionHandler` | core/extension/condition | 条件匹配逻辑（条件分支/包容路由/路由跳转） | ✅ |
-| `FlowSubProcessHandler` | core/extension/subprocess | 子流程调用 | ✅ |
+| `FlowConditionHandler` | core/extension/condition | 条件匹配逻辑（条件分支/包容分支） | ✅ |
 | `FlowAiHandler` | core/extension/ai | AI 节点处理 | ✅ |
 | `FlowIdGenerator` | core/extension/id | 节点 ID 生成 | ✅ |
 | `FlowJsonHandler` | core/extension/json | JSON 序列化/反序列化 | ✅ |

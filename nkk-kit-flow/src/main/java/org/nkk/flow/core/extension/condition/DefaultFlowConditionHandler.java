@@ -27,11 +27,6 @@ public class DefaultFlowConditionHandler implements FlowConditionHandler {
         return getConditionNode(context, execution, nodeModel, nodeModel.getBranchNodes());
     }
 
-    @Override
-    public Optional<FlowConditionNode> getRouteNode(FlowContext context, FlowExecution execution, FlowNodeModel nodeModel) {
-        return getConditionNode(context, execution, nodeModel, nodeModel.getBranchNodes());
-    }
-
     private Optional<FlowConditionNode> getConditionNode(FlowContext context, FlowExecution execution,
                                                         FlowNodeModel nodeModel, List<FlowConditionNode> nodes) {
         if (CollUtil.isEmpty(nodes)) {

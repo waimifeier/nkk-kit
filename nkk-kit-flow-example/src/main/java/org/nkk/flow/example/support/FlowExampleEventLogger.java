@@ -43,7 +43,7 @@ public class FlowExampleEventLogger {
         String nodeName = event.getNodeModel() == null ? null : event.getNodeModel().getNodeName();
 
         if (task == null) {
-            // 子流程启动/结束等事件不携带具体任务
+            // 部分事件不携带具体任务
             log.info("[流程任务事件] {} 操作人={} 节点={} 参与人={}",
                     describeType(event.getEventType() == null ? null : event.getEventType().name()),
                     describeCreator(event.getCreator()), nodeName, actorNames);

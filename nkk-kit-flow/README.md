@@ -4,7 +4,7 @@
 
 ## 模块边界
 
-- `nkk-kit-flow`：starter 和核心能力。负责自动配置、MyBatis-Plus 持久化、部署流程、启动实例、创建任务、完成任务、驳回、撤回、拿回、转办、委派、代理、加签、减签、定时/触发、子流程扩展。
+- `nkk-kit-flow`：starter 和核心能力。负责自动配置、MyBatis-Plus 持久化、部署流程、启动实例、创建任务、完成任务、驳回、撤回、拿回、转办、委派、代理、加签、减签、定时/触发。
 - `nkk-kit-flow-web`：Web 扩展。后续负责流程设计器页面、流程定义配置接口、管理端 API 和可选审批页面。
 - 使用方系统：只需要准备数据源、执行 SQL，并按需要提供业务扩展 Bean，例如参与人解析、权限策略、事件监听、消息通知等。
 
@@ -19,7 +19,6 @@
 - `org.nkk.flow.core.extension.json`：JSON 适配。
 - `org.nkk.flow.core.extension.listener`：节点、任务和实例事件监听。
 - `org.nkk.flow.core.extension.schedule`：超时、提醒、触发任务扩展。
-- `org.nkk.flow.core.extension.subprocess`：子流程扩展。
 - `org.nkk.flow.dao`：核心 DAO 接口。
 - `org.nkk.flow.dao.mybatis`：MyBatis-Plus 默认 DAO 实现。
 - `org.nkk.flow.entity`：流程定义、实例、任务、参与者实体。
@@ -75,7 +74,6 @@ starter 按 Spring Boot 规范拆分 Bean。使用方可以通过注册同类型
 - `FlowTaskActorProvider`
 - `FlowActorAccessStrategy`：统一判断当前用户是否命中用户、角色、部门等参与人配置。
 - `FlowNodeListener`
-- `FlowSubProcessHandler`
 - `FlowTaskListener`
 - `FlowInstanceListener`
 - `FlowInstanceAccessStrategy`：控制撤回、终止、挂起、激活、作废等实例级操作权限。
@@ -110,7 +108,7 @@ META-INF/nkk-flow/schema-mysql.sql
 | `flow_instance` | `FlowInstance` | 只保存正在运行的实例 | 保存活动流程实例的当前节点、发起人、业务 key、实例变量等。流程结束后会从该表删除。 |
 | `flow_his_instance` | `FlowHisInstance` | 实例创建时插入，结束后继续保留 | 保存实例生命周期记录。实例启动时就会插入一条历史记录，运行中同步当前节点和变量，结束时更新最终状态和结束时间。 |
 | `flow_ext_instance` | `FlowExtInstance` | 实例创建时插入，默认随实例历史保留 | 保存实例级流程模型快照。流程定义后续改版不会影响已经启动的实例。 |
-| `flow_task` | `FlowTask` | 只保存待处理任务 | 保存当前待办任务、任务类型、参与方式、变量、超时提醒、委派转办信息、子流程等待信息等。任务完成后会从该表删除。 |
+| `flow_task` | `FlowTask` | 只保存待处理任务 | 保存当前待办任务、任务类型、参与方式、变量、超时提醒、委派转办信息等。任务完成后会从该表删除。 |
 | `flow_his_task` | `FlowHisTask` | 任务完成、关闭或异常结束后写入 | 保存任务处理历史。活动任务完成时会复制到历史任务表，并记录任务状态、完成时间和耗时。 |
 | `flow_task_actor` | `FlowTaskActor` | 只保存活动任务参与者 | 保存当前任务的办理人、角色、部门、候选人快照以及权重、代理信息。任务完成后会从该表删除。 |
 | `flow_his_task_actor` | `FlowHisTaskActor` | 任务转历史时写入 | 保存任务参与者历史快照，便于后续查看当时是谁可审批、谁被委派、谁参与会签/票签。 |
@@ -129,9 +127,7 @@ META-INF/nkk-flow/schema-mysql.sql
 | `flow_instance.id` = `flow_ext_instance.id` | 实例扩展表主键就是实例 ID。 |
 | `flow_task.id` -> `flow_task_actor.task_id` | 一个活动任务可以有一个或多个参与者。 |
 | `flow_his_task.id` -> `flow_his_task_actor.task_id` | 一个历史任务对应当时的参与者快照。 |
-| `flow_instance.parent_instance_id` | 子流程实例指向父流程实例。 |
 | `flow_task.parent_task_id` | 当前任务由哪个上游任务流转而来。 |
-| `flow_task.call_process_id`、`call_instance_id` | 父流程等待子流程时，任务会记录调用的子流程定义和子流程实例。 |
 | 表单字段元数据来源 | 流程模型 JSON 的 `extendConfig.metaForm.fields` + `FlowDesignerFormProvider.listFormFields()` | 设计器条件节点先从 Provider 查实时字段，Provider 未实现时读流程模型快照。 |
 
 ### 一次完整审批的数据流
@@ -155,7 +151,7 @@ META-INF/nkk-flow/schema-mysql.sql
 
 3. 创建第一个真实待办。
 
-   流程走到审批、抄送、定时器、触发器、子流程等待等节点时，调用 `FlowTaskService.createTask(...)` 创建活动任务：
+   流程走到审批、抄送、定时器、触发器等节点时，调用 `FlowTaskService.createTask(...)` 创建活动任务：
 
    - 插入 `flow_task`。
    - 如果节点需要办理人，插入 `flow_task_actor`。
@@ -198,14 +194,14 @@ META-INF/nkk-flow/schema-mysql.sql
 | 修改流程定义资料 | 更新 `flow_process` | 通常修改名称、图标、分类、实例地址、备注、排序等展示和管理字段。 |
 | 发起流程实例 | 插入 `flow_instance`、`flow_his_instance`、`flow_ext_instance` | 活动实例、历史生命周期、实例模型快照同时创建。 |
 | 暂存草稿 | 插入 `flow_instance`、`flow_his_instance`、`flow_ext_instance` | 历史实例状态为暂存待审，后续可恢复继续流转。 |
-| 创建审批任务 | 插入 `flow_task`、`flow_task_actor`；更新 `flow_instance`、`flow_his_instance` 当前节点 | 普通审批、抄送、定时器、触发器、子流程等待都会落活动任务。 |
+| 创建审批任务 | 插入 `flow_task`、`flow_task_actor`；更新 `flow_instance`、`flow_his_instance` 当前节点 | 普通审批、抄送、定时器、触发器都会落活动任务。 |
 | 顺序签 | 插入 1 条 `flow_task` 和当前顺序办理人的 `flow_task_actor` | 当前人完成后再创建下一个顺序办理人的任务。 |
 | 会签/票签 | 可能按参与人插入多条 `flow_task` 和多条 `flow_task_actor` | 每个参与人独立处理，完成后根据会签、票签规则判断是否收口。 |
 | 或签 | 通常插入 1 条 `flow_task` 和多个 `flow_task_actor` | 任一允许参与者处理后，任务进入历史并继续流转。 |
 | 完成任务 | 插入 `flow_his_task`、`flow_his_task_actor`；删除 `flow_task_actor`、`flow_task` | 活动任务转历史任务。完成后继续执行下一个节点。 |
 | 反对票/弃权票 | 插入 `flow_his_task`、`flow_his_task_actor`；删除对应活动任务和参与者 | 用于会签、票签的投票收口；是否结束流程取决于权重和策略。 |
 | 驳回/驳回跳转 | 当前任务和相关活动任务转入 `flow_his_task`；删除对应活动表；可能创建目标节点新任务 | 驳回到指定节点、上一审批节点、发起人等都通过任务历史状态记录跳转语义。 |
-| 任意跳转/路由跳转/触发跳转 | 活动任务转历史；更新实例当前节点；创建目标节点任务 | 历史任务状态记录跳转类型，目标任务可标记为对应跳转任务类型。 |
+| 任意跳转/触发跳转 | 活动任务转历史；更新实例当前节点；创建目标节点任务 | 历史任务状态记录跳转类型，目标任务可标记为对应跳转任务类型。 |
 | 转办 | 更新 `flow_task.task_type/assignor_id/assignor/variable`；替换 `flow_task_actor` | 任务仍是同一条活动任务，只是办理人替换为被转办人。 |
 | 委派 | 更新 `flow_task`；替换 `flow_task_actor` | 委派完成后可以归还给原办理人。 |
 | 委派归还 | 更新 `flow_task.task_type`；替换 `flow_task_actor` | 把任务参与者恢复为委派人。 |
@@ -221,7 +217,7 @@ META-INF/nkk-flow/schema-mysql.sql
 | 恢复实例 | 插入 `flow_instance`；更新 `flow_his_instance.instance_state/end_time` | 当活动实例不存在但历史实例存在时，可恢复成活动实例继续处理。 |
 | 撤回/拿回 | 相关活动任务转历史；可能恢复或重新创建可处理任务 | 通过历史任务状态区分撤回、拿回、恢复等语义。 |
 | 超时/终止/撤销/作废 | 活动任务转 `flow_his_task`；删除活动任务和参与者；删除 `flow_instance`；更新 `flow_his_instance` | 这些属于实例结束类操作，最终状态写入历史实例。 |
-| 级联删除实例 | 删除 `flow_task_actor`、`flow_his_task_actor`、`flow_task`、`flow_his_task`、`flow_ext_instance`、`flow_instance`、`flow_his_instance` | 用于彻底清理父流程和子流程数据，不是普通审批结束。 |
+| 级联删除实例 | 删除 `flow_task_actor`、`flow_his_task_actor`、`flow_task`、`flow_his_task`、`flow_ext_instance`、`flow_instance`、`flow_his_instance` | 用于彻底清理实例数据，不是普通审批结束。 |
 
 ### 活动表与历史表规则
 
@@ -230,17 +226,6 @@ META-INF/nkk-flow/schema-mysql.sql
 - 任务完成不是简单更新状态，而是“活动任务复制到历史任务，再删除活动任务”。因此待办查询查 `flow_task`，已办/轨迹查询查 `flow_his_task`。
 - 参与者表也遵循同样规则：活动参与者在 `flow_task_actor`，任务完成后复制到 `flow_his_task_actor`。
 - `flow_ext_instance` 保存实例模型快照，是流程审计和历史查看的重要依据。流程定义升级后，老实例仍按自己的快照继续流转。
-
-### 子流程数据流
-
-子流程本质上也是一个普通流程实例，只是多了父子关系：
-
-- 子流程启动时，会新增自己的 `flow_instance`、`flow_his_instance`、`flow_ext_instance`。
-- 子流程的 `parent_instance_id` 指向父流程实例 ID。
-- 同步子流程会在父流程中创建一个等待任务，父任务的 `call_process_id`、`call_instance_id` 分别记录子流程定义 ID 和子流程实例 ID。
-- 子流程正常结束后，父流程等待任务会被自动完成并转入历史任务表，父流程继续向下执行。
-- 子流程拒绝、撤销、终止、超时、作废时，默认会把相同语义传递给父流程。
-- 级联删除父流程实例时，会递归清理父流程和所有子流程的活动实例、历史实例、模型快照、活动任务、历史任务和参与者数据。
 
 ### 查询建议
 
@@ -253,7 +238,6 @@ META-INF/nkk-flow/schema-mysql.sql
 | 已办任务 | `flow_his_task` + `flow_his_task_actor` |
 | 审批轨迹 | `flow_his_task`，按 `instance_id/create_time/finish_time` 排序 |
 | 历史流程图回显 | `flow_ext_instance.model_content` |
-| 子流程关系 | `flow_instance.parent_instance_id` 或 `flow_his_instance.parent_instance_id` |
 | 表单字段元数据 | `flow_process.model_content` 的 `extendConfig.metaForm.fields` + `FlowDesignerFormProvider` SPI |
 | 流程绑定表单 | `flow_process.model_content` 的 `extendConfig.metaForm` |
 
@@ -263,7 +247,7 @@ META-INF/nkk-flow/schema-mysql.sql
 
 当前暴露方式：
 
-- `FlowCreatorProvider`：负责从使用方登录上下文中获取当前流程操作人，以及提供系统操作人身份（用于自动超时、触发器、子流程等无人操作场景）。显式传入 `FlowCreator` 时优先使用显式参数；未传时才从该扩展点获取。
+- `FlowCreatorProvider`：负责从使用方登录上下文中获取当前流程操作人，以及提供系统操作人身份（用于自动超时、触发器等无人操作场景）。显式传入 `FlowCreator` 时优先使用显式参数；未传时才从该扩展点获取。
 - `FlowTaskActorProvider`：负责把节点模型解析成任务参与者。使用方可覆盖 `getTaskActors(...)`、`getNodeAssignees(...)`、`getDynamicAssignee(...)`。
 - `FlowActorAccessStrategy`：统一判断当前用户是否命中用户、角色、部门等参与人配置。开始节点发起权限和审批任务办理权限都会委托给它。
 - `FlowStartAccessStrategy`：发起权限内部适配层，默认遍历开始节点 `nodeAssigneeList` 后调用 `FlowActorAccessStrategy`。
@@ -286,7 +270,7 @@ META-INF/nkk-flow/schema-mysql.sql
 
 默认实现 `DefaultFlowInstanceAccessStrategy` 的规则是：
 
-- 系统自动操作（定时超时、触发器、子流程级联回调等）：直接放行。
+- 系统自动操作（定时超时、触发器等）：直接放行。
 - 撤回、挂起、激活、终止、作废、超时结束等人工操作：只允许流程发起人（实例创建人）。
 
 默认规则开箱即用，无需配置。如果你希望“流程管理员、部门主管、角色负责人、单据拥有者”也能操作实例，可以自己覆盖这个 Bean：
@@ -453,9 +437,8 @@ public FlowNodeListener flowNodeListener() {
 - 多人审批投反对票、弃权。
 - 转办、委派、委派归还、代理、认领、角色/部门认领。
 - 加签、减签、修改办理人、已阅。
-- 跳转、路由跳转、触发器跳转、驳回跳转、驳回重新审批跳转。
+- 触发器跳转、驳回跳转、驳回重新审批跳转。
 - 撤回、拿回、超时、提醒、触发、终止、撤销、作废、驳回终止。
-- 子流程启动、子流程结束。
 
 实例事件覆盖：
 
@@ -572,36 +555,16 @@ engine.abstainTask(taskId, FlowCreator.of("u3", "王五"), variables);
 - `allowAbstain`：是否允许调用 `abstainTask`。
 - `abstainAsPass`：弃权是否按通过权重计算。
 
-## 子流程
-
-流程节点 `type = FlowTaskTypeEnum.CALL_PROCESS.value()` 时，会根据 `callProcess` 启动子流程。
-
-- `callProcess`：子流程定义，支持 `processKey`、`processKey:version`、`processId`。
-- `callAsync = true`：启动子流程后，父流程继续向下执行。
-- `callAsync = false` 或未配置：父流程先生成一个 `CALL_PROCESS` 等待任务，再启动子流程。
-
-默认子流程处理器是 `DefaultFlowSubProcessHandler`：
-
-- 子流程正常完成或自动通过：关闭父流程等待任务，合并子流程变量，继续执行父流程后续节点。
-- 子流程拒绝或自动拒绝：关闭父流程等待任务，并将父流程结束为拒绝。
-- 子流程撤销、终止、超时、作废：父流程按相同语义结束。
-- 删除父流程实例时，会递归删除活动和历史子流程实例、任务和模型数据。
-
-如果需要绑定业务单据、复制变量、改变子流程结束后的父流程策略，可以通过注册 `FlowSubProcessHandler` Bean 或 `FlowEngineBuilder.subProcessHandler(...)` 替换。
-
 ## 已迁移能力
 
 - JSON 流程定义部署与版本管理。
 - 活动表、历史表流转模型。
 - 发起、审批、抄送、条件分支、并行分支、包容分支、自动通过、自动拒绝、结束节点。
-- 路由分支，可根据条件或 AI 决策跳到目标节点，并记录路由跳转历史状态。
 - 会签、或签、顺序签、票签任务创建和完成后收口。
 - 驳回到指定节点、发起人、上级审批节点、上一审批节点、终止审批。
 - 转办、委派、归还、代理、认领、加签、减签。
 - 撤回、拿回、恢复实例。
 - 超时、提醒、触发任务扩展。
-- 子流程默认启动和同步等待任务。
-- 子流程父子实例联动，支持同步等待任务恢复、子流程变量合并、异常状态向父流程传递、父流程删除递归清理子流程。
 - starter 自动配置和 MyBatis-Plus 默认持久化。
 - 按流程定义 ID 启动流程、按 processKey 启动流程。
 - 启动流程时传业务 key、自定义实例 supplier、暂存草稿。
@@ -610,9 +573,8 @@ engine.abstainTask(taskId, FlowCreator.of("u3", "王五"), variables);
 - 实例级流程模型缓存、重载、追加临时节点、移除临时节点。
 - 线程内动态分支指定和动态办理人传递。
 - AI 节点处理、AI 分支决策、变量回写和失败兜底策略。
-- 流程模型部署前增强校验，覆盖重复节点、分支结构、路由目标、参与人配置、票签权重、可结束路径等。
+- 流程模型部署前增强校验，覆盖重复节点、分支结构、参与人配置、票签权重、可结束路径等。
 - 调度门面和本地调度锁。
-- 路由跳转历史状态、路由跳转事件、路由目标任务类型标记。
 - 任务和实例事件覆盖补齐，支持外围模块统一监听落库、消息、审计。
 - 会签、或签、票签支持投反对票、弃权、拒绝权重和加权否决策略。
 - 设计器模型校验增强，覆盖节点名称/长度、节点 key 空白字符、分支优先级重复、条件操作符和多人审批策略配置。
@@ -726,13 +688,11 @@ public Order submit(Order order) {
 - 根节点必须是发起节点。
 - 至少存在一个审批节点。
 - 至少存在一条可结束路径。
-- 条件、并行、包容、路由分支必须配置对应分支列表。
-- 条件、包容、路由分支最多只能有一个空条件默认分支。
+- 条件、并行、包容分支必须配置对应分支列表。
+- 条件、包容分支最多只能有一个空条件默认分支。
 - 无公共后续节点时，普通条件分支最多只能有一个空子节点分支。
-- 路由目标节点必须存在，且不能指向自身。
 - 审批/抄送节点按 `setType` 校验参与人配置。
 - 票签 `passWeight` 必须在 1-100 之间，参与人 `weight` 必须在 0-100 之间。
-- 子流程节点必须配置 `callProcess`。
 - 节点名称不能为空，节点 key 不能包含空白字符。
 - 分支 `priorityLevel` 不能重复。
 - 条件操作符仅支持 `eq`、`ne`、`gt`、`ge`、`lt`、`le` 及对应符号。

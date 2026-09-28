@@ -48,8 +48,6 @@ public class FlowHisTask extends FlowTask {
         his.setCreateTime(task.getCreateTime());
         his.setInstanceId(task.getInstanceId());
         his.setParentTaskId(task.getParentTaskId());
-        his.setCallProcessId(task.getCallProcessId());
-        his.setCallInstanceId(task.getCallInstanceId());
         his.setTaskName(task.getTaskName());
         his.setTaskKey(task.getTaskKey());
         his.setTaskType(task.getTaskType());

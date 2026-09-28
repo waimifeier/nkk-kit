@@ -16,9 +16,5 @@ public interface FlowConditionHandler {
     Optional<FlowConditionNode> getConditionNode(FlowContext context, FlowExecution execution, FlowNodeModel nodeModel);
 
     Optional<List<FlowConditionNode>> getInclusiveNodes(FlowContext context, FlowExecution execution, FlowNodeModel nodeModel);
-
-    default Optional<FlowConditionNode> getRouteNode(FlowContext context, FlowExecution execution, FlowNodeModel nodeModel) {
-        return getConditionNode(context, execution, nodeModel);
-    }
 }
 

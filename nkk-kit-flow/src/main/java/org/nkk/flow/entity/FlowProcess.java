@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import org.nkk.flow.core.context.FlowContext;
 import org.nkk.flow.enums.core.FlowProcessEnum.ProcessState;
+import org.nkk.flow.exception.FlowException;
 import org.nkk.flow.model.FlowProcessModel;
 
 /**
@@ -121,7 +122,7 @@ public class FlowProcess extends FlowEntity {
      */
     public FlowProcess checkState() {
         if (!ProcessState.ENABLED.value().equals(processState)) {
-            throw new IllegalStateException("流程定义未启用，processKey=" + processKey);
+            throw new FlowException("流程定义未启用，processKey=" + processKey);
         }
         return this;
     }

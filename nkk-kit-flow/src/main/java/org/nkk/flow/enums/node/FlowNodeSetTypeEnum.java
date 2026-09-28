@@ -16,6 +16,7 @@ public enum FlowNodeSetTypeEnum implements IEnum<Integer> {
     ROLE(3, "角色"),
     INITIATOR_SELECTED(4, "发起人自选"),
     INITIATOR_SELF(5, "发起人本人"),
+    CONTINUOUS_SUPERVISOR(6, "连续主管审批"),
     DEPARTMENT(7, "部门"),
     CANDIDATE(8, "候选人");
 

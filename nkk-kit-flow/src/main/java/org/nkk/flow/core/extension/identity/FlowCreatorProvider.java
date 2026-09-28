@@ -18,7 +18,7 @@ public interface FlowCreatorProvider {
     FlowCreator getCurrentCreator();
 
     /**
-     * 获取系统操作人（用于自动超时、触发器、子流程等无人操作场景）。
+     * 获取系统操作人（用于自动超时、触发器等无人操作场景）。
      *
      * <p>使用方注册 {@link FlowCreatorProvider} 时必须覆盖本方法，
      * 返回一个代表"系统"身份的 {@link FlowCreator}（如 {@code FlowCreator.of("0", "系统操作人")}）。

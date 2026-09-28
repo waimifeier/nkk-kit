@@ -19,6 +19,7 @@ import org.nkk.flow.enums.runtime.FlowExecuteTypeEnum;
 import org.nkk.flow.enums.runtime.FlowInstanceOperateEnum;
 import org.nkk.flow.enums.core.FlowInstanceEnum.InstanceState;
 import org.nkk.flow.enums.core.FlowTaskEnum.TaskState;
+import org.nkk.flow.exception.FlowException;
 import org.nkk.flow.model.node.FlowNodeModel;
 import org.nkk.flow.model.FlowProcessModel;
 import org.nkk.flow.service.FlowRuntimeService;
@@ -57,13 +58,7 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
 
     @Override
     public FlowInstance createInstance(FlowProcess process, FlowCreator creator, Map<String, Object> args,
-                                       FlowNodeModel startNode, Long parentInstanceId) {
-        return createInstance(process, creator, args, startNode, parentInstanceId, false, null);
-    }
-
-    @Override
-    public FlowInstance createInstance(FlowProcess process, FlowCreator creator, Map<String, Object> args,
-                                       FlowNodeModel startNode, Long parentInstanceId, boolean saveAsDraft,
+                                       FlowNodeModel startNode, boolean saveAsDraft,
                                        Supplier<FlowInstance> supplier) {
         FlowInstance instance = new FlowInstance();
         if (supplier != null) {
@@ -79,7 +74,6 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
         instance.setCreateTime(context.getCreateTimeHandler().getCurrentTime(FlowExecuteTypeEnum.START, null, null));
         instance.setProcessId(process.getId());
         instance.setProcessKey(process.getProcessKey());
-        instance.setParentInstanceId(parentInstanceId);
         instance.setCurrentNodeName(startNode.getNodeName());
         instance.setCurrentNodeKey(startNode.getNodeKey());
         instance.setLastUpdateBy(creator.getCreateBy());
@@ -177,7 +171,6 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
         his.setCurrentNodeName(endNode.getNodeName());
         his.setEndTime(new Date());
         hisInstanceDao.updateById(his);
-        finishParentCallProcess(instance, his, state);
         notifyInstance(eventTypeOf(state), his, endNode, execution.getFlowCreator());
         return true;
     }
@@ -283,7 +276,7 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
         if (instanceId == null) {
             return;
         }
-        java.util.List<Long> ids = collectInstanceIds(instanceId);
+        java.util.List<Long> ids = java.util.Collections.singletonList(instanceId);
         for (Long id : ids) {
             notifyInstance(FlowEventTypeEnum.INSTANCE_CASCADE_REMOVED, id, null,
                     creator == null ? context.getSystemCreator() : creator);
@@ -314,12 +307,7 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
         if (instance == null) {
             return false;
         }
-        FlowInstance top = getTopParentInstance(instance);
-        List<FlowInstance> instances = collectInstances(top);
-        for (FlowInstance item : instances) {
-            FlowTask matchedTask = currentTask != null && item.getId().equals(currentTask.getInstanceId()) ? currentTask : null;
-            finishSingleInstance(item, matchedTask, creator, instanceState, taskState);
-        }
+        finishSingleInstance(instance, currentTask, creator, instanceState, taskState);
         return true;
     }
 
@@ -377,7 +365,7 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
             return;
         }
         if (!strategy.isAllowed(creator, instance, hisInstance, operateType)) {
-            throw new IllegalStateException(message + "，instanceId=" + instanceId);
+            throw new FlowException(message + "，instanceId=" + instanceId);
         }
     }
 
@@ -433,7 +421,6 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
         instance.setCreateBy(his.getCreateBy());
         instance.setCreateTime(his.getCreateTime());
         instance.setProcessId(his.getProcessId());
-        instance.setParentInstanceId(his.getParentInstanceId());
         instance.setPriority(his.getPriority());
         instance.setInstanceNo(his.getInstanceNo());
         instance.setBusinessKey(his.getBusinessKey());
@@ -501,67 +488,6 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
 
     private String modelCacheKey(Long instanceId) {
         return "nkk:flow:instance:model:" + instanceId;
-    }
-
-    private void finishParentCallProcess(FlowInstance childInstance, FlowHisInstance childHis,
-                                         InstanceState state) {
-        if (childInstance.getParentInstanceId() == null) {
-            return;
-        }
-        if (context.getSubProcessHandler() != null) {
-            context.getSubProcessHandler().onChildFinished(context, childInstance, childHis, state);
-        }
-        if (context.getTaskListener() != null) {
-            context.getTaskListener().notify(FlowEventTypeEnum.SUB_PROCESS_ENDED, null, null, null, context.getSystemCreator());
-        }
-    }
-
-    private FlowInstance getTopParentInstance(FlowInstance instance) {
-        FlowInstance parent = instance;
-        while (parent.getParentInstanceId() != null) {
-            FlowInstance next = instanceDao.selectById(parent.getParentInstanceId());
-            if (next == null) {
-                break;
-            }
-            parent = next;
-        }
-        return parent;
-    }
-
-    private List<FlowInstance> collectInstances(FlowInstance instance) {
-        List<FlowInstance> instances = new java.util.ArrayList<>();
-        instances.add(instance);
-        List<FlowInstance> children = instanceDao.selectListByParentInstanceId(instance.getId());
-        if (children != null) {
-            for (FlowInstance child : children) {
-                instances.addAll(collectInstances(child));
-            }
-        }
-        return instances;
-    }
-
-    private java.util.List<Long> collectInstanceIds(Long instanceId) {
-        java.util.Set<Long> idSet = new java.util.LinkedHashSet<>();
-        collectInstanceIds(instanceId, idSet);
-        return new java.util.ArrayList<>(idSet);
-    }
-
-    private void collectInstanceIds(Long instanceId, java.util.Set<Long> ids) {
-        if (!ids.add(instanceId)) {
-            return;
-        }
-        List<FlowInstance> children = instanceDao.selectListByParentInstanceId(instanceId);
-        if (children != null) {
-            for (FlowInstance child : children) {
-                collectInstanceIds(child.getId(), ids);
-            }
-        }
-        List<FlowHisInstance> hisChildren = hisInstanceDao.selectListByParentInstanceId(instanceId);
-        if (hisChildren != null) {
-            for (FlowHisInstance child : hisChildren) {
-                collectInstanceIds(child.getId(), ids);
-            }
-        }
     }
 }
 

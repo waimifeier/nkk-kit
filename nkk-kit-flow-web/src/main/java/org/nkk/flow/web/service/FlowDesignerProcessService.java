@@ -11,6 +11,7 @@ import org.nkk.flow.model.node.FlowNodeModel;
 import org.nkk.flow.model.node.router.FlowConditionNode;
 import org.nkk.flow.model.node.task.FlowNodeAssignee;
 import org.nkk.flow.model.node.task.TaskNodeModel;
+import org.nkk.flow.model.node.task.ApprovalNodeModel;
 import org.nkk.flow.model.FlowProcessModel;
 import org.nkk.flow.service.NkkFlowEngine;
 import org.nkk.flow.web.model.FlowInstancePageRequest;
@@ -162,6 +163,10 @@ public class FlowDesignerProcessService {
         if (nodeModel instanceof TaskNodeModel) {
             TaskNodeModel taskNode = (TaskNodeModel) nodeModel;
             seg.setAssignees(buildAssignees(taskNode.getNodeAssigneeList()));
+            seg.setSetType(taskNode.getSetType());
+            if (nodeModel instanceof ApprovalNodeModel) {
+                seg.setExamineLevel(((ApprovalNodeModel) nodeModel).getExamineLevel());
+            }
         }
         return seg;
     }

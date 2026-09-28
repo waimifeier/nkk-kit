@@ -61,12 +61,6 @@ public class FlowQueryServiceImpl implements FlowQueryService {
     }
 
     @Override
-    public boolean existActiveSubProcess(Long instanceId) {
-        List<FlowInstance> list = instanceDao.selectListByParentInstanceId(instanceId);
-        return list != null && !list.isEmpty();
-    }
-
-    @Override
     public boolean existActiveTask(Long instanceId) {
         List<FlowTask> list = taskDao.selectListByInstanceId(instanceId);
         return list != null && !list.isEmpty();
@@ -139,12 +133,6 @@ public class FlowQueryServiceImpl implements FlowQueryService {
     @Override
     public List<FlowHisInstance> getHisInstancesByBusinessKey(String businessKey) {
         List<FlowHisInstance> list = hisInstanceDao.selectListByBusinessKey(businessKey);
-        return list == null ? Collections.emptyList() : list;
-    }
-
-    @Override
-    public List<FlowInstance> getSubProcessByInstanceId(Long instanceId) {
-        List<FlowInstance> list = instanceDao.selectListByParentInstanceId(instanceId);
         return list == null ? Collections.emptyList() : list;
     }
 

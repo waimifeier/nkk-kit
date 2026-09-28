@@ -3,6 +3,7 @@ package org.nkk.flow.core.extension.identity;
 import org.nkk.flow.core.context.FlowExecution;
 import org.nkk.flow.entity.FlowTask;
 import org.nkk.flow.entity.FlowTaskActor;
+import org.nkk.flow.exception.FlowException;
 import org.nkk.flow.model.node.task.FlowDynamicAssignee;
 import org.nkk.flow.model.node.task.FlowNodeAssignee;
 import org.nkk.flow.model.node.task.TaskNodeModel;
@@ -17,7 +18,7 @@ public interface FlowTaskActorProvider {
     /**
      * 解析当前节点需要生成的任务参与者。
      *
-     * <p>核心引擎创建审批、抄送、子流程等待等任务时会调用该方法。默认实现会优先读取
+     * <p>核心引擎创建审批、抄送等任务时会调用该方法。默认实现会优先读取
      * {@link org.nkk.flow.core.context.FlowDataTransfer#DYNAMIC_ASSIGNEE} 中当前节点的动态参与人，
      * 其次调用 {@link #getDynamicAssignee(TaskNodeModel, FlowExecution)}，最后回退到节点模型的
      * {@link TaskNodeModel#getNodeAssigneeList()}。</p>
@@ -76,7 +77,7 @@ public interface FlowTaskActorProvider {
      * 返回 {@code false} 表示调用方已经补齐 {@code taskActors}，引擎可继续创建任务
      */
     default boolean abnormal(FlowTask task, List<FlowTaskActor> taskActors, FlowExecution execution, TaskNodeModel nodeModel) {
-        throw new IllegalStateException("节点没有审批人，nodeKey=" + nodeModel.getNodeKey());
+        throw new FlowException("节点没有审批人，nodeKey=" + nodeModel.getNodeKey());
     }
 
     /**

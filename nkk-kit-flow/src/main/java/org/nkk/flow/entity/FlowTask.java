@@ -28,19 +28,9 @@ public class FlowTask extends FlowEntity {
     private Long instanceId;
 
     /**
-     * 父任务 ID，顺序会签、子流程等场景会使用该字段关联来源任务。
+     * 父任务 ID，顺序会签等场景会使用该字段关联来源任务。
      */
     private Long parentTaskId;
-
-    /**
-     * 被调用的子流程定义 ID。
-     */
-    private Long callProcessId;
-
-    /**
-     * 被调用的子流程实例 ID。
-     */
-    private Long callInstanceId;
 
     /**
      * 任务名称。

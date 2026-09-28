@@ -22,8 +22,6 @@ public interface FlowQueryService {
 
     FlowExtInstance getExtInstance(Long instanceId);
 
-    boolean existActiveSubProcess(Long instanceId);
-
     boolean existActiveTask(Long instanceId);
 
     FlowTask getTask(Long taskId);
@@ -49,8 +47,6 @@ public interface FlowQueryService {
     List<FlowInstance> getInstancesByBusinessKey(String businessKey);
 
     List<FlowHisInstance> getHisInstancesByBusinessKey(String businessKey);
-
-    List<FlowInstance> getSubProcessByInstanceId(Long instanceId);
 
     List<FlowTask> getTimeoutOrRemindTasks(Date now);
 }

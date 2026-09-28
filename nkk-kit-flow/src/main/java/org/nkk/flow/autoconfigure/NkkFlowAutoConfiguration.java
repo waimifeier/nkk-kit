@@ -30,8 +30,6 @@ import org.nkk.flow.core.extension.schedule.FlowTaskReminder;
 import org.nkk.flow.core.extension.schedule.FlowTaskTrigger;
 import org.nkk.flow.core.extension.schedule.LocalFlowJobLock;
 import org.nkk.flow.core.extension.schedule.NkkFlowScheduler;
-import org.nkk.flow.core.extension.subprocess.DefaultFlowSubProcessHandler;
-import org.nkk.flow.core.extension.subprocess.FlowSubProcessHandler;
 import org.nkk.flow.core.extension.task.DefaultFlowCreateTaskHandler;
 import org.nkk.flow.core.extension.task.FlowCreateTaskHandler;
 import org.nkk.flow.core.extension.task.FlowTaskCreateInterceptor;
@@ -121,12 +119,6 @@ public class NkkFlowAutoConfiguration {
         DefaultFlowInstanceAccessStrategy strategy = new DefaultFlowInstanceAccessStrategy();
         creatorProvider.ifAvailable(strategy::setCreatorProvider);
         return strategy;
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public FlowSubProcessHandler flowSubProcessHandler() {
-        return new DefaultFlowSubProcessHandler();
     }
 
     @Bean
@@ -229,7 +221,6 @@ public class NkkFlowAutoConfiguration {
                                    FlowTaskAccessStrategy taskAccessStrategy,
                                    FlowStartAccessStrategy startAccessStrategy,
                                    FlowInstanceAccessStrategy instanceAccessStrategy,
-                                   FlowSubProcessHandler subProcessHandler,
                                    FlowCreateTimeHandler createTimeHandler,
                                    FlowCreateTaskHandler createTaskHandler,
                                    FlowModelCache modelCache,
@@ -253,7 +244,6 @@ public class NkkFlowAutoConfiguration {
         context.setTaskAccessStrategy(taskAccessStrategy);
         context.setStartAccessStrategy(startAccessStrategy);
         context.setInstanceAccessStrategy(instanceAccessStrategy);
-        context.setSubProcessHandler(subProcessHandler);
         context.setCreateTimeHandler(createTimeHandler);
         context.setCreateTaskHandler(createTaskHandler);
         context.setModelCache(modelCache);

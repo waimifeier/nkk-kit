@@ -67,11 +67,6 @@ public class FlowHisInstanceDaoMybatisPlusImpl implements FlowHisInstanceDao {
     }
 
     @Override
-    public List<FlowHisInstance> selectListByParentInstanceId(Long parentInstanceId) {
-        return mapper.selectList(new QueryWrapper<FlowHisInstance>().eq("parent_instance_id", parentInstanceId));
-    }
-
-    @Override
     public List<FlowHisInstance> selectListByBusinessKey(String businessKey) {
         return mapper.selectList(new QueryWrapper<FlowHisInstance>().eq("business_key", businessKey));
     }

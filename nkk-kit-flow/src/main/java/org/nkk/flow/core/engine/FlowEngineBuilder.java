@@ -8,6 +8,7 @@ import org.nkk.flow.dao.FlowInstanceDao;
 import org.nkk.flow.dao.FlowProcessDao;
 import org.nkk.flow.dao.FlowTaskActorDao;
 import org.nkk.flow.dao.FlowTaskDao;
+import org.nkk.flow.exception.FlowException;
 import org.nkk.flow.core.context.FlowContext;
 import org.nkk.flow.core.extension.ai.FlowAiHandler;
 import org.nkk.flow.core.extension.cache.FlowModelCache;
@@ -35,8 +36,6 @@ import org.nkk.flow.core.extension.listener.FlowNodeListener;
 import org.nkk.flow.core.extension.listener.FlowTaskListener;
 import org.nkk.flow.core.extension.schedule.FlowTaskReminder;
 import org.nkk.flow.core.extension.schedule.FlowTaskTrigger;
-import org.nkk.flow.core.extension.subprocess.DefaultFlowSubProcessHandler;
-import org.nkk.flow.core.extension.subprocess.FlowSubProcessHandler;
 import org.nkk.flow.core.extension.task.DefaultFlowCreateTaskHandler;
 import org.nkk.flow.core.extension.task.FlowCreateTaskHandler;
 import org.nkk.flow.core.extension.task.FlowTaskCreateInterceptor;
@@ -77,7 +76,6 @@ public class FlowEngineBuilder {
     private FlowJsonHandler jsonHandler;
     private FlowTaskReminder taskReminder;
     private FlowTaskTrigger taskTrigger;
-    private FlowSubProcessHandler subProcessHandler = new DefaultFlowSubProcessHandler();
     private FlowCreateTimeHandler createTimeHandler = new DefaultFlowCreateTimeHandler();
     private FlowTaskCreateInterceptor taskCreateInterceptor;
     private FlowCreateTaskHandler createTaskHandler = new DefaultFlowCreateTaskHandler();
@@ -207,11 +205,6 @@ public class FlowEngineBuilder {
         return this;
     }
 
-    public FlowEngineBuilder subProcessHandler(FlowSubProcessHandler subProcessHandler) {
-        this.subProcessHandler = subProcessHandler;
-        return this;
-    }
-
     public FlowEngineBuilder createTimeHandler(FlowCreateTimeHandler createTimeHandler) {
         this.createTimeHandler = createTimeHandler;
         return this;
@@ -260,7 +253,6 @@ public class FlowEngineBuilder {
         context.setInstanceListener(instanceListener);
         context.setTaskReminder(taskReminder);
         context.setTaskTrigger(taskTrigger);
-        context.setSubProcessHandler(subProcessHandler);
         context.setCreateTimeHandler(createTimeHandler);
         context.setTaskCreateInterceptor(taskCreateInterceptor);
         context.setCreateTaskHandler(createTaskHandler);
@@ -283,7 +275,7 @@ public class FlowEngineBuilder {
     private void requireDaos() {
         if (processDao == null || instanceDao == null || hisInstanceDao == null || extInstanceDao == null
                 || taskDao == null || hisTaskDao == null || taskActorDao == null || hisTaskActorDao == null) {
-            throw new IllegalStateException("流程 DAO 实现不能为空");
+            throw new FlowException("流程 DAO 实现不能为空");
         }
     }
 }

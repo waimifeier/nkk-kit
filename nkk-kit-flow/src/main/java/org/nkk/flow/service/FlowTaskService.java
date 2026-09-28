@@ -98,11 +98,6 @@ public interface FlowTaskService {
 
     boolean changeTaskActor(Long taskId, FlowTaskActor actor);
 
-    List<FlowTask> endCallProcessTask(Long callProcessId, Long callInstanceId);
-
-    List<FlowTask> finishCallProcessTask(Long callProcessId, Long callInstanceId, FlowCreator creator,
-                                         TaskState state);
-
     boolean cascadeRemoveByInstanceIds(List<Long> instanceIds);
 
     FlowTaskActor isAllowed(FlowTask task, String userId);

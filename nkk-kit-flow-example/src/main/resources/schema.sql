@@ -46,7 +46,6 @@ CREATE TABLE flow_his_instance
     create_time       TIMESTAMP    NOT NULL,
     process_id        BIGINT       NOT NULL,
     process_key       VARCHAR(100),
-    parent_instance_id BIGINT,
     priority          TINYINT,
     instance_no       VARCHAR(50),
     business_key      VARCHAR(100),
@@ -64,7 +63,6 @@ CREATE TABLE flow_his_instance
 
 CREATE INDEX idx_flow_his_instance_process ON flow_his_instance (process_id);
 CREATE INDEX idx_flow_his_instance_key ON flow_his_instance (process_key);
-CREATE INDEX idx_flow_his_instance_parent ON flow_his_instance (parent_instance_id);
 CREATE INDEX idx_flow_his_instance_business ON flow_his_instance (tenant_id, business_key);
 
 CREATE TABLE flow_instance
@@ -76,7 +74,6 @@ CREATE TABLE flow_instance
     create_time       TIMESTAMP    NOT NULL,
     process_id        BIGINT       NOT NULL,
     process_key       VARCHAR(100),
-    parent_instance_id BIGINT,
     priority          TINYINT,
     instance_no       VARCHAR(50),
     business_key      VARCHAR(100),
@@ -91,7 +88,6 @@ CREATE TABLE flow_instance
 
 CREATE INDEX idx_flow_instance_process ON flow_instance (process_id);
 CREATE INDEX idx_flow_instance_key ON flow_instance (process_key);
-CREATE INDEX idx_flow_instance_parent ON flow_instance (parent_instance_id);
 CREATE INDEX idx_flow_instance_business ON flow_instance (tenant_id, business_key);
 
 CREATE TABLE flow_ext_instance
@@ -116,8 +112,6 @@ CREATE TABLE flow_task
     create_time     TIMESTAMP    NOT NULL,
     instance_id     BIGINT       NOT NULL,
     parent_task_id  BIGINT,
-    call_process_id BIGINT,
-    call_instance_id BIGINT,
     task_name       VARCHAR(100) NOT NULL,
     task_key        VARCHAR(100) NOT NULL,
     task_type       TINYINT      NOT NULL,
@@ -148,8 +142,6 @@ CREATE TABLE flow_his_task
     create_time     TIMESTAMP    NOT NULL,
     instance_id     BIGINT       NOT NULL,
     parent_task_id  BIGINT,
-    call_process_id BIGINT,
-    call_instance_id BIGINT,
     task_name       VARCHAR(100) NOT NULL,
     task_key        VARCHAR(100) NOT NULL,
     task_type       TINYINT      NOT NULL,

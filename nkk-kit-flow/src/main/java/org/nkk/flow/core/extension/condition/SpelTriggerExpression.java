@@ -4,6 +4,7 @@ import org.springframework.context.expression.MapAccessor;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
+import org.nkk.flow.exception.FlowException;
 
 import java.util.Collections;
 import java.util.Map;
@@ -26,7 +27,7 @@ import java.util.Map;
  *
  * <p>表达式由流程设计器配置（受信管理员编写），使用 {@link StandardEvaluationContext}
  * 以获得完整 SpEL 能力。表达式非法或运行时求值出错时抛出
- * {@link IllegalStateException}，由调用方按「配置有误」快速暴露。</p>
+ * {@link FlowException}，由调用方按「配置有误」快速暴露。</p>
  */
 public class SpelTriggerExpression {
 
@@ -41,7 +42,7 @@ public class SpelTriggerExpression {
      * @param expression SpEL 表达式，调用方需保证非空白
      * @param variables 发起流程时传入的变量 Map，为 null 时按空 Map 处理
      * @return true 表示满足触发条件，应发起审批流程
-     * @throws IllegalStateException 表达式非法或运行时求值异常
+     * @throws FlowException 表达式非法或运行时求值异常
      */
     public boolean match(String expression, Map<String, Object> variables) {
         Map<String, Object> args = variables == null ? Collections.emptyMap() : variables;
@@ -55,7 +56,7 @@ public class SpelTriggerExpression {
             Boolean result = spel.getValue(context, Boolean.class);
             return Boolean.TRUE.equals(result);
         } catch (Exception e) {
-            throw new IllegalStateException("业务审批触发条件表达式求值失败：" + expression, e);
+            throw new FlowException("业务审批触发条件表达式求值失败：" + expression, e);
         }
     }
 }

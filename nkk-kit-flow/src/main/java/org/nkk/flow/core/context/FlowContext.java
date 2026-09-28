@@ -31,14 +31,13 @@ import org.nkk.flow.core.extension.listener.FlowNodeListener;
 import org.nkk.flow.core.extension.listener.FlowTaskListener;
 import org.nkk.flow.core.extension.schedule.FlowTaskReminder;
 import org.nkk.flow.core.extension.schedule.FlowTaskTrigger;
-import org.nkk.flow.core.extension.subprocess.DefaultFlowSubProcessHandler;
-import org.nkk.flow.core.extension.subprocess.FlowSubProcessHandler;
 import org.nkk.flow.core.extension.task.DefaultFlowCreateTaskHandler;
 import org.nkk.flow.core.extension.task.FlowCreateTaskHandler;
 import org.nkk.flow.core.extension.task.FlowTaskCreateInterceptor;
 import org.nkk.flow.core.extension.time.DefaultFlowCreateTimeHandler;
 import org.nkk.flow.core.extension.time.FlowCreateTimeHandler;
 import org.nkk.flow.model.node.FlowNodeModel;
+import org.nkk.flow.exception.FlowException;
 import org.nkk.flow.model.node.task.TaskNodeModel;
 import org.nkk.flow.service.FlowProcessService;
 import org.nkk.flow.service.FlowQueryService;
@@ -91,8 +90,6 @@ public class FlowContext {
     private FlowTaskReminder taskReminder;
 
     private FlowTaskTrigger taskTrigger;
-
-    private FlowSubProcessHandler subProcessHandler = new DefaultFlowSubProcessHandler();
 
     private FlowCreateTimeHandler createTimeHandler = new DefaultFlowCreateTimeHandler();
 
@@ -147,23 +144,23 @@ public class FlowContext {
         }
         FlowCreator current = creatorProvider == null ? null : creatorProvider.getCurrentCreator();
         if (current == null || StrUtil.isBlank(current.getCreateId())) {
-            throw new IllegalStateException("未传入流程操作人，也未配置 FlowCreatorProvider 获取当前操作人");
+            throw new FlowException("未传入流程操作人，也未配置 FlowCreatorProvider 获取当前操作人");
         }
         return current;
     }
 
     /**
-     * 获取系统操作人（用于自动超时、触发器、子流程等无人操作场景）。
+     * 获取系统操作人（用于自动超时、触发器等无人操作场景）。
      *
      * @return 系统操作人；未配置 {@link FlowCreatorProvider#getSystemCreator()} 时抛异常
      */
     public FlowCreator getSystemCreator() {
         if (creatorProvider == null) {
-            throw new IllegalStateException("未配置 FlowCreatorProvider，无法获取系统操作人");
+            throw new FlowException("未配置 FlowCreatorProvider，无法获取系统操作人");
         }
         FlowCreator system = creatorProvider.getSystemCreator();
         if (system == null || StrUtil.isBlank(system.getCreateId())) {
-            throw new IllegalStateException("FlowCreatorProvider 未提供系统操作人，请在 provider 中实现 getSystemCreator()");
+            throw new FlowException("FlowCreatorProvider 未提供系统操作人，请在 provider 中实现 getSystemCreator()");
         }
         return system;
     }

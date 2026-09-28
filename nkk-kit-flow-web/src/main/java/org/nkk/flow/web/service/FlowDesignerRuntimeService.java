@@ -1017,12 +1017,11 @@ public class FlowDesignerRuntimeService {
             case 6:  // TERMINATED
             case 18: // DESTROYED
                 return ApprovalNodeStatusEnum.TERMINATED;
-            // 跳过类：跳转、自动通过、路由跳转等
+            // 跳过类：跳转、自动通过等
             case 1:  // JUMP
             case 10: // AUTO_JUMP
             case 11: // REJECT_JUMP
             case 12: // RE_APPROVE_JUMP
-            case 13: // ROUTE_JUMP
             case 14: // TRIGGER_JUMP
             case 17: // RESUMED
                 return ApprovalNodeStatusEnum.SKIPPED;

@@ -9,7 +9,6 @@ import org.nkk.flow.enums.core.FlowTaskEnum.PerformType;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -19,9 +18,7 @@ import org.nkk.flow.model.node.router.FlowCondition;
 import org.nkk.flow.model.node.router.FlowConditionNode;
 import org.nkk.flow.model.node.router.InclusiveRouterNodeModel;
 import org.nkk.flow.model.node.router.ParallelRouterNodeModel;
-import org.nkk.flow.model.node.router.RouteRouterNodeModel;
 import org.nkk.flow.model.node.task.ApprovalNodeModel;
-import org.nkk.flow.model.node.task.CallProcessNodeModel;
 import org.nkk.flow.model.node.task.CopyNodeModel;
 import org.nkk.flow.model.node.task.FlowNodeAssignee;
 import org.nkk.flow.model.node.task.FlowSignPolicy;
@@ -91,11 +88,6 @@ public final class FlowModelValidator {
         if (!context.hasEndPath) {
             errors.add("流程缺少可结束路径，请配置结束节点、自动通过、自动拒绝或无后续节点的可结束节点");
         }
-        for (Map.Entry<String, String> entry : context.routeTargets.entrySet()) {
-            if (!context.nodeKeys.contains(entry.getValue())) {
-                errors.add("路由目标节点不存在，routeNodeKey=" + entry.getKey() + "，targetNodeKey=" + entry.getValue());
-            }
-        }
     }
 
     /**
@@ -151,9 +143,6 @@ public final class FlowModelValidator {
         } else if (node instanceof InclusiveRouterNodeModel) {
             collectBranches(((InclusiveRouterNodeModel) node).getInclusiveNodes(), path + ".inclusiveNodes",
                     node, context, errors, BranchType.INCLUSIVE);
-        } else if (node instanceof RouteRouterNodeModel) {
-            collectBranches(((RouteRouterNodeModel) node).getRouteNodes(), path + ".routeNodes",
-                    node, context, errors, BranchType.ROUTE);
         }
     }
 
@@ -188,18 +177,6 @@ public final class FlowModelValidator {
             validateBranchContainer(node, ((InclusiveRouterNodeModel) node).getInclusiveNodes(), path, "inclusiveNodes", errors);
             return;
         }
-        if (node instanceof RouteRouterNodeModel) {
-            List<FlowConditionNode> routeNodes = ((RouteRouterNodeModel) node).getRouteNodes();
-            validateBranchContainer(node, routeNodes, path, "routeNodes", errors);
-            if (node.getChildNode() != null && hasDefaultCondition(routeNodes)) {
-                errors.add(path + " 路由分支配置公共后续节点时，routeNodes 不允许存在空条件默认路由，nodeKey=" + value(node.getNodeKey()));
-            }
-            return;
-        }
-        if (node instanceof CallProcessNodeModel && StrUtil.isBlank(((CallProcessNodeModel) node).getCallProcess())) {
-            errors.add(path + " 子流程节点 callProcess 不能为空，nodeKey=" + value(node.getNodeKey()));
-            return;
-        }
         if (FlowNodeTypeEnum.END.eq(node.getType()) || FlowNodeTypeEnum.AUTO_PASS.eq(node.getType())
                 || FlowNodeTypeEnum.AUTO_REJECT.eq(node.getType())) {
             if (node.getChildNode() != null) {
@@ -223,7 +200,7 @@ public final class FlowModelValidator {
         if (node.getChildNode() != null) {
             return;
         }
-        if (FlowNodeTypeEnum.APPROVAL.eq(node.getType()) || FlowNodeTypeEnum.CALL_PROCESS.eq(node.getType())
+        if (FlowNodeTypeEnum.APPROVAL.eq(node.getType())
                 || FlowNodeTypeEnum.TIMER.eq(node.getType()) || FlowNodeTypeEnum.TRIGGER.eq(node.getType())) {
             context.hasEndPath = true;
         }
@@ -238,7 +215,7 @@ public final class FlowModelValidator {
      */
     private static void validateApprovalNode(ApprovalNodeModel node, String path, List<String> errors) {
         PerformType performType = PerformType.of(node.getExamineMode());
-        if (PerformType.START == performType || PerformType.CALL_PROCESS == performType
+        if (PerformType.START == performType
                 || PerformType.TIMER == performType || PerformType.TRIGGER == performType
                 || PerformType.COPY == performType) {
             errors.add(path + " 审批节点 examineMode 不合法，nodeKey=" + value(node.getNodeKey())
@@ -376,9 +353,6 @@ public final class FlowModelValidator {
             if (node.getChildNode() == null) {
                 emptyChildCount++;
             }
-            if (branchType == BranchType.ROUTE) {
-                registerRouteTarget(node, owner, context, errors, currentPath);
-            }
             if (node.getChildNode() != null) {
                 collectNode(node.getChildNode(), currentPath + ".childNode", context, errors);
             }
@@ -386,7 +360,7 @@ public final class FlowModelValidator {
         if (branchType != BranchType.PARALLEL && defaultConditionCount > 1) {
             errors.add(path + " 只能配置一个空条件默认分支，nodeKey=" + value(owner.getNodeKey()));
         }
-        if (branchType != BranchType.ROUTE && owner.getChildNode() == null && emptyChildCount > 1) {
+        if (owner.getChildNode() == null && emptyChildCount > 1) {
             errors.add(path + " 无公共后续节点时，最多只能有一个空 childNode 分支，nodeKey=" + value(owner.getNodeKey()));
         }
     }
@@ -437,47 +411,6 @@ public final class FlowModelValidator {
     }
 
     /**
-     * 注册并校验路由分支的目标节点。
-     *
-     * @param route 路由分支
-     * @param owner 路由分支所属节点
-     * @param context 校验上下文
-     * @param errors 错误列表
-     * @param path 当前分支路径
-     */
-    private static void registerRouteTarget(FlowConditionNode route, FlowNodeModel owner, ValidationContext context,
-                                            List<String> errors, String path) {
-        String targetNodeKey = routeTargetNodeKey(route.getNodeKey());
-        if (StrUtil.isBlank(targetNodeKey)) {
-            errors.add(path + " 路由目标 nodeKey 不能为空");
-            return;
-        }
-        if (route.getChildNode() != null) {
-            return;
-        }
-        if (targetNodeKey.equals(owner.getNodeKey())) {
-            errors.add(path + " 路由目标不能指向自身，nodeKey=" + value(owner.getNodeKey()));
-            return;
-        }
-        context.routeTargets.put(route.getNodeKey(), targetNodeKey);
-    }
-
-    /**
-     * 判断分支列表中是否存在默认分支。
-     *
-     * @param nodes 分支节点列表
-     * @return true 表示存在默认分支
-     */
-    private static boolean hasDefaultCondition(List<FlowConditionNode> nodes) {
-        for (FlowConditionNode node : nodes) {
-            if (node != null && CollUtil.isEmpty(node.getConditionList())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
      * 校验设计器基础字段长度和必填项。
      *
      * @param node 当前节点
@@ -494,12 +427,6 @@ public final class FlowModelValidator {
             String actionUrl = ((TaskNodeModel) node).getActionUrl();
             if (actionUrl != null && actionUrl.length() > 200) {
                 errors.add(path + " actionUrl 长度不能超过 200，nodeKey=" + value(node.getNodeKey()));
-            }
-        }
-        if (node instanceof CallProcessNodeModel) {
-            String callProcess = ((CallProcessNodeModel) node).getCallProcess();
-            if (callProcess != null && callProcess.length() > 200) {
-                errors.add(path + " callProcess 长度不能超过 200，nodeKey=" + value(node.getNodeKey()));
             }
         }
     }
@@ -613,19 +540,6 @@ public final class FlowModelValidator {
     }
 
     /**
-     * 从路由分支编码中解析目标节点编码。
-     *
-     * @param nodeKey 路由分支编码
-     * @return 目标节点编码
-     */
-    private static String routeTargetNodeKey(String nodeKey) {
-        if (nodeKey == null) {
-            return null;
-        }
-        return nodeKey.startsWith("route:") ? nodeKey.substring("route:".length()) : nodeKey;
-    }
-
-    /**
      * 判断列表是否为空。
      *
      * @param values 列表
@@ -670,12 +584,7 @@ public final class FlowModelValidator {
         /**
          * 包容分支。
          */
-        INCLUSIVE,
-
-        /**
-         * 路由分支。
-         */
-        ROUTE
+        INCLUSIVE
     }
 
     /**
@@ -687,11 +596,6 @@ public final class FlowModelValidator {
          * 已收集的节点编码集合。
          */
         private final Set<String> nodeKeys = new HashSet<>();
-
-        /**
-         * 路由分支编码和目标节点编码映射。
-         */
-        private final Map<String, String> routeTargets = new LinkedHashMap<>();
 
         /**
          * 是否已经存在审批节点。

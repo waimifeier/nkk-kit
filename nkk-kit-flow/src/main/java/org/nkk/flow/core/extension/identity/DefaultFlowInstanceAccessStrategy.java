@@ -11,7 +11,7 @@ import org.nkk.flow.enums.runtime.FlowInstanceOperateEnum;
  *
  * <p>默认规则：</p>
  * <ul>
- *     <li>系统操作（定时超时、触发器、子流程级联回调等以系统操作人身份执行的自动动作）：直接放行。</li>
+ *     <li>系统操作（定时超时、触发器等以系统操作人身份执行的自动动作）：直接放行。</li>
  *     <li>撤回、终止、挂起、激活、作废、超时结束等人工操作：只允许流程发起人（实例创建人）操作。</li>
  * </ul>
  *
@@ -33,7 +33,7 @@ public class DefaultFlowInstanceAccessStrategy implements FlowInstanceAccessStra
         if (creator == null || StrUtil.isBlank(creator.getCreateId())) {
             return false;
         }
-        // 系统自动动作（超时扫描、触发器、子流程级联回调等）不受业务权限约束
+        // 系统自动动作（超时扫描、触发器等）不受业务权限约束
         if (isSystem(creator)) {
             return true;
         }

@@ -131,7 +131,6 @@ public class FlowApprovalCallbackAdapter {
                 case TASK_AUTO_COMPLETED:
                 case TASK_AUTO_REJECTED:
                 case TASK_JUMPED:
-                case TASK_ROUTE_JUMPED:
                 case TASK_REJECT_JUMPED:
                 case TASK_RE_APPROVE_JUMPED:
                 case TASK_TERMINATED:

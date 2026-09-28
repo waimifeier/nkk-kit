@@ -24,10 +24,8 @@ import org.nkk.flow.model.node.router.ConditionRouterNodeModel;
 import org.nkk.flow.model.node.router.FlowConditionNode;
 import org.nkk.flow.model.node.router.InclusiveRouterNodeModel;
 import org.nkk.flow.model.node.router.ParallelRouterNodeModel;
-import org.nkk.flow.model.node.router.RouteRouterNodeModel;
 import org.nkk.flow.model.node.router.RouterNodeModel;
 import org.nkk.flow.model.node.task.ApprovalNodeModel;
-import org.nkk.flow.model.node.task.CallProcessNodeModel;
 import org.nkk.flow.model.node.task.CopyNodeModel;
 import org.nkk.flow.model.node.task.StartNodeModel;
 import org.nkk.flow.model.node.task.TaskNodeModel;
@@ -41,8 +39,8 @@ import org.nkk.flow.model.node.task.TriggerNodeModel;
  * 子类型不在本类维护清单，而是由各子类上的 {@link FlowNodeType} 注解自我声明，
  * JSON 处理器启动时扫描 {@code org.nkk.flow.model} 包自动注册：
  * 任务节点见 {@link TaskNodeModel}（审批/抄送/发起/延迟/触发），
- * 路由容器见 {@link RouterNodeModel}（条件/并行/包容/路由），
- * 分支项见 {@link FlowConditionNode}，子流程见 {@link CallProcessNodeModel}。</p>
+ * 路由容器见 {@link RouterNodeModel}（条件/并行/包容），
+ * 分支项见 {@link FlowConditionNode}。</p>
  *
  * <p>新增节点类型：新建继承本类（或 {@link TaskNodeModel}/{@link RouterNodeModel}）的子类，
  * 贴上 {@link FlowNodeType} 注解即可，无需修改本类。</p>
@@ -103,7 +101,7 @@ public abstract class FlowNodeModel implements Serializable {
     }
 
     /**
-     * 执行当前节点，并按节点类型决定是否创建任务、进入分支、启动子流程或结束实例。
+     * 执行当前节点，并按节点类型决定是否创建任务、进入分支或结束实例。
      *
      * @param context 流程上下文
      * @param execution 当前执行对象
@@ -134,9 +132,6 @@ public abstract class FlowNodeModel implements Serializable {
         if (this instanceof InclusiveRouterNodeModel) {
             return executeInclusiveNode(context, execution);
         }
-        if (this instanceof RouteRouterNodeModel) {
-            return executeRouteNode(context, execution);
-        }
         if (this instanceof StartNodeModel) {
             context.createTask(execution, (TaskNodeModel) this);
             return nextNode().map(next -> next.execute(context, execution)).orElse(true);
@@ -150,17 +145,6 @@ public abstract class FlowNodeModel implements Serializable {
         if (this instanceof TimerNodeModel || this instanceof TriggerNodeModel || this instanceof ApprovalNodeModel) {
             context.createTask(execution, (TaskNodeModel) this);
             return true;
-        }
-        if (this instanceof CallProcessNodeModel) {
-            CallProcessNodeModel callNode = (CallProcessNodeModel) this;
-            if (context.getSubProcessHandler() == null) {
-                throw new IllegalStateException("未配置子流程处理器，nodeKey=" + nodeKey);
-            }
-            boolean started = context.getSubProcessHandler().start(context, execution, callNode);
-            if (Boolean.TRUE.equals(callNode.getCallAsync())) {
-                return nextNode().map(next -> next.execute(context, execution)).orElse(started);
-            }
-            return started;
         }
         if (this instanceof AutoPassNodeModel) {
             return execution.endInstance(this, InstanceState.AUTO_PASS);
@@ -371,27 +355,5 @@ public abstract class FlowNodeModel implements Serializable {
                     return true;
                 })
                 .orElse(false);
-    }
-
-    private boolean executeRouteNode(FlowContext context, FlowExecution execution) {
-        return context.getConditionHandler().getRouteNode(context, execution, this)
-                .map(node -> {
-                    FlowNodeModel target = getNode(routeTargetNodeKey(node.getNodeKey()));
-                    if (target == null) {
-                        target = node.getChildNode();
-                    }
-                    if (target == null) {
-                        return nextNode().map(next -> next.execute(context, execution)).orElse(true);
-                    }
-                    return execution.routeJump(this, target);
-                })
-                .orElseGet(() -> nextNode().map(next -> next.execute(context, execution)).orElse(true));
-    }
-
-    private String routeTargetNodeKey(String nodeKey) {
-        if (nodeKey == null) {
-            return null;
-        }
-        return nodeKey.startsWith("route:") ? nodeKey.substring("route:".length()) : nodeKey;
     }
 }

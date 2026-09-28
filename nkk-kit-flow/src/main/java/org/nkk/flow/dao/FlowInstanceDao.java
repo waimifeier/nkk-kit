@@ -19,8 +19,6 @@ public interface FlowInstanceDao {
 
     FlowInstance selectById(Long id);
 
-    List<FlowInstance> selectListByParentInstanceId(Long parentInstanceId);
-
     List<FlowInstance> selectListByBusinessKey(String businessKey);
 
     List<FlowInstance> selectListByProcessId(Long processId);

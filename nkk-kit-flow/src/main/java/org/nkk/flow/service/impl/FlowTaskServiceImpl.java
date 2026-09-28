@@ -20,6 +20,7 @@ import org.nkk.flow.enums.node.FlowNodeTypeEnum;
 import org.nkk.flow.enums.core.FlowTaskEnum.PerformType;
 import org.nkk.flow.enums.core.FlowTaskEnum.TaskState;
 import org.nkk.flow.enums.core.FlowTaskEnum.TaskType;
+import org.nkk.flow.exception.FlowException;
 import org.nkk.flow.model.node.task.FlowNodeAssignee;
 import org.nkk.flow.model.node.FlowNodeModel;
 import org.nkk.flow.model.node.task.TaskNodeModel;
@@ -74,21 +75,6 @@ public class FlowTaskServiceImpl implements FlowTaskService {
             taskDao.insert(task);
             context.getRuntimeService().updateCurrentNode(task);
             notifyTaskCreated(task, Collections.emptyList(), nodeModel, execution.getFlowCreator());
-            return Collections.singletonList(task);
-        }
-
-        if (PerformType.CALL_PROCESS == performType) {
-            task.setPerformType(performType.value());
-            taskDao.insert(task);
-            List<FlowTaskActor> actors = execution.getProviderTaskActors(nodeModel);
-            if (actors == null || actors.isEmpty()) {
-                actors = Collections.singletonList(toUserActor(execution.getFlowCreator()));
-            }
-            for (FlowTaskActor actor : actors) {
-                assignTask(task, actor);
-            }
-            context.getRuntimeService().updateCurrentNode(task);
-            notifyTaskCreated(task, actors, nodeModel, execution.getFlowCreator());
             return Collections.singletonList(task);
         }
 
@@ -181,7 +167,7 @@ public class FlowTaskServiceImpl implements FlowTaskService {
         }
         FlowCreator actualCreator = creator == null ? context.getSystemCreator() : creator;
         if (state == TaskState.COMPLETED && isAllowed(task, actualCreator.getCreateId()) == null) {
-            throw new IllegalStateException("当前用户无权审批任务，taskId=" + taskId);
+            throw new FlowException("当前用户无权审批任务，taskId=" + taskId);
         }
         task.putAllVariable(args);
         task.setOpinion(opinion);
@@ -297,7 +283,7 @@ public class FlowTaskServiceImpl implements FlowTaskService {
     public boolean resolveTask(Long taskId, FlowCreator creator) {
         FlowTask task = getAllowedTask(taskId, creator);
         if (!TaskType.DELEGATE.value().equals(task.getTaskType()) || task.getAssignorId() == null) {
-            throw new IllegalStateException("当前任务不是可归还的委派任务，taskId=" + taskId);
+            throw new FlowException("当前任务不是可归还的委派任务，taskId=" + taskId);
         }
         FlowTaskActor owner = new FlowTaskActor();
         owner.setActorId(task.getAssignorId());
@@ -364,7 +350,7 @@ public class FlowTaskServiceImpl implements FlowTaskService {
         FlowTask task = taskDao.selectById(taskId);
         if (task != null) {
             if (isAllowed(task, creator.getCreateId()) == null) {
-                throw new IllegalStateException("当前用户无权操作任务，taskId=" + taskId);
+                throw new FlowException("当前用户无权操作任务，taskId=" + taskId);
             }
             task.setViewed(1);
             taskDao.updateById(task);
@@ -380,7 +366,7 @@ public class FlowTaskServiceImpl implements FlowTaskService {
         List<FlowHisTaskActor> allHisActors = hisTaskActorDao.selectListByTaskId(taskId);
         if (context.getTaskAccessStrategy().isAllowed(hisTask, creator.getCreateId(),
                 new ArrayList<FlowTaskActor>(allHisActors)) == null) {
-            throw new IllegalStateException("当前用户无权操作任务，taskId=" + taskId);
+            throw new FlowException("当前用户无权操作任务，taskId=" + taskId);
         }
         // 通知仍只传当前用户的 actor（保持原行为，避免给所有抄送人发已读通知）
         List<FlowHisTaskActor> viewerActors = allHisActors.stream()
@@ -484,7 +470,7 @@ public class FlowTaskServiceImpl implements FlowTaskService {
             return false;
         }
         if (removeCount >= actors.size()) {
-            throw new IllegalStateException("不允许移除任务全部参与者，taskId=" + taskId);
+            throw new FlowException("不允许移除任务全部参与者，taskId=" + taskId);
         }
         for (FlowTaskActor actor : actors) {
             if (actorIds.contains(actor.getActorId())) {
@@ -504,26 +490,6 @@ public class FlowTaskServiceImpl implements FlowTaskService {
         replaceTaskActors(task, Collections.singletonList(actor));
         notifyTaskChanged(FlowEventTypeEnum.TASK_ACTOR_CHANGED, task, context.getSystemCreator());
         return true;
-    }
-
-    @Override
-    public List<FlowTask> endCallProcessTask(Long callProcessId, Long callInstanceId) {
-        return finishCallProcessTask(callProcessId, callInstanceId, context.getSystemCreator(), TaskState.AUTO_COMPLETED);
-    }
-
-    @Override
-    public List<FlowTask> finishCallProcessTask(Long callProcessId, Long callInstanceId, FlowCreator creator,
-                                                TaskState state) {
-        List<FlowTask> tasks = taskDao.selectListByCallProcessIdAndCallInstanceId(callProcessId, callInstanceId);
-        if (tasks == null || tasks.isEmpty()) {
-            return Collections.emptyList();
-        }
-        List<FlowTask> completed = new ArrayList<>();
-        for (FlowTask task : tasks) {
-            completed.add(executeTask(task.getId(), creator == null ? context.getSystemCreator() : creator, null,
-                    state == null ? TaskState.AUTO_COMPLETED : state));
-        }
-        return completed;
     }
 
     @Override
@@ -549,7 +515,7 @@ public class FlowTaskServiceImpl implements FlowTaskService {
             throw new IllegalArgumentException("任务不存在，taskId=" + taskId);
         }
         if (isAllowed(task, creator.getCreateId()) == null) {
-            throw new IllegalStateException("当前用户无权操作任务，taskId=" + taskId);
+            throw new FlowException("当前用户无权操作任务，taskId=" + taskId);
         }
         return task;
     }
@@ -626,8 +592,6 @@ public class FlowTaskServiceImpl implements FlowTaskService {
                 return FlowEventTypeEnum.TASK_REJECT_JUMPED;
             case RE_APPROVE_JUMP:
                 return FlowEventTypeEnum.TASK_RE_APPROVE_JUMPED;
-            case ROUTE_JUMP:
-                return FlowEventTypeEnum.TASK_ROUTE_JUMPED;
             case TRIGGER_JUMP:
                 return FlowEventTypeEnum.TASK_TRIGGER_JUMPED;
             case RECLAIMED:
@@ -657,9 +621,6 @@ public class FlowTaskServiceImpl implements FlowTaskService {
         }
         if (FlowNodeTypeEnum.TRIGGER.eq(nodeModel.getType())) {
             return PerformType.TRIGGER;
-        }
-        if (FlowNodeTypeEnum.CALL_PROCESS.eq(nodeModel.getType())) {
-            return PerformType.CALL_PROCESS;
         }
         return PerformType.of(nodeModel.getExamineMode());
     }
@@ -736,8 +697,6 @@ public class FlowTaskServiceImpl implements FlowTaskService {
         task.setCreateTime(source.getCreateTime());
         task.setInstanceId(source.getInstanceId());
         task.setParentTaskId(source.getParentTaskId());
-        task.setCallProcessId(source.getCallProcessId());
-        task.setCallInstanceId(source.getCallInstanceId());
         task.setTaskName(source.getTaskName());
         task.setTaskKey(source.getTaskKey());
         task.setTaskType(source.getTaskType());

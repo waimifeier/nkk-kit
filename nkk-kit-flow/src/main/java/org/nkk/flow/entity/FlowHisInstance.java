@@ -48,7 +48,6 @@ public class FlowHisInstance extends FlowInstance {
         his.setCreateTime(instance.getCreateTime());
         his.setProcessId(instance.getProcessId());
         his.setProcessKey(instance.getProcessKey());
-        his.setParentInstanceId(instance.getParentInstanceId());
         his.setPriority(instance.getPriority());
         his.setInstanceNo(instance.getInstanceNo());
         his.setBusinessKey(instance.getBusinessKey());

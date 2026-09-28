@@ -82,13 +82,6 @@ public class FlowTaskDaoMybatisPlusImpl implements FlowTaskDao {
     }
 
     @Override
-    public List<FlowTask> selectListByCallProcessIdAndCallInstanceId(Long callProcessId, Long callInstanceId) {
-        return mapper.selectList(new QueryWrapper<FlowTask>()
-                .eq("call_process_id", callProcessId)
-                .eq("call_instance_id", callInstanceId));
-    }
-
-    @Override
     public List<FlowTask> selectTimeoutOrRemindTasks(Date now) {
         if (now == null) {
             return Collections.emptyList();

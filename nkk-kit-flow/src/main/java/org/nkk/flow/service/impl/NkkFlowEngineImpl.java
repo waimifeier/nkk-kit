@@ -20,6 +20,7 @@ import org.nkk.flow.enums.core.FlowTaskEnum.PerformType;
 import org.nkk.flow.enums.node.FlowRejectStrategyEnum;
 import org.nkk.flow.enums.core.FlowTaskEnum.TaskState;
 import org.nkk.flow.enums.core.FlowTaskEnum.TaskType;
+import org.nkk.flow.exception.FlowException;
 import org.nkk.flow.model.node.task.FlowNodeAssignee;
 import org.nkk.flow.model.node.FlowNodeModel;
 import org.nkk.flow.model.FlowProcessModel;
@@ -108,7 +109,7 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
         if (context.getStartAccessStrategy() != null
                 && !context.getStartAccessStrategy().isAllowed(creator,
                 startNode instanceof StartNodeModel ? ((StartNodeModel) startNode).getNodeAssigneeList() : null)) {
-            throw new IllegalStateException("当前用户无权发起该流程，processKey=" + process.getProcessKey());
+            throw new FlowException("当前用户无权发起该流程，processKey=" + process.getProcessKey());
         }
         if (checkNodeModel != null) {
             checkNodeModel.accept(startNode);
@@ -122,7 +123,7 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
             notifyTriggerAutoApproved(process, creator, args, businessKey);
             return Optional.empty();
         }
-        FlowInstance instance = runtimeService().createInstance(process, creator, args, startNode, null, saveAsDraft, supplier);
+        FlowInstance instance = runtimeService().createInstance(process, creator, args, startNode, saveAsDraft, supplier);
         if (saveAsDraft) {
             return Optional.of(instance);
         }
@@ -135,7 +136,7 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
      * 判断业务审批触发条件是否满足。
      *
      * <p>仅 {@code form_source_type=business} 且模型中 {@code triggerExpression} 非空白时才求值，
-     * 其他情况一律放行。表达式非法或求值异常由 SpEL 求值器抛出 {@link IllegalStateException}。</p>
+     * 其他情况一律放行。表达式非法或求值异常由 SpEL 求值器抛出 {@link FlowException}。</p>
      */
     private boolean isTriggerMatched(FlowProcess process, FlowProcessModel model, Map<String, Object> args) {
         if (!"business".equalsIgnoreCase(process.getFormSourceType())) {
@@ -344,7 +345,7 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
         FlowProcessModel model = runtimeService().getProcessModelByInstanceId(instance.getId());
         FlowNodeModel nodeModel = model.getNode(task.getTaskKey());
         if (!(nodeModel instanceof TaskNodeModel)) {
-            throw new IllegalStateException("流程模型中不存在任务节点，taskKey=" + task.getTaskKey());
+            throw new FlowException("流程模型中不存在任务节点，taskKey=" + task.getTaskKey());
         }
         TaskNodeModel taskNode = (TaskNodeModel) nodeModel;
         FlowExecution execution = new FlowExecution(context, model, creator, instance, task.variableToMap());
@@ -373,7 +374,7 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
             return false;
         }
         if (taskService().isAllowed(task, actualCreator.getCreateId()) == null) {
-            throw new IllegalStateException("当前用户无权操作任务，taskId=" + taskId);
+            throw new FlowException("当前用户无权操作任务，taskId=" + taskId);
         }
         FlowInstance instance = queryService().getInstance(task.getInstanceId());
         if (instance == null) {
@@ -386,11 +387,11 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
                 || (performType != PerformType.COUNTERSIGN
                 && performType != PerformType.OR_SIGN
                 && performType != PerformType.VOTE_SIGN)) {
-            throw new IllegalStateException("当前任务不是多人审批任务，taskId=" + taskId);
+            throw new FlowException("当前任务不是多人审批任务，taskId=" + taskId);
         }
         TaskNodeModel taskNode = (TaskNodeModel) nodeModel;
         if (state == TaskState.ABSTAINED && !FlowSignPolicy.of(taskNode).isAllowAbstain()) {
-            throw new IllegalStateException("当前节点未开启弃权，nodeKey=" + task.getTaskKey());
+            throw new FlowException("当前节点未开启弃权，nodeKey=" + task.getTaskKey());
         }
         FlowTask completed = taskService().executeTask(taskId, actualCreator, args, state, null);
         return continueAfterTask(completed, actualCreator, args);
@@ -434,7 +435,7 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
             return Optional.empty();
         }
         if (taskService().isAllowed(task, actualCreator.getCreateId()) == null) {
-            throw new IllegalStateException("当前用户无权驳回任务，taskId=" + taskId);
+            throw new FlowException("当前用户无权驳回任务，taskId=" + taskId);
         }
 
         FlowInstance instance = queryService().getInstance(task.getInstanceId());
@@ -471,10 +472,10 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
             return Optional.empty();
         }
         if (taskService().isAllowed(task, actualCreator.getCreateId()) == null) {
-            throw new IllegalStateException("当前用户无权终止任务，taskId=" + taskId);
+            throw new FlowException("当前用户无权终止任务，taskId=" + taskId);
         }
         if (!runtimeService().terminate(task.getInstanceId(), actualCreator)) {
-            throw new IllegalStateException("终止流程失败，instanceId=" + task.getInstanceId());
+            throw new FlowException("终止流程失败，instanceId=" + task.getInstanceId());
         }
         return Optional.empty();
     }
@@ -828,7 +829,7 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
             return Optional.empty();
         }
         if (hisTask.getCreateId() != null && !hisTask.getCreateId().equals(creator.getCreateId())) {
-            throw new IllegalStateException("当前用户无权回滚该历史任务，hisTaskId=" + hisTaskId);
+            throw new FlowException("当前用户无权回滚该历史任务，hisTaskId=" + hisTaskId);
         }
         FlowInstance instance = queryService().getInstance(hisTask.getInstanceId());
         if (instance == null) {

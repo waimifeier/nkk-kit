@@ -21,14 +21,12 @@ public enum FlowNodeTypeEnum implements IEnum<Integer> {
     COPY(2, "抄送节点"),
     CONDITION_APPROVAL(3, "条件审批"),
     CONDITION_BRANCH(4, "条件分支"),
-    CALL_PROCESS(5, "子流程"),
-    TIMER(6, "延迟等待"),
-    TRIGGER(7, "触发器"),
-    PARALLEL_BRANCH(8, "并行分支"),
-    INCLUSIVE_BRANCH(9, "包容分支"),
-    ROUTE_BRANCH(23, "路由分支"),
-    AUTO_PASS(30, "自动通过"),
-    AUTO_REJECT(31, "自动拒绝");
+    TIMER(5, "延迟等待"),
+    TRIGGER(6, "触发器"),
+    PARALLEL_BRANCH(7, "并行分支"),
+    INCLUSIVE_BRANCH(8, "包容分支"),
+    AUTO_PASS(9, "自动通过"),
+    AUTO_REJECT(10, "自动拒绝");
 
     private final Integer value;
     private final String label;

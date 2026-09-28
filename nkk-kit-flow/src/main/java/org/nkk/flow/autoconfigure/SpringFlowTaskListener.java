@@ -37,7 +37,7 @@ public class SpringFlowTaskListener implements FlowTaskListener {
      * 接收核心引擎任务事件，并转发为 Spring 应用事件。
      *
      * @param eventType 任务事件类型
-     * @param task 当前任务或已归档任务快照，部分子流程事件可能为 {@code null}
+     * @param task 当前任务或已归档任务快照，部分事件可能为 {@code null}
      * @param actors 当前任务参与者快照，任务归档事件中为归档前参与者
      * @param nodeModel 当前相关节点模型，非节点触发事件时可能为 {@code null}
      * @param creator 当前操作人，系统自动动作通常为管理员身份

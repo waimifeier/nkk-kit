@@ -32,11 +32,6 @@ public class FlowInstance extends FlowEntity implements Cloneable {
     private String processKey;
 
     /**
-     * 父流程实例 ID，子流程实例会记录发起它的父实例。
-     */
-    private Long parentInstanceId;
-
-    /**
      * 实例优先级，值越大优先级越高。
      */
     private Integer priority;

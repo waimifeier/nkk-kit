@@ -72,7 +72,7 @@ public class FlowProcessModelContractTest {
             + "\"nodeName\":\"抄送人\",\"nodeKey\":\"copy_1\",\"type\":2,"
             + "\"nodeAssigneeList\":[{\"id\":\"emp-2\",\"name\":\"李四\",\"actorType\":2,\"weight\":1}],"
             + "\"childNode\":{"
-            + "\"nodeName\":\"延迟等待\",\"nodeKey\":\"timer_1\",\"type\":6,"
+            + "\"nodeName\":\"延迟等待\",\"nodeKey\":\"timer_1\",\"type\":5,"
             + "\"delayTime\":2,\"delayUnit\":\"hour\""
             + "}"
             + "}"
@@ -203,7 +203,7 @@ public class FlowProcessModelContractTest {
         assertTrue("延迟节点应反序列化为TimerNodeModel", timer instanceof TimerNodeModel);
         TimerNodeModel timerNode = (TimerNodeModel) timer;
         assertEquals("timer_1", timerNode.getNodeKey());
-        assertEquals(Integer.valueOf(6), timerNode.getType());
+        assertEquals(Integer.valueOf(5), timerNode.getType());
         assertEquals(Integer.valueOf(2), timerNode.getDelayTime());
         assertEquals("hour", timerNode.getDelayUnit());
 
@@ -235,7 +235,7 @@ public class FlowProcessModelContractTest {
             assertEquals("type=" + annotation.value().value() + " 应自动注册并反序列化为 " + clazz.getSimpleName(),
                     clazz, node.getClass());
         }
-        assertEquals("@FlowNodeType 标注的节点类型数量应为 14", 14, registered);
+        assertEquals("@FlowNodeType 标注的节点类型数量应为 12", 12, registered);
     }
 
     @Test

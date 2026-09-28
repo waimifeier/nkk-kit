@@ -14,6 +14,7 @@ import org.nkk.flow.dao.FlowProcessDao;
 import org.nkk.flow.entity.FlowHisInstance;
 import org.nkk.flow.entity.FlowProcess;
 import org.nkk.flow.enums.core.FlowProcessEnum.ProcessState;
+import org.nkk.flow.exception.FlowException;
 import org.nkk.flow.model.FlowModelValidator;
 import org.nkk.flow.model.FlowProcessModel;
 import org.nkk.flow.service.FlowProcessService;
@@ -75,7 +76,7 @@ public class FlowProcessServiceImpl implements FlowProcessService {
             update.setModelContent(FlowContext.toJson(model.cleanParentNode()));
             update.setProcessState(targetState.value());
             if (!processDao.updateById(update)) {
-                throw new IllegalStateException("更新流程定义失败");
+                throw new FlowException("更新流程定义失败");
             }
             if (!saveAsDraft) {
                 archiveCurrentProcesses(exists, target.getId());
@@ -124,7 +125,7 @@ public class FlowProcessServiceImpl implements FlowProcessService {
         process.setSort(0);
         process.setModelContent(FlowContext.toJson(model.cleanParentNode()));
         if (!processDao.insert(process)) {
-            throw new IllegalStateException("保存流程定义失败");
+            throw new FlowException("保存流程定义失败");
         }
         return process.getId();
     }
@@ -136,7 +137,7 @@ public class FlowProcessServiceImpl implements FlowProcessService {
         update.setInstanceUrl(model.getInstanceUrl());
         update.setModelContent(FlowContext.toJson(model.cleanParentNode()));
         if (!processDao.updateById(update)) {
-            throw new IllegalStateException("保存流程草稿失败");
+            throw new FlowException("保存流程草稿失败");
         }
     }
 
@@ -263,10 +264,10 @@ public class FlowProcessServiceImpl implements FlowProcessService {
     public boolean enableProcess(Long id) {
         FlowProcess process = getProcessById(id);
         if (ProcessState.HISTORY.value().equals(process.getProcessState())) {
-            throw new IllegalStateException("历史版本不能直接启用，id=" + id);
+            throw new FlowException("历史版本不能直接启用，id=" + id);
         }
         if (ProcessState.DRAFT.value().equals(process.getProcessState())) {
-            throw new IllegalStateException("草稿不能直接启用，请发布草稿，id=" + id);
+            throw new FlowException("草稿不能直接启用，请发布草稿，id=" + id);
         }
         FlowProcess update = new FlowProcess();
         update.setId(id);
@@ -278,10 +279,10 @@ public class FlowProcessServiceImpl implements FlowProcessService {
     public boolean disableProcess(Long id) {
         FlowProcess process = getProcessById(id);
         if (ProcessState.HISTORY.value().equals(process.getProcessState())) {
-            throw new IllegalStateException("历史版本不能直接禁用，id=" + id);
+            throw new FlowException("历史版本不能直接禁用，id=" + id);
         }
         if (ProcessState.DRAFT.value().equals(process.getProcessState())) {
-            throw new IllegalStateException("草稿不能禁用，id=" + id);
+            throw new FlowException("草稿不能禁用，id=" + id);
         }
         FlowProcess update = new FlowProcess();
         update.setId(id);
@@ -293,11 +294,11 @@ public class FlowProcessServiceImpl implements FlowProcessService {
     public boolean deleteDraft(Long id) {
         FlowProcess process = getProcessById(id);
         if (!ProcessState.DRAFT.value().equals(process.getProcessState())) {
-            throw new IllegalStateException("仅草稿状态允许删除，id=" + id);
+            throw new FlowException("仅草稿状态允许删除，id=" + id);
         }
         if (CollUtil.isNotEmpty(instanceDao.selectListByProcessId(id))
                 || CollUtil.isNotEmpty(hisInstanceDao.selectListByProcessId(id))) {
-            throw new IllegalStateException("该流程已发起过实例，不允许删除，id=" + id);
+            throw new FlowException("该流程已发起过实例，不允许删除，id=" + id);
         }
         return processDao.deleteById(id);
     }

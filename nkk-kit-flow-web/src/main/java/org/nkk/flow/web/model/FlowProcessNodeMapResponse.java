@@ -10,9 +10,9 @@ import java.util.List;
  *
  * <p>接口返回 {@code List<FlowProcessNodeMapResponse>}，每个段通过 {@link #kind} 区分类型：
  * <ul>
- *     <li>{@code kind=node} — 普通节点（发起/审批/抄送/延迟/触发器/子流程/结束），
+ *     <li>{@code kind=node} — 普通节点（发起/审批/抄送/延迟/触发器/结束），
  *         携带 {@code nodeKey/nodeName/type}，任务类节点额外携带 {@code assignees}。</li>
- *     <li>{@code kind=branch} — 分支点（条件路由/并行/包容/路由分支容器），
+ *     <li>{@code kind=branch} — 分支点（条件/并行/包容分支容器），
  *         携带 {@code branches} 列表，每个分支含 {@code branchKey/branchName} 和嵌套的 {@code segments}。</li>
  * </ul>
  * 分支点之后紧跟的下一个段即为各分支汇聚后的主链后继。</p>
@@ -32,12 +32,12 @@ public class FlowProcessNodeMapResponse implements Serializable {
     // ==================== node / branch 共有字段 ====================
 
     /**
-     * 节点/路由容器唯一编码。
+     * 节点/分支容器唯一编码。
      */
     private String nodeKey;
 
     /**
-     * 节点/路由容器显示名称。
+     * 节点/分支容器显示名称。
      */
     private String nodeName;
 
@@ -45,6 +45,17 @@ public class FlowProcessNodeMapResponse implements Serializable {
      * 节点类型，取值见 {@link org.nkk.flow.enums.node.FlowNodeTypeEnum}。
      */
     private Integer type;
+
+    /**
+     * 审批人设置类型，取值见 {@link org.nkk.flow.enums.node.FlowNodeSetTypeEnum}。
+     * 仅审批节点有值。
+     */
+    private Integer setType;
+
+    /**
+     * 部门领导层级（N级部门）。setType=2（主管）或 setType=6（连续主管审批）时使用。
+     */
+    private Integer examineLevel;
 
     // ==================== node 段特有字段 ====================
 
@@ -56,12 +67,12 @@ public class FlowProcessNodeMapResponse implements Serializable {
     // ==================== branch 段特有字段 ====================
 
     /**
-     * 分支列表，路由容器节点携带。
+     * 分支列表，分支容器节点携带。
      */
     private List<Branch> branches;
 
     /**
-     * 路由分支信息（精简版）。
+     * 分支信息（精简版）。
      */
     @Data
     public static class Branch implements Serializable {
@@ -79,7 +90,7 @@ public class FlowProcessNodeMapResponse implements Serializable {
         private String branchName;
 
         /**
-         * 分支内的段列表（支持分支内嵌套路由）。
+         * 分支内的段列表（支持分支内嵌套分支）。
          */
         private List<FlowProcessNodeMapResponse> segments;
     }
