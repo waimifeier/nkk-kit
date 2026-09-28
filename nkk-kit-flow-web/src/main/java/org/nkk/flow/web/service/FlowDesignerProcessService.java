@@ -126,7 +126,7 @@ public class FlowDesignerProcessService {
         }
         FlowCreator creator = creatorProvider == null ? null : creatorProvider.getCurrentCreator();
         if (creator == null || StrUtil.isBlank(creator.getCreateId())) {
-            throw new IllegalStateException("未配置 FlowCreatorProvider，无法获取当前预览用户");
+            throw new FlowException("未配置 FlowCreatorProvider，无法获取当前预览用户");
         }
         FlowProcess process = flowEngine.processService().getProcessById(processId);
         if (process == null) {
@@ -134,7 +134,7 @@ public class FlowDesignerProcessService {
         }
         FlowProcessModel model = process.model();
         if (model == null || model.getNodeConfig() == null) {
-            throw new IllegalStateException("流程模型为空或解析失败，processId=" + processId);
+            throw new FlowException("流程模型为空或解析失败，processId=" + processId);
         }
         List<FlowProcessNodeMapResponse> segments = new ArrayList<>();
         collectSegments(model.getNodeConfig(), segments, creator);
@@ -606,7 +606,7 @@ public class FlowDesignerProcessService {
     private FlowCreator currentCreator() {
         FlowCreator creator = creatorProvider == null ? null : creatorProvider.getCurrentCreator();
         if (creator == null || StrUtil.isBlank(creator.getCreateId())) {
-            throw new IllegalStateException("未配置 FlowCreatorProvider，无法获取当前发布人");
+            throw new FlowException("未配置 FlowCreatorProvider，无法获取当前发布人");
         }
         return creator;
     }

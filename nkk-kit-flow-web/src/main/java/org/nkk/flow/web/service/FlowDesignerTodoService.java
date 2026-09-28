@@ -21,6 +21,7 @@ import org.nkk.flow.entity.FlowTask;
 import org.nkk.flow.entity.FlowTaskActor;
 import org.nkk.flow.enums.core.FlowInstanceEnum.InstanceState;
 import org.nkk.flow.enums.core.FlowTaskEnum.TaskType;
+import org.nkk.flow.exception.FlowException;
 import org.nkk.flow.service.NkkFlowEngine;
 import org.nkk.flow.web.model.FlowApprovedPageRequest;
 import org.nkk.flow.web.model.FlowCopiedPageRequest;
@@ -322,7 +323,7 @@ public class FlowDesignerTodoService {
     private FlowCreator currentCreator() {
         FlowCreator creator = creatorProvider == null ? null : creatorProvider.getCurrentCreator();
         if (creator == null || StrUtil.isBlank(creator.getCreateId())) {
-            throw new IllegalStateException("未配置 FlowCreatorProvider 或当前用户为空");
+            throw new FlowException("未配置 FlowCreatorProvider 或当前用户为空");
         }
         return creator;
     }

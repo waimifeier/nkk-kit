@@ -5,6 +5,7 @@ import com.github.pagehelper.PageInfo;
 import org.nkk.core.beans.common.BaseQuery;
 import org.nkk.core.beans.common.PageResult;
 import org.nkk.core.beans.common.Result;
+import org.nkk.core.beans.exception.BusinessException;
 import org.nkk.web.utils.PageUtils;
 import org.springframework.util.CollectionUtils;
 
@@ -57,7 +58,7 @@ public class BaseController {
                 try {
                     target = clazz.newInstance();
                 } catch (InstantiationException | IllegalAccessException ex) {
-                    throw new IllegalStateException("分页结果对象实例化失败: " + clazz.getName(), ex);
+                    throw new BusinessException("分页结果对象实例化失败: " + clazz.getName(), ex);
                 }
                 if (target instanceof Map) {
                     return (E) BeanUtil.beanToMap(item);

@@ -17,6 +17,7 @@ import org.nkk.flow.enums.core.FlowTaskEnum.PerformType;
 import org.nkk.flow.enums.core.FlowTaskActorEnum;
 import org.nkk.flow.enums.node.FlowNodeSetTypeEnum;
 import org.nkk.flow.enums.node.FlowNodeTypeEnum;
+import org.nkk.flow.exception.FlowException;
 import org.nkk.flow.model.FlowProcessModel;
 import org.nkk.flow.model.node.task.ApprovalNodeModel;
 import org.nkk.flow.model.node.task.FlowNodeAssignee;
@@ -253,7 +254,7 @@ public class FlowDesignerRuntimeService {
         boolean before = request == null || request.getSignType() == null || Integer.valueOf(1).equals(request.getSignType());
         if (!flowEngine.executeAppendNodeModel(taskId, nodeModel, null,
                 variables(request == null ? null : request.getVariables()), before)) {
-            throw new IllegalStateException("审批加签失败，taskId=" + taskId);
+            throw new FlowException("审批加签失败，taskId=" + taskId);
         }
         return runtimeResponse(task.getInstanceId());
     }
@@ -265,7 +266,7 @@ public class FlowDesignerRuntimeService {
             throw new IllegalArgumentException("加签节点编码不能为空");
         }
         if (!flowEngine.executeRemoveNodeModel(task.getInstanceId(), StrUtil.trim(request.getNodeKey()))) {
-            throw new IllegalStateException("审批减签失败，nodeKey=" + request.getNodeKey());
+            throw new FlowException("审批减签失败，nodeKey=" + request.getNodeKey());
         }
         return runtimeResponse(task.getInstanceId());
     }
@@ -273,7 +274,7 @@ public class FlowDesignerRuntimeService {
     public FlowRuntimeResponse withdraw(Long hisTaskId, FlowTaskOperateRequest request) {
         FlowHisTask hisTask = hisTask(hisTaskId);
         if (!flowEngine.withdrawTask(hisTaskId, null, variables(request == null ? null : request.getVariables())).isPresent()) {
-            throw new IllegalStateException("回退撤回失败，hisTaskId=" + hisTaskId);
+            throw new FlowException("回退撤回失败，hisTaskId=" + hisTaskId);
         }
         return runtimeResponse(hisTask.getInstanceId());
     }
@@ -281,7 +282,7 @@ public class FlowDesignerRuntimeService {
     public FlowRuntimeResponse reclaim(Long hisTaskId, FlowTaskOperateRequest request) {
         FlowHisTask hisTask = hisTask(hisTaskId);
         if (!flowEngine.reclaimTask(hisTaskId, null, variables(request == null ? null : request.getVariables())).isPresent()) {
-            throw new IllegalStateException("回退拿回失败，hisTaskId=" + hisTaskId);
+            throw new FlowException("回退拿回失败，hisTaskId=" + hisTaskId);
         }
         return runtimeResponse(hisTask.getInstanceId());
     }
@@ -296,7 +297,7 @@ public class FlowDesignerRuntimeService {
     public FlowRuntimeResponse revoke(Long instanceId) {
         assertHisInstanceState(instanceId, InstanceState.ACTIVE, "只有审批中的流程才能撤回");
         if (!flowEngine.revokeInstanceById(instanceId, null)) {
-            throw new IllegalStateException("撤回流程失败，instanceId=" + instanceId);
+            throw new FlowException("撤回流程失败，instanceId=" + instanceId);
         }
         return runtimeResponse(instanceId);
     }
@@ -304,7 +305,7 @@ public class FlowDesignerRuntimeService {
     public FlowRuntimeResponse suspend(Long instanceId) {
         assertHisInstanceState(instanceId, InstanceState.ACTIVE, "只有审批中的流程才能挂起");
         if (!flowEngine.suspendInstanceById(instanceId, null)) {
-            throw new IllegalStateException("挂起流程失败，instanceId=" + instanceId);
+            throw new FlowException("挂起流程失败，instanceId=" + instanceId);
         }
         return runtimeResponse(instanceId);
     }
@@ -312,7 +313,7 @@ public class FlowDesignerRuntimeService {
     public FlowRuntimeResponse active(Long instanceId) {
         assertHisInstanceState(instanceId, InstanceState.SUSPENDED, "只有已暂停的流程才能激活");
         if (!flowEngine.activeInstanceById(instanceId, null)) {
-            throw new IllegalStateException("激活流程失败，instanceId=" + instanceId);
+            throw new FlowException("激活流程失败，instanceId=" + instanceId);
         }
         return runtimeResponse(instanceId);
     }
@@ -337,7 +338,7 @@ public class FlowDesignerRuntimeService {
             throw new IllegalArgumentException("流程实例不存在，instanceId=" + instanceId);
         }
         if (!InstanceState.DRAFT.value().equals(hisInstance.getInstanceState())) {
-            throw new IllegalStateException("只有暂存状态的流程实例才能提交，instanceId=" + instanceId);
+            throw new FlowException("只有暂存状态的流程实例才能提交，instanceId=" + instanceId);
         }
         flowEngine.resumeInstance(instanceId, null, variables(request == null ? null : request.getVariables()));
         return runtimeResponse(instanceId);
@@ -346,7 +347,7 @@ public class FlowDesignerRuntimeService {
     public FlowRuntimeResponse destroy(Long instanceId, FlowTaskOperateRequest request) {
         assertNotHisInstanceState(instanceId, InstanceState.DESTROYED, "流程已作废，不能重复作废");
         if (!flowEngine.destroyByInstanceId(instanceId, variables(request == null ? null : request.getVariables()))) {
-            throw new IllegalStateException("作废流程失败，instanceId=" + instanceId);
+            throw new FlowException("作废流程失败，instanceId=" + instanceId);
         }
         return runtimeResponse(instanceId);
     }
@@ -816,11 +817,11 @@ public class FlowDesignerRuntimeService {
     private void assertNodeOperationAllowed(FlowTask task, NodeOperation operation) {
         FlowNodeModel node = currentTaskNode(task);
         if (!FlowNodeTypeEnum.APPROVAL.eq(node.getType())) {
-            throw new IllegalStateException(operation.label + "只能在审批节点操作，nodeKey=" + task.getTaskKey());
+            throw new FlowException(operation.label + "只能在审批节点操作，nodeKey=" + task.getTaskKey());
         }
         Boolean allowed = nodeOperationAllowed(node, operation);
         if (Boolean.FALSE.equals(allowed)) {
-            throw new IllegalStateException("当前节点不允许" + operation.label + "，nodeKey=" + task.getTaskKey());
+            throw new FlowException("当前节点不允许" + operation.label + "，nodeKey=" + task.getTaskKey());
         }
     }
 
@@ -832,7 +833,7 @@ public class FlowDesignerRuntimeService {
                 .getProcessModelByInstanceId(task.getInstanceId())
                 .getNode(task.getTaskKey());
         if (node == null) {
-            throw new IllegalStateException("当前任务节点不存在，nodeKey=" + task.getTaskKey());
+            throw new FlowException("当前任务节点不存在，nodeKey=" + task.getTaskKey());
         }
         return node;
     }
@@ -884,14 +885,14 @@ public class FlowDesignerRuntimeService {
     private void assertHisInstanceState(Long instanceId, InstanceState expectedState, String message) {
         FlowHisInstance hisInstance = hisInstance(instanceId);
         if (!expectedState.value().equals(hisInstance.getInstanceState())) {
-            throw new IllegalStateException(message + "，当前状态=" + instanceStateLabel(hisInstance.getInstanceState()));
+            throw new FlowException(message + "，当前状态=" + instanceStateLabel(hisInstance.getInstanceState()));
         }
     }
 
     private void assertNotHisInstanceState(Long instanceId, InstanceState state, String message) {
         FlowHisInstance hisInstance = hisInstance(instanceId);
         if (state.value().equals(hisInstance.getInstanceState())) {
-            throw new IllegalStateException(message);
+            throw new FlowException(message);
         }
     }
 
