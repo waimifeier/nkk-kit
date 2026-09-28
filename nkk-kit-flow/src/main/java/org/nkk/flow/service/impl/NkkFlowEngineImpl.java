@@ -373,7 +373,7 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
         if (task == null) {
             return false;
         }
-        if (taskService().isAllowed(task, actualCreator.getCreateId()) == null) {
+        if (taskService().isAllowed(task, actualCreator) == null) {
             throw new FlowException("当前用户无权操作任务，taskId=" + taskId);
         }
         FlowInstance instance = queryService().getInstance(task.getInstanceId());
@@ -434,7 +434,7 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
         if (task == null) {
             return Optional.empty();
         }
-        if (taskService().isAllowed(task, actualCreator.getCreateId()) == null) {
+        if (taskService().isAllowed(task, actualCreator) == null) {
             throw new FlowException("当前用户无权驳回任务，taskId=" + taskId);
         }
 
@@ -471,7 +471,7 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
         if (task == null) {
             return Optional.empty();
         }
-        if (taskService().isAllowed(task, actualCreator.getCreateId()) == null) {
+        if (taskService().isAllowed(task, actualCreator) == null) {
             throw new FlowException("当前用户无权终止任务，taskId=" + taskId);
         }
         if (!runtimeService().terminate(task.getInstanceId(), actualCreator)) {

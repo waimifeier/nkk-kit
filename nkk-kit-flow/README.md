@@ -72,7 +72,6 @@ starter 按 Spring Boot 规范拆分 Bean。使用方可以通过注册同类型
 - `FlowConditionHandler`
 - `FlowCreatorProvider`
 - `FlowTaskActorProvider`
-- `FlowActorAccessStrategy`：统一判断当前用户是否命中用户、角色、部门等参与人配置。
 - `FlowNodeListener`
 - `FlowTaskListener`
 - `FlowInstanceListener`
@@ -247,11 +246,10 @@ META-INF/nkk-flow/schema-mysql.sql
 
 当前暴露方式：
 
-- `FlowCreatorProvider`：负责从使用方登录上下文中获取当前流程操作人，以及提供系统操作人身份（用于自动超时、触发器等无人操作场景）。显式传入 `FlowCreator` 时优先使用显式参数；未传时才从该扩展点获取。
+- `FlowCreatorProvider`：负责从使用方登录上下文中获取当前流程操作人，以及提供系统操作人身份（用于自动超时、触发器等无人操作场景）。显式传入 `FlowCreator` 时优先使用显式参数；未传时才从该扩展点获取。使用方应同时填充 `deptId`、`roleIds`，供发起/审批节点的角色、部门权限校验使用。
 - `FlowTaskActorProvider`：负责把节点模型解析成任务参与者。使用方可覆盖 `getTaskActors(...)`、`getNodeAssignees(...)`、`getDynamicAssignee(...)`。
-- `FlowActorAccessStrategy`：统一判断当前用户是否命中用户、角色、部门等参与人配置。开始节点发起权限和审批任务办理权限都会委托给它。
-- `FlowStartAccessStrategy`：发起权限内部适配层，默认遍历开始节点 `nodeAssigneeList` 后调用 `FlowActorAccessStrategy`。
-- `FlowTaskAccessStrategy`：任务权限内部适配层，默认遍历 `flow_task_actor` 后调用 `FlowActorAccessStrategy`。
+- `FlowStartAccessStrategy`：发起权限内部适配层，默认遍历开始节点 `nodeAssigneeList`，通过 `FlowCreator#matches(actorId, actorType)` 判断当前操作人是否命中参与人配置。
+- `FlowTaskAccessStrategy`：任务权限内部适配层，默认遍历 `flow_task_actor`，通过 `FlowCreator#matches(actorId, actorType)` 判断当前操作人是否命中参与者快照。仅当需要按 `taskType` 等字段做差异化放行（如抄送阅读）时才覆盖。
 - `FlowNodeSetTypeEnum`：定义节点参与人配置类型，当前包含指定成员、主管、角色、发起人自选、发起人本人、部门、候选人。
 - `FlowActorTypeEnum`：定义任务参与者快照类型，当前包含用户、角色、部门。
 - `FlowDataTransfer.dynamicAssignee(...)`：支持单次调用线程内动态指定节点办理人。
@@ -334,18 +332,26 @@ engine.rejectTask(taskId, variables);
 
 参与人权限扩展示例：
 
+使用方只需在 `FlowCreatorProvider` 中填充当前操作人的 `deptId`、`roleIds`，引擎会通过 `FlowCreator#matches(actorId, actorType)` 自行完成用户、角色、部门的命中判断，无需注册额外策略 Bean。
+
 ```java
 @Bean
-public FlowActorAccessStrategy flowActorAccessStrategy(UserOrgService userOrgService) {
-    return new DefaultFlowActorAccessStrategy() {
+public FlowCreatorProvider flowCreatorProvider() {
+    return new FlowCreatorProvider() {
         @Override
-        protected boolean hasRole(String userId, String roleId) {
-            return userOrgService.hasRole(userId, roleId);
+        public FlowCreator getCurrentCreator() {
+            Long userId = SecurityUtils.getUserId();
+            String deptId = String.valueOf(sysUserService.getById(userId).getDeptId());
+            List<String> roleIds = sysUserService.roleByUserId(userId).stream()
+                    .map(SysRoleVo::getId)
+                    .collect(Collectors.toList());
+            return FlowCreator.of(tenantId, String.valueOf(userId),
+                    SecurityUtils.getUser().getRealName(), deptId, roleIds);
         }
 
         @Override
-        protected boolean inDepartment(String userId, String departmentId) {
-            return userOrgService.inDepartment(userId, departmentId);
+        public FlowCreator getSystemCreator() {
+            return FlowCreator.of("0", "系统操作人");
         }
     };
 }
@@ -353,10 +359,9 @@ public FlowActorAccessStrategy flowActorAccessStrategy(UserOrgService userOrgSer
 
 说明：
 
-- `FlowCreatorProvider` 只提供当前操作人的基础身份，不要求携带角色、部门、岗位。
-- 角色、部门、岗位、候选人等真实组织关系由使用方在 `FlowActorAccessStrategy` 中查询和判断。
+- `FlowCreator` 通过 `deptId`、`roleIds` 承载当前操作人的组织身份，`matches(actorId, actorType)` 内部完成 USER/ROLE/DEPARTMENT 命中判断。
 - 开始节点的 `nodeAssigneeList` 负责保存设计器选择的发起范围；审批节点创建任务后会保存到 `flow_task_actor`。
-- `FlowStartAccessStrategy` 和 `FlowTaskAccessStrategy` 默认都是适配器，通常不需要业务方再单独注册。
+- `FlowStartAccessStrategy` 和 `FlowTaskAccessStrategy` 默认实现已自给自足，业务方无需再注册；仅当需要按 `taskType` 等字段做差异化放行时才覆盖 `FlowTaskAccessStrategy`。
 
 动态指定办理人示例：
 
@@ -381,21 +386,21 @@ engine.startInstanceByProcessKey("leave", null, FlowCreator.of("u1", "张三"), 
 | --- | --- | --- | --- |
 | 用户/角色/部门真实查询 | 不内置，通过扩展实现 | 不内置，通过扩展实现 | 保持 starter 轻量，不绑定业务组织表 |
 | 参与人解析扩展 | `TaskActorProvider` | `FlowTaskActorProvider` | 命名按 NKK 风格调整 |
-| 发起权限扩展 | 可通过自定义策略处理 | `FlowActorAccessStrategy` + `FlowStartAccessStrategy` 适配 | 开始节点未配置发起范围时允许；配置后按 actorType 判断 |
-| 任务权限扩展 | `TaskAccessStrategy` | `FlowActorAccessStrategy` + `FlowTaskAccessStrategy` 适配 | 任务参与者按 actorType 判断 |
+| 发起权限扩展 | 可通过自定义策略处理 | `FlowStartAccessStrategy` 适配，命中判断走 `FlowCreator#matches` | 开始节点未配置发起范围时允许；配置后按 actorType 判断 |
+| 任务权限扩展 | `TaskAccessStrategy` | `FlowTaskAccessStrategy` 适配，命中判断走 `FlowCreator#matches` | 任务参与者按 actorType 判断 |
 | 默认参与人来源 | `nodeAssigneeList` | `nodeAssigneeList`、`FlowDataTransfer.dynamicAssignee`、`getDynamicAssignee` | NKK 默认实现直接支持线程内动态办理人 |
 | 参与者快照类型 | 用户、角色、部门 | 用户、角色、部门 | 与任务参与者表字段保持一致 |
 | 节点 setType | 指定成员、主管、角色、发起人自选、发起人本人、连续多级主管、部门、指定候选人 | 指定成员、主管、角色、发起人自选、发起人本人、部门、候选人 | 暂未内置连续多级主管 |
 | 候选人模型 | `NodeCandidate` | 暂未单独建模，使用 `nodeAssigneeList` 或动态参与人承载 | 如后续设计器需要候选池，可补 `FlowNodeCandidate` |
 | 岗位/用户组/表单联系人 | 注释中提到部分扩展场景，但核心枚举未完整内置 | 暂未内置 | 建议放到使用方 `FlowTaskActorProvider` 或后续 web 扩展 |
-| 角色/部门发起或认领权限 | 需要扩展策略判断用户是否属于角色/部门 | 统一扩展 `FlowActorAccessStrategy` | 核心模块不关心组织成员关系 |
+| 角色/部门发起或认领权限 | 需要扩展策略判断用户是否属于角色/部门 | 在 `FlowCreator` 填充 `roleIds`/`deptId`，由 `matches` 判断 | 核心模块不关心组织成员关系 |
 
 参考 Warm-Flow 后的取舍：
 
 | 设计点 | Warm-Flow | nkk-kit-flow 处理方式 | 取舍原因 |
 | --- | --- | --- | --- |
 | 当前办理人 | `PermissionHandler#getHandler()`，`FlowParams#getHandler()` 未传时回退获取 | `FlowCreatorProvider#getCurrentCreator()`，引擎入口未传 `FlowCreator` 时回退获取 | 借鉴“显式优先、上下文兜底”，但返回完整 `FlowCreator`，能携带租户、用户 ID、显示名 |
-| 当前权限标识 | `PermissionHandler#permissions()` 返回当前用户权限集合 | 使用 `FlowActorAccessStrategy` 判断参与者是否可处理 | 权限判断放在策略里比把权限集合塞进操作参数更清楚，也更适合角色、部门、岗位等复杂组织 |
+| 当前权限标识 | `PermissionHandler#permissions()` 返回当前用户权限集合 | 使用 `FlowCreator#matches` 判断参与者是否可处理 | 权限判断放在 `FlowCreator` 内部比把权限集合塞进操作参数更清楚，也更适合角色、部门、岗位等复杂组织 |
 | 操作参数对象 | `FlowParams` 同时承载 handler、权限、变量、下一办理人、意见等 | 当前仍使用 `FlowCreator + Map<String,Object>`，动态办理人用 `FlowDataTransfer` 或 `FlowTaskActorProvider` | 暂不引入大而全参数对象，避免 API 语义变宽；后续如要统一意见、下一办理人，可新增 `FlowOperateCommand` |
 | 全局引擎 | 静态 `FlowEngine` 保存服务和处理器 | Spring Bean + `FlowContext`，手动构建走 `FlowEngineBuilder` | starter 场景下 Bean 更符合 Spring 规范，测试和替换更容易 |
 | 节点监听 | 全局监听 + 节点/定义上的 `listenerType/listenerPath` 字符串配置 | 新增 `FlowNodeListener` Bean，提供节点执行前后、任务创建前后钩子 | 保留节点生命周期能力，不把 Java 类路径写进流程 JSON，设计器后续可把业务配置放 `extendConfig` |

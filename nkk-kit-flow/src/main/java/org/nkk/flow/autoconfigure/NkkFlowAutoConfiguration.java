@@ -10,15 +10,15 @@ import org.nkk.flow.core.extension.condition.FlowExpression;
 import org.nkk.flow.core.extension.condition.SimpleFlowExpression;
 import org.nkk.flow.core.extension.id.DefaultFlowIdGenerator;
 import org.nkk.flow.core.extension.id.FlowIdGenerator;
-import org.nkk.flow.core.extension.identity.DefaultFlowActorAccessStrategy;
 import org.nkk.flow.core.extension.identity.DefaultFlowTaskAccessStrategy;
 import org.nkk.flow.core.extension.identity.DefaultFlowTaskActorProvider;
 import org.nkk.flow.core.extension.identity.DefaultFlowInstanceAccessStrategy;
 import org.nkk.flow.core.extension.identity.DefaultFlowStartAccessStrategy;
-import org.nkk.flow.core.extension.identity.FlowActorAccessStrategy;
+import org.nkk.flow.core.extension.identity.DefaultFlowSupervisorResolver;
 import org.nkk.flow.core.extension.identity.FlowCreatorProvider;
 import org.nkk.flow.core.extension.identity.FlowInstanceAccessStrategy;
 import org.nkk.flow.core.extension.identity.FlowStartAccessStrategy;
+import org.nkk.flow.core.extension.identity.FlowSupervisorResolver;
 import org.nkk.flow.core.extension.identity.FlowTaskAccessStrategy;
 import org.nkk.flow.core.extension.identity.FlowTaskActorProvider;
 import org.nkk.flow.core.extension.json.FlowJsonHandler;
@@ -96,20 +96,20 @@ public class NkkFlowAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public FlowActorAccessStrategy flowActorAccessStrategy() {
-        return new DefaultFlowActorAccessStrategy();
+    public FlowTaskAccessStrategy flowTaskAccessStrategy() {
+        return new DefaultFlowTaskAccessStrategy();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public FlowTaskAccessStrategy flowTaskAccessStrategy(FlowActorAccessStrategy actorAccessStrategy) {
-        return new DefaultFlowTaskAccessStrategy(actorAccessStrategy);
+    public FlowStartAccessStrategy flowStartAccessStrategy() {
+        return new DefaultFlowStartAccessStrategy();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public FlowStartAccessStrategy flowStartAccessStrategy(FlowActorAccessStrategy actorAccessStrategy) {
-        return new DefaultFlowStartAccessStrategy(actorAccessStrategy);
+    public FlowSupervisorResolver flowSupervisorResolver() {
+        return new DefaultFlowSupervisorResolver();
     }
 
     @Bean
@@ -217,9 +217,9 @@ public class NkkFlowAutoConfiguration {
     public FlowContext flowContext(FlowIdGenerator idGenerator, FlowExpression expression,
                                    FlowConditionHandler conditionHandler,
                                    FlowTaskActorProvider taskActorProvider,
-                                   FlowActorAccessStrategy actorAccessStrategy,
                                    FlowTaskAccessStrategy taskAccessStrategy,
                                    FlowStartAccessStrategy startAccessStrategy,
+                                   FlowSupervisorResolver supervisorResolver,
                                    FlowInstanceAccessStrategy instanceAccessStrategy,
                                    FlowCreateTimeHandler createTimeHandler,
                                    FlowCreateTaskHandler createTaskHandler,
@@ -240,9 +240,9 @@ public class NkkFlowAutoConfiguration {
         context.setExpression(expression);
         context.setConditionHandler(conditionHandler);
         context.setTaskActorProvider(taskActorProvider);
-        context.setActorAccessStrategy(actorAccessStrategy);
         context.setTaskAccessStrategy(taskAccessStrategy);
         context.setStartAccessStrategy(startAccessStrategy);
+        context.setSupervisorResolver(supervisorResolver);
         context.setInstanceAccessStrategy(instanceAccessStrategy);
         context.setCreateTimeHandler(createTimeHandler);
         context.setCreateTaskHandler(createTaskHandler);

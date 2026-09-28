@@ -9,23 +9,11 @@ import java.util.List;
 /**
  * 默认流程发起权限策略。
  *
- * <p>该类只负责开始节点 {@code nodeAssigneeList} 的遍历，实际用户、角色、部门判断委托给
- * {@link FlowActorAccessStrategy}。业务系统通常只需要注册自定义 {@link FlowActorAccessStrategy} Bean，
- * 不需要再单独覆盖本类。</p>
+ * <p>该类只负责开始节点 {@code nodeAssigneeList} 的遍历，实际用户、角色、部门判断通过
+ * {@link FlowCreator#matches(String, Integer)} 完成。业务系统只需在构造 {@link FlowCreator}
+ * 时填充 {@code deptId}、{@code roleIds}，无需再注册自定义策略 Bean。</p>
  */
 public class DefaultFlowStartAccessStrategy implements FlowStartAccessStrategy {
-
-    private final FlowActorAccessStrategy actorAccessStrategy;
-
-    public DefaultFlowStartAccessStrategy() {
-        this(new DefaultFlowActorAccessStrategy());
-    }
-
-    public DefaultFlowStartAccessStrategy(FlowActorAccessStrategy actorAccessStrategy) {
-        this.actorAccessStrategy = actorAccessStrategy == null
-                ? new DefaultFlowActorAccessStrategy()
-                : actorAccessStrategy;
-    }
 
     @Override
     public boolean isAllowed(FlowCreator creator, List<FlowNodeAssignee> assignees) {
@@ -40,7 +28,7 @@ public class DefaultFlowStartAccessStrategy implements FlowStartAccessStrategy {
             if (assignee == null) {
                 continue;
             }
-            if (actorAccessStrategy.isAllowed(creator, assignee)) {
+            if (creator.matches(assignee.getId(), assignee.getActorType())) {
                 return true;
             }
         }

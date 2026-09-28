@@ -24,6 +24,7 @@ import org.nkk.flow.model.node.task.TaskNodeModel;
 import org.nkk.flow.model.node.FlowNodeModel;
 import org.nkk.flow.service.NkkFlowEngine;
 import org.nkk.flow.web.enums.ApprovalNodeStatusEnum;
+import org.springframework.transaction.annotation.Transactional;
 import org.nkk.flow.web.model.FlowInstanceApprovalRecordResponse;
 import org.nkk.flow.web.model.FlowRuntimeResponse;
 import org.nkk.flow.web.model.FlowStartProcessRequest;
@@ -63,9 +64,15 @@ public class FlowDesignerRuntimeService {
     /**
      * 发起流程。
      *
+     * <p>整体置于同一事务：引擎先 {@code createInstance} 落库实例/历史/扩展实例，
+     * 再 {@code startNode.execute} 解析并创建审批任务。若审批人解析失败（如主管节点
+     * 未解析到具体主管），{@code abnormal} 抛出 {@link org.nkk.flow.exception.FlowException}，
+     * 事务整体回滚，避免出现"已报错但实例仍创建"的脏数据。</p>
+     *
      * @param request 发起请求
      * @return 发起结果
      */
+    @Transactional(rollbackFor = Exception.class)
     public FlowRuntimeResponse start(FlowStartProcessRequest request) {
         assertStartRequest(request);
         Map<String, Object> variables = variables(request.getVariables());
@@ -311,12 +318,16 @@ public class FlowDesignerRuntimeService {
     }
 
     /**
-     * 提交草稿并继续执行流程。
+     * 提交暂存流程实例，恢复执行流程。
+     *
+     * <p>与 {@link #start} 同理，置于同一事务：实例状态从 DRAFT 切到 ACTIVE 后再执行节点、
+     * 创建审批任务。若审批人解析失败抛异常，事务回滚，实例状态不被篡改为 ACTIVE。</p>
      *
      * @param instanceId 流程实例 ID
      * @param request 提交请求
      * @return 提交后的实例详情
      */
+    @Transactional(rollbackFor = Exception.class)
     public FlowRuntimeResponse submit(Long instanceId, FlowTaskOperateRequest request) {
         if (instanceId == null) {
             throw new IllegalArgumentException("流程实例 ID 不能为空");

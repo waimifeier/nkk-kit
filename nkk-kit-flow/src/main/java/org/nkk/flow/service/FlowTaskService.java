@@ -100,6 +100,6 @@ public interface FlowTaskService {
 
     boolean cascadeRemoveByInstanceIds(List<Long> instanceIds);
 
-    FlowTaskActor isAllowed(FlowTask task, String userId);
+    FlowTaskActor isAllowed(FlowTask task, FlowCreator creator);
 }
 

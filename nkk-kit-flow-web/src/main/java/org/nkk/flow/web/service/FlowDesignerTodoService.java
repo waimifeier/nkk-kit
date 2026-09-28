@@ -98,7 +98,8 @@ public class FlowDesignerTodoService {
      * 分页查询当前登录人需要审批的活动任务对应的流程实例。
      */
     public PageResult<FlowTodoRecordResponse> pending(FlowPendingPageRequest request) {
-        String userId = currentUserId();
+        FlowCreator creator = currentCreator();
+        String userId = creator.getCreateId();
 
         // Step1: 通过权限策略找到允许的任务 ID
         List<FlowTaskActor> actors = taskActorDao.selectListByActorId(userId);
@@ -106,7 +107,7 @@ public class FlowDesignerTodoService {
         if (actorMap.isEmpty()) {
             return PageResult.empty(request.getCurrent(), request.getSize());
         }
-        LinkedHashSet<Long> allowedTaskIds = allowedTaskIds(userId, actorMap);
+        LinkedHashSet<Long> allowedTaskIds = allowedTaskIds(creator, actorMap);
         if (allowedTaskIds.isEmpty()) {
             return PageResult.empty(request.getCurrent(), request.getSize());
         }
@@ -318,18 +319,22 @@ public class FlowDesignerTodoService {
 
     // ==================== 公共方法 ====================
 
-    private String currentUserId() {
+    private FlowCreator currentCreator() {
         FlowCreator creator = creatorProvider == null ? null : creatorProvider.getCurrentCreator();
         if (creator == null || StrUtil.isBlank(creator.getCreateId())) {
             throw new IllegalStateException("未配置 FlowCreatorProvider 或当前用户为空");
         }
-        return creator.getCreateId();
+        return creator;
     }
 
-    private LinkedHashSet<Long> allowedTaskIds(String userId, Map<Long, List<FlowTaskActor>> actorMap) {
+    private String currentUserId() {
+        return currentCreator().getCreateId();
+    }
+
+    private LinkedHashSet<Long> allowedTaskIds(FlowCreator creator, Map<Long, List<FlowTaskActor>> actorMap) {
         LinkedHashSet<Long> taskIds = new LinkedHashSet<>();
         for (Map.Entry<Long, List<FlowTaskActor>> entry : actorMap.entrySet()) {
-            if (flowEngine.getContext().getTaskAccessStrategy().isAllowed(userId, entry.getValue()) != null) {
+            if (flowEngine.getContext().getTaskAccessStrategy().isAllowed(creator, entry.getValue()) != null) {
                 taskIds.add(entry.getKey());
             }
         }

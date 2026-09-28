@@ -124,6 +124,10 @@ public class FlowDesignerProcessController {
      * 分支点之后紧跟的下一个段即为各分支汇聚后的主链后继。
      * 前端在分支点切换 tab 时，直接替换显示对应 branch 的 segments 即可。</p>
      *
+     * <p><b>预览模式</b>：当前操作人信息（id、部门、角色）由 {@link org.nkk.flow.core.extension.identity.FlowCreatorProvider}
+     * 提供。发起节点会根据 setType（指定成员/角色/部门）校验发起权限（无权限抛异常），
+     * 主管/连续主管审批节点会解析出具体主管人并展示，其他节点返回静态配置办理人。</p>
+     *
      * @param processId 流程定义 ID（路径参数，必填）；示例值：{@code 1785467714628}
      * @return 段式结构小地图
      */

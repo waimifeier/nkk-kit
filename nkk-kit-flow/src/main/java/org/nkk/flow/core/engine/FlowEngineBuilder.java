@@ -19,15 +19,15 @@ import org.nkk.flow.core.extension.condition.FlowExpression;
 import org.nkk.flow.core.extension.condition.SimpleFlowExpression;
 import org.nkk.flow.core.extension.id.DefaultFlowIdGenerator;
 import org.nkk.flow.core.extension.id.FlowIdGenerator;
-import org.nkk.flow.core.extension.identity.DefaultFlowActorAccessStrategy;
 import org.nkk.flow.core.extension.identity.DefaultFlowTaskAccessStrategy;
 import org.nkk.flow.core.extension.identity.DefaultFlowTaskActorProvider;
 import org.nkk.flow.core.extension.identity.DefaultFlowInstanceAccessStrategy;
 import org.nkk.flow.core.extension.identity.DefaultFlowStartAccessStrategy;
-import org.nkk.flow.core.extension.identity.FlowActorAccessStrategy;
+import org.nkk.flow.core.extension.identity.DefaultFlowSupervisorResolver;
 import org.nkk.flow.core.extension.identity.FlowCreatorProvider;
 import org.nkk.flow.core.extension.identity.FlowInstanceAccessStrategy;
 import org.nkk.flow.core.extension.identity.FlowStartAccessStrategy;
+import org.nkk.flow.core.extension.identity.FlowSupervisorResolver;
 import org.nkk.flow.core.extension.identity.FlowTaskAccessStrategy;
 import org.nkk.flow.core.extension.identity.FlowTaskActorProvider;
 import org.nkk.flow.core.extension.json.FlowJsonHandler;
@@ -65,9 +65,9 @@ public class FlowEngineBuilder {
     private FlowExpression expression = new SimpleFlowExpression();
     private FlowConditionHandler conditionHandler = new DefaultFlowConditionHandler();
     private FlowTaskActorProvider taskActorProvider = new DefaultFlowTaskActorProvider();
-    private FlowActorAccessStrategy actorAccessStrategy = new DefaultFlowActorAccessStrategy();
-    private FlowTaskAccessStrategy taskAccessStrategy = new DefaultFlowTaskAccessStrategy(actorAccessStrategy);
-    private FlowStartAccessStrategy startAccessStrategy = new DefaultFlowStartAccessStrategy(actorAccessStrategy);
+    private FlowTaskAccessStrategy taskAccessStrategy = new DefaultFlowTaskAccessStrategy();
+    private FlowStartAccessStrategy startAccessStrategy = new DefaultFlowStartAccessStrategy();
+    private FlowSupervisorResolver supervisorResolver = new DefaultFlowSupervisorResolver();
     private FlowInstanceAccessStrategy instanceAccessStrategy = new DefaultFlowInstanceAccessStrategy();
     private FlowCreatorProvider creatorProvider;
     private FlowNodeListener nodeListener;
@@ -146,15 +146,6 @@ public class FlowEngineBuilder {
         return this;
     }
 
-    public FlowEngineBuilder actorAccessStrategy(FlowActorAccessStrategy actorAccessStrategy) {
-        this.actorAccessStrategy = actorAccessStrategy == null
-                ? new DefaultFlowActorAccessStrategy()
-                : actorAccessStrategy;
-        this.taskAccessStrategy = new DefaultFlowTaskAccessStrategy(this.actorAccessStrategy);
-        this.startAccessStrategy = new DefaultFlowStartAccessStrategy(this.actorAccessStrategy);
-        return this;
-    }
-
     public FlowEngineBuilder taskAccessStrategy(FlowTaskAccessStrategy taskAccessStrategy) {
         this.taskAccessStrategy = taskAccessStrategy;
         return this;
@@ -162,6 +153,13 @@ public class FlowEngineBuilder {
 
     public FlowEngineBuilder startAccessStrategy(FlowStartAccessStrategy startAccessStrategy) {
         this.startAccessStrategy = startAccessStrategy;
+        return this;
+    }
+
+    public FlowEngineBuilder supervisorResolver(FlowSupervisorResolver supervisorResolver) {
+        this.supervisorResolver = supervisorResolver == null
+                ? new DefaultFlowSupervisorResolver()
+                : supervisorResolver;
         return this;
     }
 
@@ -240,9 +238,9 @@ public class FlowEngineBuilder {
         context.setExpression(expression);
         context.setConditionHandler(conditionHandler);
         context.setTaskActorProvider(taskActorProvider);
-        context.setActorAccessStrategy(actorAccessStrategy);
         context.setTaskAccessStrategy(taskAccessStrategy);
         context.setStartAccessStrategy(startAccessStrategy);
+        context.setSupervisorResolver(supervisorResolver);
         context.setInstanceAccessStrategy(instanceAccessStrategy);
         context.setCreatorProvider(creatorProvider);
         if (instanceAccessStrategy instanceof DefaultFlowInstanceAccessStrategy) {

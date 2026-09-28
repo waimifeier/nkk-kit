@@ -230,7 +230,7 @@ nkk-kit-flow 是核心引擎包，**不能** import `org.springframework.web`、
 | Mapper | `FlowXxxMapper` | `FlowProcessMapper` |
 | Service 接口 | `FlowXxxService` / `NkkFlowEngine` | `FlowProcessService`, `NkkFlowEngine` |
 | Service 实现 | `FlowXxxServiceImpl` / `NkkFlowEngineImpl` | 同上 |
-| SPI 接口 | `FlowXxxHandler` / `FlowXxxStrategy` | `FlowConditionHandler`, `FlowActorAccessStrategy` |
+| SPI 接口 | `FlowXxxHandler` / `FlowXxxStrategy` | `FlowConditionHandler`, `FlowStartAccessStrategy`, `FlowTaskAccessStrategy` |
 | SPI 默认实现 | `DefaultFlowXxxHandler` | `DefaultFlowConditionHandler` |
 | 枚举 | `FlowXxxEnum`（外层容器）+ `XxxType`/`XxxState`（内层枚举） | `FlowTaskEnum.TaskType` |
 
@@ -283,7 +283,6 @@ public enum FlowNodeTypeEnum implements IEnum<Integer> {
 | `FlowTaskCreateInterceptor` | core/extension/task | 任务创建拦截 | ✅ |
 | `FlowCreateTaskHandler` | core/extension/task | 任务创建自定义 | ✅ |
 | `FlowCreateTimeHandler` | core/extension/time | 创建时间来源 | ✅ |
-| `FlowActorAccessStrategy` | core/extension/identity | 任务参与者访问控制 | ✅ |
 | `FlowTaskActorProvider` | core/extension/identity | 运行时办理人解析 | ✅ |
 | `FlowStartAccessStrategy` | core/extension/identity | 发起权限控制 | ✅ |
 | `FlowInstanceAccessStrategy` | core/extension/identity | 实例访问权限 | ✅ |

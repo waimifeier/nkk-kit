@@ -12,15 +12,15 @@ import org.nkk.flow.core.extension.cache.FlowModelCache;
 import org.nkk.flow.core.extension.cache.SimpleFlowModelCache;
 import org.nkk.flow.core.extension.id.DefaultFlowIdGenerator;
 import org.nkk.flow.core.extension.id.FlowIdGenerator;
-import org.nkk.flow.core.extension.identity.DefaultFlowActorAccessStrategy;
 import org.nkk.flow.core.extension.identity.DefaultFlowTaskAccessStrategy;
 import org.nkk.flow.core.extension.identity.DefaultFlowTaskActorProvider;
 import org.nkk.flow.core.extension.identity.DefaultFlowInstanceAccessStrategy;
 import org.nkk.flow.core.extension.identity.DefaultFlowStartAccessStrategy;
-import org.nkk.flow.core.extension.identity.FlowActorAccessStrategy;
+import org.nkk.flow.core.extension.identity.DefaultFlowSupervisorResolver;
 import org.nkk.flow.core.extension.identity.FlowCreatorProvider;
 import org.nkk.flow.core.extension.identity.FlowInstanceAccessStrategy;
 import org.nkk.flow.core.extension.identity.FlowStartAccessStrategy;
+import org.nkk.flow.core.extension.identity.FlowSupervisorResolver;
 import org.nkk.flow.core.extension.identity.FlowTaskAccessStrategy;
 import org.nkk.flow.core.extension.identity.FlowTaskActorProvider;
 import org.nkk.flow.core.extension.json.FlowJsonHandler;
@@ -71,11 +71,11 @@ public class FlowContext {
 
     private FlowTaskActorProvider taskActorProvider = new DefaultFlowTaskActorProvider();
 
-    private FlowActorAccessStrategy actorAccessStrategy = new DefaultFlowActorAccessStrategy();
+    private FlowTaskAccessStrategy taskAccessStrategy = new DefaultFlowTaskAccessStrategy();
 
-    private FlowTaskAccessStrategy taskAccessStrategy = new DefaultFlowTaskAccessStrategy(actorAccessStrategy);
+    private FlowStartAccessStrategy startAccessStrategy = new DefaultFlowStartAccessStrategy();
 
-    private FlowStartAccessStrategy startAccessStrategy = new DefaultFlowStartAccessStrategy(actorAccessStrategy);
+    private FlowSupervisorResolver supervisorResolver = new DefaultFlowSupervisorResolver();
 
     private FlowInstanceAccessStrategy instanceAccessStrategy = new DefaultFlowInstanceAccessStrategy();
 

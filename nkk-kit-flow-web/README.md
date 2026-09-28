@@ -80,7 +80,7 @@ public FlowDesignerOrgProvider flowDesignerOrgProvider() {
 - 角色选项：`actorType = 1`，对应核心任务参与者的角色。
 - `extra` 字段预留给前端设计器使用，例如头像、编码、排序、是否外部人员等。
 
-这组接口只解决“设计器选择数据”。真正发起流程时，节点选中的数据会进入流程 JSON；运行时发起人范围和任务办理权限都会委托给统一的 `FlowActorAccessStrategy`，`FlowStartAccessStrategy` 和 `FlowTaskAccessStrategy` 只是内部适配层。
+这组接口只解决“设计器选择数据”。真正发起流程时，节点选中的数据会进入流程 JSON；运行时发起人范围和任务办理权限都由 `FlowStartAccessStrategy` / `FlowTaskAccessStrategy` 处理，命中判断走 `FlowCreator#matches(actorId, actorType)`，组织身份来自 `FlowCreatorProvider` 填充的 `deptId`/`roleIds`。
 
 ## 表单字段元数据
 
@@ -330,7 +330,7 @@ curl "http://localhost:18080/flow/designer/processes?current=1&size=10&processNa
 - 发起流程时会读取开始节点的 `nodeAssigneeList`。
 - `nodeAssigneeList` 为空时，默认不限制发起人。
 - `nodeAssigneeList` 不为空时，默认只允许列表中的用户 ID 发起。
-- 如果开始节点或审批节点配置的是角色、部门、岗位等范围，使用方需要注册自定义 `FlowActorAccessStrategy` Bean 来查询自己的组织关系并完成判断。
+- 如果开始节点或审批节点配置的是角色、部门等范围，使用方只需在 `FlowCreatorProvider` 中填充当前操作人的 `deptId`、`roleIds`，引擎会通过 `FlowCreator#matches(actorId, actorType)` 自行完成命中判断，无需注册额外策略 Bean。
 
 ## 无侵入式自动发起审批（@FlowApproval）
 

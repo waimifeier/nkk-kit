@@ -3,8 +3,6 @@ package org.nkk.flow.example.support;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import org.nkk.flow.core.context.FlowCreator;
-import org.nkk.flow.core.extension.identity.DefaultFlowActorAccessStrategy;
-import org.nkk.flow.core.extension.identity.FlowActorAccessStrategy;
 import org.nkk.flow.core.extension.identity.FlowCreatorProvider;
 import org.nkk.flow.enums.core.FlowFormFieldEnum.SourceType;
 import org.nkk.flow.web.extension.FlowDesignerCategoryProvider;
@@ -32,37 +30,17 @@ import java.util.Map;
 public class FlowExampleWebConfiguration {
 
     /**
-     * 统一参与人权限判断。
-     *
-     * <p>发起节点和审批节点都会使用该策略。示例中约定：
-     * 用户 1 拥有角色 r1，并属于部门 d1。</p>
-     */
-    @Bean
-    public FlowActorAccessStrategy flowActorAccessStrategy() {
-        return new DefaultFlowActorAccessStrategy() {
-            @Override
-            protected boolean hasRole(String userId, String roleId) {
-                return isRoleAllowed(userId, roleId);
-            }
-
-            @Override
-            protected boolean inDepartment(String userId, String departmentId) {
-                return isDepartmentAllowed(userId, departmentId);
-            }
-        };
-    }
-
-    /**
      * 提供当前流程操作人和系统操作人。
      *
-     * <p>当前操作人用于流程发布接口写入创建人；系统操作人用于自动超时、触发器等无人操作场景。</p>
+     * <p>当前操作人用于流程发布接口写入创建人；系统操作人用于自动超时、触发器等无人操作场景。
+     * 示例约定：用户 1 拥有角色 r1、属于部门 d1，发起/审批节点指定角色、部门时据此校验。</p>
      */
     @Bean
     public FlowCreatorProvider flowCreatorProvider() {
         return new FlowCreatorProvider() {
             @Override
             public FlowCreator getCurrentCreator() {
-                return FlowCreator.of("1", "系统管理员");
+                return FlowCreator.of(null, "1", "系统管理员", "d1", Collections.singletonList("r1"));
             }
 
             @Override
@@ -70,14 +48,6 @@ public class FlowExampleWebConfiguration {
                 return FlowCreator.of("0", "系统操作人");
             }
         };
-    }
-
-    private boolean isRoleAllowed(String userId, String roleId) {
-        return "1".equals(userId) && "r1".equals(roleId);
-    }
-
-    private boolean isDepartmentAllowed(String userId, String departmentId) {
-        return "1".equals(userId) && "d1".equals(departmentId);
     }
 
     /**

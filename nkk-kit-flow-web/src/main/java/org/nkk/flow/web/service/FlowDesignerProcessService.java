@@ -5,8 +5,13 @@ import org.nkk.core.beans.common.PageResult;
 import org.nkk.flow.core.context.FlowContext;
 import org.nkk.flow.core.context.FlowCreator;
 import org.nkk.flow.core.extension.identity.FlowCreatorProvider;
+import org.nkk.flow.core.extension.identity.FlowSupervisorResolver;
 import org.nkk.flow.entity.FlowProcess;
 import org.nkk.flow.enums.core.FlowProcessEnum.ProcessState;
+import org.nkk.flow.enums.core.FlowTaskActorEnum.ActorType;
+import org.nkk.flow.enums.node.FlowNodeSetTypeEnum;
+import org.nkk.flow.enums.node.FlowNodeTypeEnum;
+import org.nkk.flow.exception.FlowException;
 import org.nkk.flow.model.node.FlowNodeModel;
 import org.nkk.flow.model.node.router.FlowConditionNode;
 import org.nkk.flow.model.node.task.FlowNodeAssignee;
@@ -98,12 +103,19 @@ public class FlowDesignerProcessService {
     }
 
     /**
-     * 查询流程节点小地图。
+     * 查询流程节点小地图（预览模式）。
      *
      * <p>解析流程定义的模型 JSON，返回段式结构：顶层是段列表，每个段通过 {@code kind} 区分
      * 普通节点（node）或分支点（branch）。分支点段携带 {@code branches} 列表，
      * 每个分支内部的 {@code segments} 也是段列表，支持嵌套路由。
      * 前端在分支点切换 tab 时，直接替换显示对应 branch 的 segments 即可。</p>
+     *
+     * <p>预览所需当前操作人（id、部门、角色）由 {@link FlowCreatorProvider} 提供：</p>
+     * <ul>
+     *     <li>发起节点：根据 setType 直接做集合成员校验（指定成员/角色/部门），无权限抛 {@link FlowException}。</li>
+     *     <li>主管/连续主管审批节点：通过 {@link FlowSupervisorResolver} 解析出具体主管人并展示。</li>
+     *     <li>其他节点：使用节点静态配置的办理人。</li>
+     * </ul>
      *
      * @param processId 流程定义 ID
      * @return 段式结构小地图
@@ -111,6 +123,10 @@ public class FlowDesignerProcessService {
     public List<FlowProcessNodeMapResponse> getNodeMap(Long processId) {
         if (processId == null) {
             throw new IllegalArgumentException("流程定义 ID 不能为空");
+        }
+        FlowCreator creator = creatorProvider == null ? null : creatorProvider.getCurrentCreator();
+        if (creator == null || StrUtil.isBlank(creator.getCreateId())) {
+            throw new IllegalStateException("未配置 FlowCreatorProvider，无法获取当前预览用户");
         }
         FlowProcess process = flowEngine.processService().getProcessById(processId);
         if (process == null) {
@@ -121,7 +137,7 @@ public class FlowDesignerProcessService {
             throw new IllegalStateException("流程模型为空或解析失败，processId=" + processId);
         }
         List<FlowProcessNodeMapResponse> segments = new ArrayList<>();
-        collectSegments(model.getNodeConfig(), segments);
+        collectSegments(model.getNodeConfig(), segments, creator);
         return segments;
     }
 
@@ -135,16 +151,16 @@ public class FlowDesignerProcessService {
      * @param nodeModel 当前链起点
      * @param out       输出段列表
      */
-    private void collectSegments(FlowNodeModel nodeModel, List<FlowProcessNodeMapResponse> out) {
+    private void collectSegments(FlowNodeModel nodeModel, List<FlowProcessNodeMapResponse> out, FlowCreator creator) {
         while (nodeModel != null) {
             List<FlowConditionNode> branchNodes = nodeModel.getBranchNodes();
             if (branchNodes != null && !branchNodes.isEmpty()) {
                 // 路由容器：只输出 branch 段（branch 段自身已携带容器标识）
-                out.add(toBranchSegment(nodeModel, branchNodes));
+                out.add(toBranchSegment(nodeModel, branchNodes, creator));
                 // 汇聚后的顺序后继
                 nodeModel = nodeModel.getChildNode();
             } else {
-                out.add(toNodeSegment(nodeModel));
+                out.add(toNodeSegment(nodeModel, creator));
                 nodeModel = nodeModel.getChildNode();
             }
         }
@@ -152,8 +168,11 @@ public class FlowDesignerProcessService {
 
     /**
      * 构建普通节点段（精简版）。
+     *
+     * @param nodeModel 当前节点
+     * @param creator   当前预览操作人
      */
-    private FlowProcessNodeMapResponse toNodeSegment(FlowNodeModel nodeModel) {
+    private FlowProcessNodeMapResponse toNodeSegment(FlowNodeModel nodeModel, FlowCreator creator) {
         FlowProcessNodeMapResponse seg = new FlowProcessNodeMapResponse();
         seg.setKind("node");
         seg.setNodeKey(nodeModel.getNodeKey());
@@ -162,19 +181,120 @@ public class FlowDesignerProcessService {
 
         if (nodeModel instanceof TaskNodeModel) {
             TaskNodeModel taskNode = (TaskNodeModel) nodeModel;
-            seg.setAssignees(buildAssignees(taskNode.getNodeAssigneeList()));
             seg.setSetType(taskNode.getSetType());
             if (nodeModel instanceof ApprovalNodeModel) {
                 seg.setExamineLevel(((ApprovalNodeModel) nodeModel).getExamineLevel());
             }
+            seg.setAssignees(buildPreviewAssignees(taskNode, creator));
         }
         return seg;
     }
 
     /**
-     * 构建分支点段（精简版），各分支内递归收集段列表。
+     * 预览模式：根据当前操作人解析节点候选办理人。
+     *
+     * <ul>
+     *     <li>发起节点：根据 setType 直接做集合成员校验（指定成员/角色/部门），无权限抛异常；
+     *         有权限则固定返回 {@code id=createId, name="本人", actorType=0}。</li>
+     *     <li>主管/连续主管审批节点：通过 {@link FlowSupervisorResolver} 解析具体主管。</li>
+     *     <li>其他节点：使用节点静态配置的办理人。</li>
+     * </ul>
+     *
+     * @param taskNode 当前任务节点
+     * @param creator  当前预览操作人
+     * @return 候选办理人列表
      */
-    private FlowProcessNodeMapResponse toBranchSegment(FlowNodeModel container, List<FlowConditionNode> branchNodes) {
+    private List<Assignee> buildPreviewAssignees(TaskNodeModel taskNode, FlowCreator creator) {
+        Integer type = taskNode.getType();
+        Integer setType = taskNode.getSetType();
+        List<FlowNodeAssignee> nodeAssignees = taskNode.getNodeAssigneeList();
+
+        // 发起节点：复用 creator.matches() 做权限校验，与运行时保持一致
+        if (FlowNodeTypeEnum.START.eq(type)) {
+            assertStartPermission(creator, nodeAssignees);
+            List<Assignee> assignees = new ArrayList<>();
+            Assignee assignee = new Assignee();
+            assignee.setId(creator.getCreateId());
+            assignee.setName("我(" + creator.getCreateBy() + ")");
+            assignee.setActorType(ActorType.USER.value());
+            assignees.add(assignee);
+            return assignees;
+        }
+
+        // 主管审批(setType=2)：只取 examineLevel 级的主管（单人）
+        if (FlowNodeSetTypeEnum.SUPERVISOR.value().equals(setType)) {
+            int level = resolveExamineLevel(taskNode);
+            FlowContext context = flowEngine.getContext();
+            FlowNodeAssignee supervisor = context.getSupervisorResolver()
+                    .resolveSupervisor(creator.getCreateId(), level);
+            if (supervisor != null) {
+                List<FlowNodeAssignee> list = new ArrayList<>();
+                list.add(supervisor);
+                return buildAssignees(list);
+            }
+            return new ArrayList<>();
+        }
+
+        // 连续主管审批(setType=6)：从 1 到 examineLevel 级依次解析（多人）
+        if (FlowNodeSetTypeEnum.CONTINUOUS_SUPERVISOR.value().equals(setType)) {
+            int maxLevel = resolveExamineLevel(taskNode);
+            FlowContext context = flowEngine.getContext();
+            List<FlowNodeAssignee> supervisors = new ArrayList<>();
+            for (int level = 1; level <= maxLevel; level++) {
+                FlowNodeAssignee supervisor = context.getSupervisorResolver()
+                        .resolveSupervisor(creator.getCreateId(), level);
+                if (supervisor != null) {
+                    supervisors.add(supervisor);
+                }
+            }
+            return buildAssignees(supervisors);
+        }
+
+        // 其他节点类型：使用静态配置
+        return buildAssignees(nodeAssignees);
+    }
+
+    /**
+     * 校验发起节点权限。
+     *
+     * <p>遍历开始节点 {@code nodeAssigneeList}，通过 {@link FlowCreator#matches(String, Integer)}
+     * 判断当前操作人是否命中任一参与人配置（用户/角色/部门）。{@code nodeAssigneeList} 为空时
+     * 不限制发起人，直接放行。与运行时 {@code DefaultFlowStartAccessStrategy} 保持一致。</p>
+     *
+     * @param creator       当前操作人
+     * @param nodeAssignees 开始节点配置的发起范围
+     */
+    private void assertStartPermission(FlowCreator creator, List<FlowNodeAssignee> nodeAssignees) {
+        if (nodeAssignees == null || nodeAssignees.isEmpty()) {
+            return; // 不限制发起人
+        }
+        boolean allowed = nodeAssignees.stream()
+                .anyMatch(a -> a != null && creator.matches(a.getId(), a.getActorType()));
+        if (!allowed) {
+            throw new FlowException("当前用户没有该流程的发起权限");
+        }
+    }
+
+    /**
+     * 解析审批节点的 examineLevel，默认 1。
+     */
+    private int resolveExamineLevel(TaskNodeModel taskNode) {
+        if (taskNode instanceof ApprovalNodeModel) {
+            Integer examineLevel = ((ApprovalNodeModel) taskNode).getExamineLevel();
+            if (examineLevel != null && examineLevel > 0) {
+                return examineLevel;
+            }
+        }
+        return 1;
+    }
+
+    /**
+     * 构建分支点段（精简版），各分支内递归收集段列表。
+     *
+     * @param creator 当前预览操作人
+     */
+    private FlowProcessNodeMapResponse toBranchSegment(FlowNodeModel container,
+                                                       List<FlowConditionNode> branchNodes, FlowCreator creator) {
         FlowProcessNodeMapResponse seg = new FlowProcessNodeMapResponse();
         seg.setKind("branch");
         seg.setNodeKey(container.getNodeKey());
@@ -191,7 +311,7 @@ public class FlowDesignerProcessService {
             branch.setBranchName(bn.getNodeName());
 
             List<FlowProcessNodeMapResponse> branchSegments = new ArrayList<>();
-            collectSegments(bn.getChildNode(), branchSegments);
+            collectSegments(bn.getChildNode(), branchSegments, creator);
             branch.setSegments(branchSegments);
             branches.add(branch);
         }

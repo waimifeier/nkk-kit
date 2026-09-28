@@ -166,7 +166,7 @@ public class FlowTaskServiceImpl implements FlowTaskService {
             throw new IllegalArgumentException("任务不存在，taskId=" + taskId);
         }
         FlowCreator actualCreator = creator == null ? context.getSystemCreator() : creator;
-        if (state == TaskState.COMPLETED && isAllowed(task, actualCreator.getCreateId()) == null) {
+        if (state == TaskState.COMPLETED && isAllowed(task, actualCreator) == null) {
             throw new FlowException("当前用户无权审批任务，taskId=" + taskId);
         }
         task.putAllVariable(args);
@@ -349,7 +349,7 @@ public class FlowTaskServiceImpl implements FlowTaskService {
     public boolean viewTask(Long taskId, FlowCreator creator) {
         FlowTask task = taskDao.selectById(taskId);
         if (task != null) {
-            if (isAllowed(task, creator.getCreateId()) == null) {
+            if (isAllowed(task, creator) == null) {
                 throw new FlowException("当前用户无权操作任务，taskId=" + taskId);
             }
             task.setViewed(1);
@@ -364,7 +364,7 @@ public class FlowTaskServiceImpl implements FlowTaskService {
         }
         // 查全部历史参与者用于权限判断，让自定义 FlowTaskAccessStrategy 生效（如宿主项目放行抄送任务）
         List<FlowHisTaskActor> allHisActors = hisTaskActorDao.selectListByTaskId(taskId);
-        if (context.getTaskAccessStrategy().isAllowed(hisTask, creator.getCreateId(),
+        if (context.getTaskAccessStrategy().isAllowed(hisTask, creator,
                 new ArrayList<FlowTaskActor>(allHisActors)) == null) {
             throw new FlowException("当前用户无权操作任务，taskId=" + taskId);
         }
@@ -505,8 +505,8 @@ public class FlowTaskServiceImpl implements FlowTaskService {
     }
 
     @Override
-    public FlowTaskActor isAllowed(FlowTask task, String userId) {
-        return context.getTaskAccessStrategy().isAllowed(task, userId, taskActorDao.selectListByTaskId(task.getId()));
+    public FlowTaskActor isAllowed(FlowTask task, FlowCreator creator) {
+        return context.getTaskAccessStrategy().isAllowed(task, creator, taskActorDao.selectListByTaskId(task.getId()));
     }
 
     private FlowTask getAllowedTask(Long taskId, FlowCreator creator) {
@@ -514,7 +514,7 @@ public class FlowTaskServiceImpl implements FlowTaskService {
         if (task == null) {
             throw new IllegalArgumentException("任务不存在，taskId=" + taskId);
         }
-        if (isAllowed(task, creator.getCreateId()) == null) {
+        if (isAllowed(task, creator) == null) {
             throw new FlowException("当前用户无权操作任务，taskId=" + taskId);
         }
         return task;
