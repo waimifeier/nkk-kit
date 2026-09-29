@@ -7,9 +7,11 @@ import org.nkk.flow.core.extension.identity.FlowCreatorProvider;
 import org.nkk.flow.enums.core.FlowFormFieldEnum.SourceType;
 import org.nkk.flow.web.extension.FlowDesignerCategoryProvider;
 import org.nkk.flow.web.extension.FlowDesignerFormProvider;
+import org.nkk.flow.web.extension.FlowDesignerNodePickerProvider;
 import org.nkk.flow.web.extension.FlowDesignerOrgProvider;
 import org.nkk.flow.web.model.FlowDesignerCategoryNode;
 import org.nkk.flow.web.model.FlowDesignerFormOption;
+import org.nkk.flow.web.model.FlowDesignerNodePickerItem;
 import org.nkk.flow.web.model.FlowDesignerOption;
 import org.nkk.flow.web.model.FlowDesignerTreeNode;
 import org.nkk.flow.model.FlowFieldMeta;
@@ -322,5 +324,26 @@ public class FlowExampleWebConfiguration {
                 );
             }
         };
+    }
+
+    /**
+     * 提供设计器节点选择器示例数据。
+     *
+     * <p>覆盖 starter 默认的空实现，演示宿主如何通过自定义 Bean 控制可添加节点类型。
+     * 业务上通常从配置中心 / 数据库字典读取后转换返回。</p>
+     */
+    @Bean
+    public FlowDesignerNodePickerProvider flowDesignerNodePickerProvider() {
+        return () -> CollUtil.newArrayList(
+                FlowDesignerNodePickerItem.of(1, "审批节点", "人工审批"),
+                FlowDesignerNodePickerItem.of(2, "抄送节点", "通知抄送"),
+                FlowDesignerNodePickerItem.of(4, "条件分支", "按条件分流"),
+                FlowDesignerNodePickerItem.of(5, "延迟等待", "延迟等待"),
+                FlowDesignerNodePickerItem.of(6, "触发器", "触发器"),
+                FlowDesignerNodePickerItem.of(7, "并行分支", "并行分支"),
+                FlowDesignerNodePickerItem.of(8, "包容分支", "包容分支"),
+                FlowDesignerNodePickerItem.of(9, "自动通过", "自动通过"),
+                FlowDesignerNodePickerItem.of(10, "自动拒绝", "自动拒绝")
+        );
     }
 }

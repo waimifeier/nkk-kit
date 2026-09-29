@@ -1,6 +1,7 @@
 package org.nkk.flow.web.autoconfigure;
 
 import org.nkk.flow.web.controller.FlowDesignerCategoryController;
+import org.nkk.flow.web.controller.FlowDesignerNodePickerController;
 import org.nkk.flow.web.controller.FlowDesignerOrgController;
 import org.nkk.flow.web.controller.FlowDesignerFormController;
 import org.nkk.flow.web.controller.FlowDesignerProcessController;
@@ -16,6 +17,7 @@ import org.nkk.flow.dao.FlowTaskActorDao;
 import org.nkk.flow.dao.FlowTaskDao;
 import org.nkk.flow.service.NkkFlowEngine;
 import org.nkk.flow.web.service.FlowDesignerCategoryService;
+import org.nkk.flow.web.service.FlowDesignerNodePickerService;
 import org.nkk.flow.web.service.FlowDesignerOrgService;
 import org.nkk.flow.web.service.FlowDesignerFormService;
 import org.nkk.flow.web.service.FlowDesignerProcessService;
@@ -71,6 +73,24 @@ public class NkkFlowWebAutoConfiguration {
     @ConditionalOnMissingBean
     public FlowDesignerCategoryController flowDesignerCategoryController(FlowDesignerCategoryService categoryService) {
         return new FlowDesignerCategoryController(categoryService);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public FlowDesignerNodePickerProvider flowDesignerNodePickerProvider() {
+        return new DefaultFlowDesignerNodePickerProvider();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public FlowDesignerNodePickerService flowDesignerNodePickerService(FlowDesignerNodePickerProvider pickerProvider) {
+        return new FlowDesignerNodePickerService(pickerProvider);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public FlowDesignerNodePickerController flowDesignerNodePickerController(FlowDesignerNodePickerService pickerService) {
+        return new FlowDesignerNodePickerController(pickerService);
     }
 
     @Bean
