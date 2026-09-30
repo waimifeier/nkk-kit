@@ -633,19 +633,11 @@ public class FlowDesignerProcessService {
         return FlowContext.toJson(modelContent);
     }
 
+    /**
+     * 解析流程模型。发布体固定为完整模型结构（{@link FlowProcessModel}），
+     * 不再支持裸节点 JSON。
+     */
     private FlowProcessModel resolveProcessModel(String modelContent) {
-        FlowProcessModel model = FlowContext.fromJson(modelContent, FlowProcessModel.class);
-        if (model != null && model.getNodeConfig() != null) {
-            return model;
-        }
-
-        FlowNodeModel nodeConfig = FlowContext.fromJson(modelContent, FlowNodeModel.class);
-        if (nodeConfig == null || StrUtil.isBlank(nodeConfig.getNodeKey())) {
-            return null;
-        }
-
-        FlowProcessModel processModel = new FlowProcessModel();
-        processModel.setNodeConfig(nodeConfig);
-        return processModel;
+        return FlowContext.fromJson(modelContent, FlowProcessModel.class);
     }
 }

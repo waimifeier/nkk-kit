@@ -37,12 +37,17 @@ public class DefaultFlowTaskActorProvider implements FlowTaskActorProvider {
             return null;
         }
         List<FlowTaskActor> actors = new ArrayList<>();
-        Integer actorType = dynamicAssignee == null || dynamicAssignee.getType() == null
-                ? getActorType(nodeModel)
-                : dynamicAssignee.getType();
+        // 运行时解析出的参与人（动态参与人/主管）未自带 actorType 时，按节点 setType 派生补齐；
+        // 节点静态配置的参与人由发布校验保证 actorType 必填
+        Integer derivedType = dynamicAssignee != null && dynamicAssignee.getType() != null
+                ? dynamicAssignee.getType()
+                : deriveActorType(nodeModel);
         for (FlowNodeAssignee assignee : assignees) {
+            if (assignee.getActorType() == null) {
+                assignee.setActorType(derivedType);
+            }
             boolean saveWeight = nodeModel instanceof ApprovalNodeModel && ((ApprovalNodeModel) nodeModel).saveWeight();
-            actors.add(FlowTaskActor.of(assignee, actorType, saveWeight));
+            actors.add(FlowTaskActor.of(assignee, saveWeight));
         }
         return actors;
     }
@@ -99,6 +104,10 @@ public class DefaultFlowTaskActorProvider implements FlowTaskActorProvider {
         for (int level = startLevel; level <= maxLevel; level++) {
             FlowNodeAssignee supervisor = resolver.resolveSupervisor(userId, level);
             if (supervisor != null) {
+                // 主管按领域定义恒为用户
+                if (supervisor.getActorType() == null) {
+                    supervisor.setActorType(ActorType.USER.value());
+                }
                 result.add(supervisor);
             }
         }
@@ -153,8 +162,10 @@ public class DefaultFlowTaskActorProvider implements FlowTaskActorProvider {
         return null;
     }
 
-    @Override
-    public Integer getActorType(TaskNodeModel nodeModel) {
+    /**
+     * 按节点 setType 派生参与者类型：角色→ROLE，部门→DEPARTMENT，其他→USER。
+     */
+    private Integer deriveActorType(TaskNodeModel nodeModel) {
         if (FlowNodeSetTypeEnum.ROLE.value().equals(nodeModel.getSetType())) {
             return ActorType.ROLE.value();
         }

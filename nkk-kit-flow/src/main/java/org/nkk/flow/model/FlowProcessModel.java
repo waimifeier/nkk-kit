@@ -74,7 +74,7 @@ public class FlowProcessModel implements Serializable {
      *
      * <p>表达式由设计器根据 {@link #triggerConfig} 单向派生，例如：
      * {@code (#department_id == 12 and #outbound_code.contains('SN0023'))}。
-     * 字段以 {@code #变量名} 引用，同时兼容直接以变量名作为根对象属性的写法。</p>
+     * 字段统一以 {@code #变量名} 引用。</p>
      */
     private String triggerExpression;
 

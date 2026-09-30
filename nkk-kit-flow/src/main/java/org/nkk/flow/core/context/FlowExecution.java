@@ -60,10 +60,6 @@ public class FlowExecution implements Serializable {
         return context.getTaskActorProvider().getTaskActors(nodeModel, this);
     }
 
-    public Integer getProviderTaskActorType(TaskNodeModel nodeModel) {
-        return context.getTaskActorProvider().getActorType(nodeModel);
-    }
-
     public Integer consumeNextTaskType() {
         Integer taskType = nextTaskType;
         nextTaskType = null;

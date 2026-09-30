@@ -78,16 +78,15 @@ public class FlowTaskActor implements Serializable {
     /**
      * 根据节点办理人创建活动任务参与者。
      *
-     * @param assignee 节点办理人
-     * @param defaultActorType 默认参与者类型
+     * @param assignee 节点办理人，actorType 为契约必填字段
      * @param saveWeight 是否保存办理人权重
      * @return 活动任务参与者
      */
-    public static FlowTaskActor of(FlowNodeAssignee assignee, Integer defaultActorType, boolean saveWeight) {
+    public static FlowTaskActor of(FlowNodeAssignee assignee, boolean saveWeight) {
         FlowTaskActor actor = new FlowTaskActor();
         actor.setActorId(assignee.getId());
         actor.setActorName(assignee.getName());
-        actor.setActorType(assignee.getActorType() == null ? defaultActorType : assignee.getActorType());
+        actor.setActorType(assignee.getActorType());
         actor.setWeight(saveWeight ? assignee.getWeight() : null);
         return actor;
     }

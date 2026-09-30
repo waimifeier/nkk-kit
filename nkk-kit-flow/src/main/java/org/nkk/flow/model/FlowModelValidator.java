@@ -5,6 +5,7 @@ import cn.hutool.core.util.StrUtil;
 import org.nkk.core.enums.common.IEnum;
 import org.nkk.flow.enums.node.FlowNodeSetTypeEnum;
 import org.nkk.flow.enums.node.FlowNodeTypeEnum;
+import org.nkk.flow.enums.core.FlowTaskActorEnum.ActorType;
 import org.nkk.flow.enums.core.FlowTaskEnum.PerformType;
 
 import java.util.ArrayList;
@@ -273,6 +274,11 @@ public final class FlowModelValidator {
                 errors.add(assigneePath + " 参与人 id 不能为空");
             } else if (!assigneeIds.add(assignee.getId())) {
                 errors.add(assigneePath + " 参与人 id 重复，id=" + assignee.getId());
+            }
+            if (assignee.getActorType() == null) {
+                errors.add(assigneePath + " 参与人 actorType 不能为空，id=" + value(assignee.getId()));
+            } else if (IEnum.resolveKeyOfNullable(ActorType.class, assignee.getActorType()) == null) {
+                errors.add(assigneePath + " 参与人 actorType 不合法，actorType=" + assignee.getActorType());
             }
             if (assignee.getWeight() != null && (assignee.getWeight() < 0 || assignee.getWeight() > 100)) {
                 errors.add(assigneePath + " 票权 weight 必须在 0-100 之间，id=" + value(assignee.getId()));

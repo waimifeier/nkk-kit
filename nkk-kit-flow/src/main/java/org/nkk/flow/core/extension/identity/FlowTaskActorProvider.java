@@ -79,17 +79,5 @@ public interface FlowTaskActorProvider {
     default boolean abnormal(FlowTask task, List<FlowTaskActor> taskActors, FlowExecution execution, TaskNodeModel nodeModel) {
         throw new FlowException("节点没有审批人，nodeKey=" + nodeModel.getNodeKey());
     }
-
-    /**
-     * 获取当前节点默认的任务参与者类型。
-     *
-     * <p>返回值会写入 {@link FlowTaskActor#getActorType()}。约定为：
-     * 0 用户，1 角色，2 部门。默认实现中，角色/部门节点会分别返回角色/部门，
-     * 其他情况返回用户。</p>
-     *
-     * @param nodeModel 当前任务节点
-     * @return 参与者类型
-     */
-    Integer getActorType(TaskNodeModel nodeModel);
 }
 

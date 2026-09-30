@@ -1,194 +1,112 @@
 {
-  "id": 1,
+  "key": "leave_approval",
   "name": "请假审批",
-  "key": "k0001",
   "nodeConfig": {
     "nodeName": "发起人",
-    "nodeKey": "flk1785894730713",
+    "nodeKey": "node_start",
     "type": 0,
-    "nodeAssigneeList": [
-      {
-        "id": "1",
-        "name": "系统管理员",
-        "actorType": 0
-      },
-      {
-        "id": "1778231636381663234",
-        "name": "CEO",
-        "actorType": 1
-      }
-    ],
+    "setType": 5,
+    "nodeAssigneeList": [],
     "childNode": {
-      "nodeName": "部门领导",
-      "nodeKey": "flk1786698065676",
+      "nodeName": "直属领导审批",
+      "nodeKey": "node_leader",
       "type": 1,
-      "setType": 4,
-      "nodeAssigneeList": [
-        {
-          "id": "1",
-          "name": "系统管理员",
-          "weight": 10
-        }
-      ],
-      "nodeCandidate": {
-        "type": 0,
-        "assignees": [
-          {
-            "id": "1778235419958444034",
-            "name": "笪小琴"
-          },
-          {
-            "id": "1778235567803465730",
-            "name": "陈小超"
-          },
-          {
-            "id": "1778264912529981441",
-            "name": "陈小辉"
-          }
-        ]
-      },
-      "examineLevel": 5,
+      "setType": 2,
+      "examineLevel": 1,
+      "nodeAssigneeList": [],
       "examineMode": 1,
-      "groupStrategy": 0,
-      "directorLevel": 1,
-      "directorMode": 0,
-      "selectMode": 1,
-      "termAuto": false,
-      "term": 1,
-      "termMode": 1,
-      "typeOfApprove": 1,
       "rejectStrategy": 1,
-      "remind": false,
+      "approveSelf": 1,
       "allowTransfer": true,
-      "allowAppendNode": true,
-      "allowRollback": true,
+      "allowAppendNode": false,
+      "allowRollback": false,
       "allowCc": true,
-      "approveSelf": 0,
-      "extendConfig": {
-        "remindTime": "1:m"
-      },
+      "remind": false,
+      "termAuto": false,
       "childNode": {
-        "nodeName": "条件路由",
-        "nodeKey": "flk1787045377132",
+        "nodeName": "请假天数分流",
+        "nodeKey": "node_router_days",
         "type": 4,
         "conditionNodes": [
           {
             "nodeName": "条件 1",
-            "nodeKey": "flk1787045377132-1",
+            "nodeKey": "node_branch_long",
             "type": 3,
             "priorityLevel": 1,
-            "conditionMode": 1,
             "conditionList": [
               [
                 {
-                  "label": "days",
+                  "label": "请假天数",
                   "field": "days",
                   "operator": ">",
-                  "value": "10",
+                  "value": "3",
                   "type": "custom"
                 }
               ]
             ],
             "childNode": {
-              "nodeName": "审核人",
-              "nodeKey": "flk1787045403804",
+              "nodeName": "总经理审批",
+              "nodeKey": "node_gm",
               "type": 1,
               "setType": 1,
               "nodeAssigneeList": [
                 {
-                  "id": "1",
-                  "name": "系统管理员",
-                  "weight": 10
+                  "id": "1778231636381663234",
+                  "name": "总经理",
+                  "actorType": 0
                 }
               ],
-              "examineLevel": 1,
-              "directorLevel": 1,
-              "selectMode": 1,
-              "termAuto": false,
-              "remind": false,
-              "term": 1,
-              "termMode": 1,
               "examineMode": 1,
-              "approveSelf": 0,
-              "directorMode": 0,
-              "typeOfApprove": 1,
-              "extendConfig": {
-                "remindTime": "1:m",
-                "formConfig": [
-                  {
-                    "id": "input_9348",
-                    "label": "输入框",
-                    "opera": "1"
-                  }
-                ]
-              },
-              "allowCc": false,
+              "rejectStrategy": 1,
+              "approveSelf": 1,
               "allowTransfer": false,
               "allowAppendNode": false,
               "allowRollback": false,
-              "rejectStrategy": 2,
-              "delayType": 1,
-              "groupStrategy": 0,
-              "childNode": {}
+              "allowCc": false,
+              "remind": false,
+              "termAuto": false,
+              "childNode": {
+                "nodeName": "结束",
+                "nodeKey": "node_end_long",
+                "type": -1
+              }
             }
           },
           {
             "nodeName": "默认条件",
-            "nodeKey": "flk1787045377132-default",
+            "nodeKey": "node_branch_default",
             "type": 3,
             "priorityLevel": 2,
-            "conditionMode": 1,
-            "conditionList": []
+            "conditionList": [],
+            "childNode": {
+              "nodeName": "结束",
+              "nodeKey": "node_end_default",
+              "type": -1
+            }
           }
         ],
         "childNode": {
-          "nodeName": "审核人",
-          "nodeKey": "flk1787045417971",
-          "type": 1,
-          "setType": 1,
-          "nodeAssigneeList": [
-            {
-              "id": "1",
-              "name": "系统管理员",
-              "weight": 10
-            }
-          ],
-          "examineLevel": 1,
-          "directorLevel": 1,
-          "selectMode": 1,
-          "termAuto": false,
-          "remind": false,
-          "term": 1,
-          "termMode": 1,
-          "examineMode": 1,
-          "approveSelf": 0,
-          "directorMode": 0,
-          "typeOfApprove": 1,
-          "extendConfig": {
-            "remindTime": "1:m",
-            "formConfig": [
-              {
-                "id": "input_9348",
-                "label": "输入框",
-                "opera": "1"
-              }
-            ]
-          },
-          "allowCc": false,
-          "allowTransfer": false,
-          "allowAppendNode": false,
-          "allowRollback": false,
-          "rejectStrategy": 2,
-          "delayType": 1,
-          "groupStrategy": 0,
-          "childNode": {
-            "nodeName": "结束",
-            "nodeKey": "flk1785894630713",
-            "type": -1
-          }
+          "nodeName": "结束",
+          "nodeKey": "node_end",
+          "type": -1
         }
-      },
-      "delayType": 1
+      }
     }
-  }
+  },
+  "metaFields": [
+    {
+      "fieldKey": "days",
+      "fieldName": "请假天数",
+      "fieldType": "number",
+      "required": true,
+      "sort": 1
+    },
+    {
+      "fieldKey": "reason",
+      "fieldName": "请假事由",
+      "fieldType": "text",
+      "required": true,
+      "sort": 2
+    }
+  ]
 }

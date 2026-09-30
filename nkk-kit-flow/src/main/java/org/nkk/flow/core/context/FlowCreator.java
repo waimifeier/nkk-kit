@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.Getter;
 import org.nkk.flow.enums.core.FlowTaskActorEnum.ActorType;
+import org.nkk.flow.exception.FlowException;
 
 import java.io.Serializable;
 import java.util.List;
@@ -81,26 +82,29 @@ public class FlowCreator implements Serializable {
     /**
      * 判断当前流程操作人是否命中某个参与人配置。
      *
-     * <p>参与人类型由 {@code actorType} 指定，兼容旧流程 JSON：{@code actorType} 为空时按用户处理。</p>
+     * <p>参与人类型由 {@code actorType} 显式指定（契约必填）：
      *
      * <ul>
-     *     <li>{@link ActorType#USER}：操作人 ID 等于参与人 ID。</li>
-     *     <li>{@link ActorType#ROLE}：操作人角色列表包含该角色 ID。</li>
-     *     <li>{@link ActorType#DEPARTMENT}：操作人部门 ID 等于参与人 ID。</li>
+     *   <li>{@link ActorType#USER}：操作人 ID 等于参与人 ID。</li>
+     *   <li>{@link ActorType#ROLE}：操作人角色列表包含该角色 ID。</li>
+     *   <li>{@link ActorType#DEPARTMENT}：操作人部门 ID 等于参与人 ID。</li>
      * </ul>
      *
      * <p>开始节点发起权限、审批/抄送任务办理权限等组织身份匹配统一走该方法，
      * 业务系统无需再注册自定义策略 Bean。</p>
      *
      * @param actorId   参与人 ID，可能是用户 ID、角色 ID 或部门 ID
-     * @param actorType 参与人类型，参见 {@link ActorType}
+     * @param actorType 参与人类型，参见 {@link ActorType}，不允许为空
      * @return true 表示当前操作人命中该参与人配置
      */
     public boolean matches(String actorId, Integer actorType) {
         if (StrUtil.isBlank(actorId)) {
             return false;
         }
-        if (actorType == null || ActorType.USER.value().equals(actorType)) {
+        if (actorType == null) {
+            throw new FlowException("参与人 actorType 未配置（actorId=" + actorId + "），流程 JSON 不符合契约");
+        }
+        if (ActorType.USER.value().equals(actorType)) {
             return StrUtil.equals(createId, actorId);
         }
         if (ActorType.ROLE.value().equals(actorType)) {

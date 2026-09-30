@@ -1,6 +1,5 @@
 package org.nkk.flow.core.extension.condition;
 
-import org.springframework.context.expression.MapAccessor;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
@@ -16,10 +15,8 @@ import java.util.Map;
  * 发起审批前，以流程变量为上下文对表达式求值，结果为 true 才发起流程。</p>
  *
  * <h3>变量绑定</h3>
- * <ul>
- *   <li>流程变量同时注册为 SpEL 变量（{@code #fieldName}，设计器生成的标准写法）；</li>
- *   <li>变量 Map 同时作为根对象，兼容 {@code fieldName} 直接属性访问的写法。</li>
- * </ul>
+ * <p>流程变量注册为 SpEL 变量，表达式统一以 {@code #fieldName} 引用变量
+ * （设计器生成的标准写法）。</p>
  *
  * <p>支持 SpEL 文本操作符（{@code and}/{@code or}/{@code not}）与符号操作符
  * （{@code &&/||/!}）、比较运算（{@code == != &gt; &gt;= &lt; &lt;=}）
@@ -48,11 +45,8 @@ public class SpelTriggerExpression {
         Map<String, Object> args = variables == null ? Collections.emptyMap() : variables;
         try {
             Expression spel = PARSER.parseExpression(expression);
-            StandardEvaluationContext context = new StandardEvaluationContext(args);
-            // #变量名 引用（设计器生成的标准形式）
+            StandardEvaluationContext context = new StandardEvaluationContext();
             context.setVariables(args);
-            // 变量名直接属性访问（department_id 风格）：SpEL 默认不支持 Map.key 取值，注册 MapAccessor 兼容
-            context.addPropertyAccessor(new MapAccessor());
             Boolean result = spel.getValue(context, Boolean.class);
             return Boolean.TRUE.equals(result);
         } catch (Exception e) {

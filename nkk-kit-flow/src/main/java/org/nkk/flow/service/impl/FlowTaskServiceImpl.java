@@ -410,9 +410,6 @@ public class FlowTaskServiceImpl implements FlowTaskService {
             hisActor.setTenantId(copyTask.getTenantId());
             hisActor.setInstanceId(copyTask.getInstanceId());
             hisActor.setTaskId(hisTask.getId());
-            if (hisActor.getActorType() == null) {
-                hisActor.setActorType(ActorType.USER.value());
-            }
             hisTaskActorDao.insert(hisActor);
             hisActors.add(hisActor);
         }
