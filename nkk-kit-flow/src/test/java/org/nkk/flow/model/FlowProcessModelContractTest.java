@@ -52,7 +52,7 @@ public class FlowProcessModelContractTest {
             + "\"childNode\":{"
             + "\"nodeName\":\"主管审批\",\"nodeKey\":\"approve_1\",\"type\":1,"
             + "\"setType\":1,\"examineMode\":1,\"approveSelf\":1,\"examineLevel\":2,"
-            + "\"rejectStrategy\":2,\"rejectStart\":1,"
+            + "\"rejectStrategy\":2,"
             + "\"termAuto\":true,\"term\":24,\"termMode\":1,\"remind\":true,"
             + "\"allowTransfer\":true,\"allowAppendNode\":true,\"allowRollback\":true,\"allowCc\":true,"
             + "\"actionUrl\":\"/flow/task/detail\","
@@ -121,7 +121,6 @@ public class FlowProcessModelContractTest {
         assertEquals(Integer.valueOf(1), approvalNode.getApproveSelf());
         assertEquals(Integer.valueOf(2), approvalNode.getExamineLevel());
         assertEquals(Integer.valueOf(2), approvalNode.getRejectStrategy());
-        assertEquals(Integer.valueOf(1), approvalNode.getRejectStart());
         assertEquals(Boolean.TRUE, approvalNode.getTermAuto());
         assertEquals(Integer.valueOf(24), approvalNode.getTerm());
         assertEquals(Integer.valueOf(1), approvalNode.getTermMode());

@@ -9,7 +9,7 @@ import java.util.List;
 import org.nkk.flow.model.node.FlowNodeType;
 
 /**
- * 并行分支路由容器（type=8），所有分支同时执行。
+ * 并行分支路由容器（type=7），所有分支同时执行。
  */
 @Data
 @FlowNodeType(FlowNodeTypeEnum.PARALLEL_BRANCH)

@@ -4,16 +4,17 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.nkk.flow.enums.node.FlowNodeTypeEnum;
+import org.nkk.flow.model.node.FlowNodeModel;
 import org.nkk.flow.model.node.FlowNodeType;
 
 /**
- * 延迟等待节点（type=6）。
+ * 延迟等待节点（type=5）。
  */
 @Data
 @FlowNodeType(FlowNodeTypeEnum.TIMER)
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class TimerNodeModel extends TaskNodeModel {
+public class TimerNodeModel extends FlowNodeModel {
 
     private static final long serialVersionUID = 1L;
 

@@ -453,6 +453,12 @@ public FlowNodeListener flowNodeListener() {
 
 ## AI 节点
 
+`callAi` 字段位于节点基类 `FlowNodeModel`，所有节点均可配置，但实际生效的节点类型为：
+
+- **审批节点（type=1）**：任务创建后调用 `FlowAiHandler.handle`，支持自动通过/拒绝/异步等待。
+- **条件分支（type=4）**：调用 `FlowAiHandler.decideRoute` 决定命中分支，返回空时走普通条件表达式。
+- **包容分支（type=8）**：调用 `FlowAiHandler.decideInclusiveRoutes` 决定命中分支集合，返回空时走普通条件表达式。
+
 节点配置 `callAi` 后，starter 会在任务创建后调用使用方提供的 `FlowAiHandler`。
 
 ```java

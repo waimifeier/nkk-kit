@@ -41,7 +41,8 @@ public class DefaultFlowTaskActorProvider implements FlowTaskActorProvider {
                 ? getActorType(nodeModel)
                 : dynamicAssignee.getType();
         for (FlowNodeAssignee assignee : assignees) {
-            actors.add(FlowTaskActor.of(assignee, actorType, nodeModel.saveWeight()));
+            boolean saveWeight = nodeModel instanceof ApprovalNodeModel && ((ApprovalNodeModel) nodeModel).saveWeight();
+            actors.add(FlowTaskActor.of(assignee, actorType, saveWeight));
         }
         return actors;
     }

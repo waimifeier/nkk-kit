@@ -4,16 +4,17 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.nkk.flow.enums.node.FlowNodeTypeEnum;
+import org.nkk.flow.model.node.FlowNodeModel;
 import org.nkk.flow.model.node.FlowNodeType;
 
 /**
- * 触发器节点（type=7）。
+ * 触发器节点（type=6）。
  */
 @Data
 @FlowNodeType(FlowNodeTypeEnum.TRIGGER)
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class TriggerNodeModel extends TaskNodeModel {
+public class TriggerNodeModel extends FlowNodeModel {
 
     private static final long serialVersionUID = 1L;
 

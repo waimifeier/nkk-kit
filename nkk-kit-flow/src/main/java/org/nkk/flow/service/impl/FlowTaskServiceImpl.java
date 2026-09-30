@@ -22,6 +22,7 @@ import org.nkk.flow.enums.core.FlowTaskEnum.TaskState;
 import org.nkk.flow.enums.core.FlowTaskEnum.TaskType;
 import org.nkk.flow.exception.FlowException;
 import org.nkk.flow.model.node.task.FlowNodeAssignee;
+import org.nkk.flow.model.node.task.ApprovalNodeModel;
 import org.nkk.flow.model.node.FlowNodeModel;
 import org.nkk.flow.model.node.task.TaskNodeModel;
 import org.nkk.flow.service.FlowTaskService;
@@ -535,7 +536,9 @@ public class FlowTaskServiceImpl implements FlowTaskService {
         Integer taskType = execution.consumeNextTaskType();
         task.setTaskType(taskType == null ? nodeModel.getType() : taskType);
         task.setPerformType(resolvePerformType(nodeModel).value());
-        task.setActionUrl(nodeModel.getActionUrl());
+        if (nodeModel instanceof ApprovalNodeModel) {
+            task.setActionUrl(((ApprovalNodeModel) nodeModel).getActionUrl());
+        }
         task.setVariable(FlowContext.toJson(execution.getArgs()));
         loadScheduleConfig(task, nodeModel);
         return context.getCreateTaskHandler().handle(task, nodeModel, execution);
@@ -616,37 +619,30 @@ public class FlowTaskServiceImpl implements FlowTaskService {
         if (FlowNodeTypeEnum.COPY.eq(nodeModel.getType())) {
             return PerformType.COPY;
         }
-        if (FlowNodeTypeEnum.TIMER.eq(nodeModel.getType())) {
-            return PerformType.TIMER;
+        if (nodeModel instanceof ApprovalNodeModel) {
+            return PerformType.of(((ApprovalNodeModel) nodeModel).getExamineMode());
         }
-        if (FlowNodeTypeEnum.TRIGGER.eq(nodeModel.getType())) {
-            return PerformType.TRIGGER;
-        }
-        return PerformType.of(nodeModel.getExamineMode());
+        return PerformType.of(null);
     }
 
     private void loadScheduleConfig(FlowTask task, TaskNodeModel nodeModel) {
-        task.setTermMode(nodeModel.getTermMode());
-        if (Boolean.TRUE.equals(nodeModel.getTermAuto()) && nodeModel.getTerm() != null && nodeModel.getTerm() > 0) {
+        // 期限、提醒等调度配置仅在审批节点上生效
+        if (!(nodeModel instanceof ApprovalNodeModel)) {
+            return;
+        }
+        ApprovalNodeModel approval = (ApprovalNodeModel) nodeModel;
+        task.setTermMode(approval.getTermMode());
+        if (Boolean.TRUE.equals(approval.getTermAuto()) && approval.getTerm() != null && approval.getTerm() > 0) {
             Calendar calendar = Calendar.getInstance();
-            calendar.add(Calendar.HOUR, nodeModel.getTerm());
+            calendar.add(Calendar.HOUR, approval.getTerm());
             task.setExpireTime(calendar.getTime());
         }
-        if (Boolean.TRUE.equals(nodeModel.getRemind()) && nodeModel.getExtendConfig() != null) {
-            Object remindMinutes = nodeModel.getExtendConfig().get("remindMinutes");
+        if (Boolean.TRUE.equals(approval.getRemind()) && approval.getExtendConfig() != null) {
+            Object remindMinutes = approval.getExtendConfig().get("remindMinutes");
             if (remindMinutes instanceof Number) {
                 Calendar calendar = Calendar.getInstance();
                 calendar.add(Calendar.MINUTE, ((Number) remindMinutes).intValue());
                 task.setRemindTime(calendar.getTime());
-            }
-        }
-        if ((FlowNodeTypeEnum.TIMER.eq(nodeModel.getType()) || FlowNodeTypeEnum.TRIGGER.eq(nodeModel.getType()))
-                && nodeModel.getExtendConfig() != null) {
-            Object delayMinutes = nodeModel.getExtendConfig().get("delayMinutes");
-            if (delayMinutes instanceof Number) {
-                Calendar calendar = Calendar.getInstance();
-                calendar.add(Calendar.MINUTE, ((Number) delayMinutes).intValue());
-                task.setExpireTime(calendar.getTime());
             }
         }
     }

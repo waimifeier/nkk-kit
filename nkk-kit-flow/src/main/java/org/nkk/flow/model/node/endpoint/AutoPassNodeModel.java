@@ -8,7 +8,7 @@ import org.nkk.flow.model.node.FlowNodeModel;
 import org.nkk.flow.model.node.FlowNodeType;
 
 /**
- * 自动通过节点（type=30），执行到该节点时实例直接以自动通过状态结束。
+ * 自动通过节点（type=9），执行到该节点时实例直接以自动通过状态结束。
  */
 @Data
 @FlowNodeType(FlowNodeTypeEnum.AUTO_PASS)

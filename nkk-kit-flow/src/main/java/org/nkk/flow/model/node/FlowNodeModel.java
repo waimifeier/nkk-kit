@@ -29,8 +29,6 @@ import org.nkk.flow.model.node.task.ApprovalNodeModel;
 import org.nkk.flow.model.node.task.CopyNodeModel;
 import org.nkk.flow.model.node.task.StartNodeModel;
 import org.nkk.flow.model.node.task.TaskNodeModel;
-import org.nkk.flow.model.node.task.TimerNodeModel;
-import org.nkk.flow.model.node.task.TriggerNodeModel;
 
 /**
  * 流程节点模型基类。
@@ -38,7 +36,8 @@ import org.nkk.flow.model.node.task.TriggerNodeModel;
  * <p>JSON 的 {@code type} 字段作为多态判别字段，反序列化时按类型实例化对应子类。
  * 子类型不在本类维护清单，而是由各子类上的 {@link FlowNodeType} 注解自我声明，
  * JSON 处理器启动时扫描 {@code org.nkk.flow.model} 包自动注册：
- * 任务节点见 {@link TaskNodeModel}（审批/抄送/发起/延迟/触发），
+ * 任务节点见 {@link TaskNodeModel}（发起/审批/抄送），
+ * 延迟等待见 {@link org.nkk.flow.model.node.task.TimerNodeModel}、触发器见 {@link org.nkk.flow.model.node.task.TriggerNodeModel}（两者直接继承本类），
  * 路由容器见 {@link RouterNodeModel}（条件/并行/包容），
  * 分支项见 {@link FlowConditionNode}。</p>
  *
@@ -142,7 +141,7 @@ public abstract class FlowNodeModel implements Serializable {
             return nextNode().map(next -> next.execute(context, execution))
                     .orElseGet(() -> execution.endInstance(this, InstanceState.COMPLETED));
         }
-        if (this instanceof TimerNodeModel || this instanceof TriggerNodeModel || this instanceof ApprovalNodeModel) {
+        if (this instanceof ApprovalNodeModel) {
             context.createTask(execution, (TaskNodeModel) this);
             return true;
         }

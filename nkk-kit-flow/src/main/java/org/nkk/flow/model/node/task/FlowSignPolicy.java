@@ -64,12 +64,12 @@ public class FlowSignPolicy implements Serializable {
     private boolean abstainAsPass;
 
     /**
-     * 从节点扩展配置中解析多人审批收口策略。
+     * 从审批节点扩展配置中解析多人审批收口策略。
      *
-     * @param nodeModel 任务节点模型
+     * @param nodeModel 审批节点模型
      * @return 多人审批收口策略
      */
-    public static FlowSignPolicy of(TaskNodeModel nodeModel) {
+    public static FlowSignPolicy of(ApprovalNodeModel nodeModel) {
         FlowSignPolicy policy = new FlowSignPolicy();
         if (nodeModel == null) {
             return policy;

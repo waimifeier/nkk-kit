@@ -21,6 +21,7 @@ import org.nkk.flow.enums.node.FlowRejectStrategyEnum;
 import org.nkk.flow.enums.core.FlowTaskEnum.TaskState;
 import org.nkk.flow.enums.core.FlowTaskEnum.TaskType;
 import org.nkk.flow.exception.FlowException;
+import org.nkk.flow.model.node.task.ApprovalNodeModel;
 import org.nkk.flow.model.node.task.FlowNodeAssignee;
 import org.nkk.flow.model.node.FlowNodeModel;
 import org.nkk.flow.model.FlowProcessModel;
@@ -355,13 +356,13 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
             return true;
         }
         if (performType == PerformType.COUNTERSIGN) {
-            return handleSignDecision(resolveCountersignResult(taskNode, task), task, creator, execution);
+            return handleSignDecision(resolveCountersignResult((ApprovalNodeModel) taskNode, task), task, creator, execution);
         }
         if (performType == PerformType.OR_SIGN) {
-            return handleSignDecision(resolveOrSignResult(taskNode, task), task, creator, execution);
+            return handleSignDecision(resolveOrSignResult((ApprovalNodeModel) taskNode, task), task, creator, execution);
         }
         if (performType == PerformType.VOTE_SIGN) {
-            VoteResult voteResult = resolveVoteResult(taskNode, task);
+            VoteResult voteResult = resolveVoteResult((ApprovalNodeModel) taskNode, task);
             return handleSignDecision(voteResult, task, creator, execution);
         }
         return execution.executeNodeModel(task.getTaskKey());
@@ -383,13 +384,13 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
         FlowProcessModel model = runtimeService().getProcessModelByInstanceId(instance.getId());
         FlowNodeModel nodeModel = model.getNode(task.getTaskKey());
         PerformType performType = PerformType.of(task.getPerformType());
-        if (!(nodeModel instanceof TaskNodeModel)
+        if (!(nodeModel instanceof ApprovalNodeModel)
                 || (performType != PerformType.COUNTERSIGN
                 && performType != PerformType.OR_SIGN
                 && performType != PerformType.VOTE_SIGN)) {
             throw new FlowException("当前任务不是多人审批任务，taskId=" + taskId);
         }
-        TaskNodeModel taskNode = (TaskNodeModel) nodeModel;
+        ApprovalNodeModel taskNode = (ApprovalNodeModel) nodeModel;
         if (state == TaskState.ABSTAINED && !FlowSignPolicy.of(taskNode).isAllowAbstain()) {
             throw new FlowException("当前节点未开启弃权，nodeKey=" + task.getTaskKey());
         }
@@ -632,7 +633,7 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
         return false;
     }
 
-    private VoteResult resolveCountersignResult(TaskNodeModel nodeModel, FlowTask task) {
+    private VoteResult resolveCountersignResult(ApprovalNodeModel nodeModel, FlowTask task) {
         FlowSignPolicy policy = FlowSignPolicy.of(nodeModel);
         int defaultWeight = defaultVoteWeight(nodeModel, task);
         VoteStats stats = collectVoteStats(task, defaultWeight, policy);
@@ -648,7 +649,7 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
         return stats.activeCount > 0 ? VoteResult.WAIT : VoteResult.PASS;
     }
 
-    private VoteResult resolveOrSignResult(TaskNodeModel nodeModel, FlowTask task) {
+    private VoteResult resolveOrSignResult(ApprovalNodeModel nodeModel, FlowTask task) {
         FlowSignPolicy policy = FlowSignPolicy.of(nodeModel);
         int defaultWeight = defaultVoteWeight(nodeModel, task);
         VoteStats stats = collectVoteStats(task, defaultWeight, policy);
@@ -661,7 +662,7 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
         return stats.activeCount > 0 ? VoteResult.WAIT : VoteResult.REJECT;
     }
 
-    private VoteResult resolveVoteResult(TaskNodeModel nodeModel, FlowTask task) {
+    private VoteResult resolveVoteResult(ApprovalNodeModel nodeModel, FlowTask task) {
         FlowSignPolicy policy = FlowSignPolicy.of(nodeModel);
         int defaultWeight = defaultVoteWeight(nodeModel, task);
         VoteStats stats = collectVoteStats(task, defaultWeight, policy);
@@ -860,8 +861,8 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
             }
             return assertRejectableNode(specifiedNode);
         }
-        Integer rejectStrategy = currentNode instanceof TaskNodeModel
-                ? ((TaskNodeModel) currentNode).getRejectStrategy()
+        Integer rejectStrategy = currentNode instanceof ApprovalNodeModel
+                ? ((ApprovalNodeModel) currentNode).getRejectStrategy()
                 : null;
         FlowRejectStrategyEnum strategy = FlowRejectStrategyEnum.of(rejectStrategy);
         if (strategy == FlowRejectStrategyEnum.TERMINATE_APPROVAL) {

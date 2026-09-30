@@ -9,7 +9,7 @@ import java.util.List;
 import org.nkk.flow.model.node.FlowNodeType;
 
 /**
- * 包容分支路由容器（type=9），满足条件的分支执行。
+ * 包容分支路由容器（type=8），满足条件的分支执行。
  */
 @Data
 @FlowNodeType(FlowNodeTypeEnum.INCLUSIVE_BRANCH)

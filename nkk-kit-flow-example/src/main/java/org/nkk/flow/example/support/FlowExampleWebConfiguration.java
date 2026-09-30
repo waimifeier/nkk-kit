@@ -334,16 +334,26 @@ public class FlowExampleWebConfiguration {
      */
     @Bean
     public FlowDesignerNodePickerProvider flowDesignerNodePickerProvider() {
+        // icon 使用 lucide-static 在线 SVG（经 cdn.jsdmirror.com 镜像加速）；color 为节点主题色
         return () -> CollUtil.newArrayList(
-                FlowDesignerNodePickerItem.of(1, "审批节点", "人工审批"),
-                FlowDesignerNodePickerItem.of(2, "抄送节点", "通知抄送"),
-                FlowDesignerNodePickerItem.of(4, "条件分支", "按条件分流"),
-                FlowDesignerNodePickerItem.of(5, "延迟等待", "延迟等待"),
-                FlowDesignerNodePickerItem.of(6, "触发器", "触发器"),
-                FlowDesignerNodePickerItem.of(7, "并行分支", "并行分支"),
-                FlowDesignerNodePickerItem.of(8, "包容分支", "包容分支"),
-                FlowDesignerNodePickerItem.of(9, "自动通过", "自动通过"),
-                FlowDesignerNodePickerItem.of(10, "自动拒绝", "自动拒绝")
+                FlowDesignerNodePickerItem.of(1, "审批节点", "人工审批",
+                        "https://cdn.jsdmirror.com/npm/lucide-static/icons/user-check.svg", "#f59e0b"),
+                FlowDesignerNodePickerItem.of(2, "抄送节点", "通知抄送",
+                        "https://cdn.jsdmirror.com/npm/lucide-static/icons/mail.svg", "#2563eb"),
+                FlowDesignerNodePickerItem.of(4, "条件分支", "按条件分流",
+                        "https://cdn.jsdmirror.com/npm/lucide-static/icons/git-branch.svg", "#16a34a"),
+                FlowDesignerNodePickerItem.of(5, "延迟等待", "定时等待",
+                        "https://cdn.jsdmirror.com/npm/lucide-static/icons/clock.svg", "#0f766e"),
+                FlowDesignerNodePickerItem.of(6, "触发器", "事件触发",
+                        "https://cdn.jsdmirror.com/npm/lucide-static/icons/zap.svg", "#db2777"),
+                FlowDesignerNodePickerItem.of(7, "并行分支", "同时执行",
+                        "https://cdn.jsdmirror.com/npm/lucide-static/icons/git-fork.svg", "#84cc16"),
+                FlowDesignerNodePickerItem.of(8, "包容分支", "满足即执行",
+                        "https://cdn.jsdmirror.com/npm/lucide-static/icons/list-checks.svg", "#84cc16"),
+                FlowDesignerNodePickerItem.of(9, "自动通过", "免审通过",
+                        "https://cdn.jsdmirror.com/npm/lucide-static/icons/circle-check.svg", "#16a34a"),
+                FlowDesignerNodePickerItem.of(10, "自动拒绝", "直接驳回",
+                        "https://cdn.jsdmirror.com/npm/lucide-static/icons/circle-x.svg", "#dc2626")
         );
     }
 }

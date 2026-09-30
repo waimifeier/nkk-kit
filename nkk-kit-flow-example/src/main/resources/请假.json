@@ -58,7 +58,6 @@
       "termMode": 1,
       "typeOfApprove": 1,
       "rejectStrategy": 1,
-      "rejectStart": 4,
       "remind": false,
       "allowTransfer": true,
       "allowAppendNode": true,
@@ -128,7 +127,6 @@
               "allowAppendNode": false,
               "allowRollback": false,
               "rejectStrategy": 2,
-              "rejectStart": 1,
               "delayType": 1,
               "groupStrategy": 0,
               "childNode": {}
@@ -181,7 +179,6 @@
           "allowAppendNode": false,
           "allowRollback": false,
           "rejectStrategy": 2,
-          "rejectStart": 1,
           "delayType": 1,
           "groupStrategy": 0,
           "childNode": {

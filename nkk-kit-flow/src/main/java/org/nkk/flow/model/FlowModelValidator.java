@@ -423,8 +423,8 @@ public final class FlowModelValidator {
         } else if (node.getNodeName().length() > 100) {
             errors.add(path + " 节点 nodeName 长度不能超过 100，nodeKey=" + value(node.getNodeKey()));
         }
-        if (node instanceof TaskNodeModel) {
-            String actionUrl = ((TaskNodeModel) node).getActionUrl();
+        if (node instanceof ApprovalNodeModel) {
+            String actionUrl = ((ApprovalNodeModel) node).getActionUrl();
             if (actionUrl != null && actionUrl.length() > 200) {
                 errors.add(path + " actionUrl 长度不能超过 200，nodeKey=" + value(node.getNodeKey()));
             }
