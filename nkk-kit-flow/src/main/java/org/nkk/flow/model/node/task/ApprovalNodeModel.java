@@ -28,9 +28,9 @@ public class ApprovalNodeModel extends TaskNodeModel {
     private Integer passWeight;
 
     /**
-     * 驳回策略，取值见 {@link org.nkk.flow.enums.node.FlowRejectStrategyEnum}。
+     * 驳回策略，取值见 {@link org.nkk.flow.enums.node.FlowRejectStrategyEnum}，默认 4=终止流程。
      */
-    private Integer rejectStrategy;
+    private Integer rejectStrategy = 4;
 
     /**
      * 是否开启任务到期自动处理。
@@ -48,9 +48,19 @@ public class ApprovalNodeModel extends TaskNodeModel {
     private Integer termMode;
 
     /**
-     * 是否开启任务提醒。
+     * 是否开启任务提醒（默认开启，仅显式关闭时为 false）。
      */
-    private Boolean remind;
+    private Boolean remind = true;
+
+    /**
+     * 超时时间（小时）：开启提醒后，审批提交超过该时长未处理即高亮预警并首次催办。
+     */
+    private Integer remindTerm;
+
+    /**
+     * 催办频率（小时）：超时催办后，该时长内不能再次催办，即两次催办之间的最小间隔。
+     */
+    private Integer remindInterval;
 
     /**
      * 节点任务办理页地址。
@@ -58,9 +68,9 @@ public class ApprovalNodeModel extends TaskNodeModel {
     private String actionUrl;
 
     /**
-     * 审批人自审：1 表示审批人与发起人相同时自动跳过该审批，其他值正常创建审批任务。
+     * 审批人自审：0=自己审批（默认，提交人自己处理），1=自动跳过，2=转交给上级。
      */
-    private Integer approveSelf;
+    private Integer approveSelf = 0;
 
     /**
      * 部门领导层级。setType=2（部门领导，指定级别）或 setType=6（连续多级审批，起始级别）时使用。
@@ -68,32 +78,33 @@ public class ApprovalNodeModel extends TaskNodeModel {
     private Integer examineLevel;
 
     /**
-     * 是否允许审批转交。
-     *
-     * <p>false 表示当前节点禁止调用转办、委派、代理等转交类操作。</p>
+     * 是否允许审批转交，默认 false（禁止转办、委派、代理等转交类操作）。
      */
-    private Boolean allowTransfer;
+    private Boolean allowTransfer = false;
 
     /**
-     * 是否允许审批加签或减签。
-     *
-     * <p>false 表示当前节点禁止调用加签、减签操作。</p>
+     * 是否允许审批加签或减签，默认 false（禁止加签、减签操作）。
      */
-    private Boolean allowAppendNode;
+    private Boolean allowAppendNode = false;
 
     /**
-     * 是否允许审批回退。
-     *
-     * <p>false 表示当前节点禁止选择目标节点回退。</p>
+     * 是否允许审批回退，默认 false（禁止选择目标节点回退）。
      */
-    private Boolean allowRollback;
+    private Boolean allowRollback = false;
 
     /**
-     * 是否允许审批节点手动抄送。
+     * 是否允许审批节点手动抄送，默认 true。
      *
      * <p>false 表示当前节点禁止调用手动抄送操作。</p>
      */
-    private Boolean allowCc;
+    private Boolean allowCc = true;
+
+    /**
+     * 是否允许发起人撤回流程，默认 true。
+     *
+     * <p>审批进行中发起人可撤回（撤销）整个流程实例；置 false 时当前节点禁止撤回。</p>
+     */
+    private Boolean allowRevoke = true;
 
     /**
      * 判断当前节点是否需要保存办理人权重。

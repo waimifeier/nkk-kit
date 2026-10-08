@@ -1,7 +1,7 @@
 package org.nkk.flow.web.autoconfigure;
 
 import org.nkk.flow.web.controller.FlowDesignerCategoryController;
-import org.nkk.flow.web.controller.FlowDesignerNodePickerController;
+import org.nkk.flow.web.controller.FlowDesignerConfigController;
 import org.nkk.flow.web.controller.FlowDesignerOrgController;
 import org.nkk.flow.web.controller.FlowDesignerFormController;
 import org.nkk.flow.web.controller.FlowDesignerProcessController;
@@ -17,7 +17,7 @@ import org.nkk.flow.dao.FlowTaskActorDao;
 import org.nkk.flow.dao.FlowTaskDao;
 import org.nkk.flow.service.NkkFlowEngine;
 import org.nkk.flow.web.service.FlowDesignerCategoryService;
-import org.nkk.flow.web.service.FlowDesignerNodePickerService;
+import org.nkk.flow.web.service.FlowDesignerConfigService;
 import org.nkk.flow.web.service.FlowDesignerOrgService;
 import org.nkk.flow.web.service.FlowDesignerFormService;
 import org.nkk.flow.web.service.FlowDesignerProcessService;
@@ -77,20 +77,20 @@ public class NkkFlowWebAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public FlowDesignerNodePickerProvider flowDesignerNodePickerProvider() {
-        return new DefaultFlowDesignerNodePickerProvider();
+    public FlowDesignerConfigProvider flowDesignerConfigProvider() {
+        return new DefaultFlowDesignerConfigProvider();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public FlowDesignerNodePickerService flowDesignerNodePickerService(FlowDesignerNodePickerProvider pickerProvider) {
-        return new FlowDesignerNodePickerService(pickerProvider);
+    public FlowDesignerConfigService flowDesignerConfigService(FlowDesignerConfigProvider configProvider) {
+        return new FlowDesignerConfigService(configProvider);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public FlowDesignerNodePickerController flowDesignerNodePickerController(FlowDesignerNodePickerService pickerService) {
-        return new FlowDesignerNodePickerController(pickerService);
+    public FlowDesignerConfigController flowDesignerConfigController(FlowDesignerConfigService configService) {
+        return new FlowDesignerConfigController(configService);
     }
 
     @Bean

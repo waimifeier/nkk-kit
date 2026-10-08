@@ -6,12 +6,13 @@ import org.nkk.flow.core.context.FlowCreator;
 import org.nkk.flow.core.extension.identity.FlowCreatorProvider;
 import org.nkk.flow.enums.core.FlowFormFieldEnum.SourceType;
 import org.nkk.flow.web.extension.FlowDesignerCategoryProvider;
+import org.nkk.flow.web.extension.FlowDesignerConfigProvider;
 import org.nkk.flow.web.extension.FlowDesignerFormProvider;
-import org.nkk.flow.web.extension.FlowDesignerNodePickerProvider;
 import org.nkk.flow.web.extension.FlowDesignerOrgProvider;
 import org.nkk.flow.web.model.FlowDesignerCategoryNode;
+import org.nkk.flow.web.model.FlowDesignerConfig;
 import org.nkk.flow.web.model.FlowDesignerFormOption;
-import org.nkk.flow.web.model.FlowDesignerNodePickerItem;
+import org.nkk.flow.web.model.FlowDesignerNodeRegistryEntry;
 import org.nkk.flow.web.model.FlowDesignerOption;
 import org.nkk.flow.web.model.FlowDesignerTreeNode;
 import org.nkk.flow.model.FlowFieldMeta;
@@ -327,33 +328,38 @@ public class FlowExampleWebConfiguration {
     }
 
     /**
-     * 提供设计器节点选择器示例数据。
+     * 提供设计器节点注册表（GET /designer/config）。
      *
-     * <p>覆盖 starter 默认的空实现，演示宿主如何通过自定义 Bean 控制可添加节点类型。
-     * 业务上通常从配置中心 / 数据库字典读取后转换返回。</p>
+     * <p>基于默认注册表（{@link FlowDesignerConfig#defaults()}，与前端内置全集对齐、
+     * properties 已完整下发）做增量定制：追加延迟等待 / 触发器 / 并行 / 包容 /
+     * 自动通过 / 自动拒绝等高级节点，并统一定制图标与主题色。</p>
      */
     @Bean
-    public FlowDesignerNodePickerProvider flowDesignerNodePickerProvider() {
+    public FlowDesignerConfigProvider flowDesignerConfigProvider() {
         // icon 使用 lucide-static 在线 SVG（经 cdn.jsdmirror.com 镜像加速）；color 为节点主题色
-        return () -> CollUtil.newArrayList(
-                FlowDesignerNodePickerItem.of(1, "审批节点", "人工审批",
-                        "https://cdn.jsdmirror.com/npm/lucide-static/icons/user-check.svg", "#f59e0b"),
-                FlowDesignerNodePickerItem.of(2, "抄送节点", "通知抄送",
-                        "https://cdn.jsdmirror.com/npm/lucide-static/icons/mail.svg", "#2563eb"),
-                FlowDesignerNodePickerItem.of(4, "条件分支", "按条件分流",
-                        "https://cdn.jsdmirror.com/npm/lucide-static/icons/git-branch.svg", "#16a34a"),
-                FlowDesignerNodePickerItem.of(5, "延迟等待", "定时等待",
-                        "https://cdn.jsdmirror.com/npm/lucide-static/icons/clock.svg", "#0f766e"),
-                FlowDesignerNodePickerItem.of(6, "触发器", "事件触发",
-                        "https://cdn.jsdmirror.com/npm/lucide-static/icons/zap.svg", "#db2777"),
-                FlowDesignerNodePickerItem.of(7, "并行分支", "同时执行",
-                        "https://cdn.jsdmirror.com/npm/lucide-static/icons/git-fork.svg", "#84cc16"),
-                FlowDesignerNodePickerItem.of(8, "包容分支", "满足即执行",
-                        "https://cdn.jsdmirror.com/npm/lucide-static/icons/list-checks.svg", "#84cc16"),
-                FlowDesignerNodePickerItem.of(9, "自动通过", "免审通过",
-                        "https://cdn.jsdmirror.com/npm/lucide-static/icons/circle-check.svg", "#16a34a"),
-                FlowDesignerNodePickerItem.of(10, "自动拒绝", "直接驳回",
-                        "https://cdn.jsdmirror.com/npm/lucide-static/icons/circle-x.svg", "#dc2626")
-        );
+        Map<Integer, String[]> themes = new LinkedHashMap<>();
+        themes.put(1, new String[]{"https://cdn.jsdmirror.com/npm/lucide-static/icons/user-check.svg", "#f59e0b"});
+        themes.put(2, new String[]{"https://cdn.jsdmirror.com/npm/lucide-static/icons/mail.svg", "#2563eb"});
+        themes.put(4, new String[]{"https://cdn.jsdmirror.com/npm/lucide-static/icons/git-branch.svg", "#16a34a"});
+        themes.put(5, new String[]{"https://cdn.jsdmirror.com/npm/lucide-static/icons/clock.svg", "#0f766e"});
+        themes.put(6, new String[]{"https://cdn.jsdmirror.com/npm/lucide-static/icons/zap.svg", "#db2777"});
+        themes.put(7, new String[]{"https://cdn.jsdmirror.com/npm/lucide-static/icons/git-fork.svg", "#84cc16"});
+        themes.put(8, new String[]{"https://cdn.jsdmirror.com/npm/lucide-static/icons/list-checks.svg", "#84cc16"});
+        themes.put(9, new String[]{"https://cdn.jsdmirror.com/npm/lucide-static/icons/circle-check.svg", "#16a34a"});
+        themes.put(10, new String[]{"https://cdn.jsdmirror.com/npm/lucide-static/icons/circle-x.svg", "#dc2626"});
+
+        return () -> {
+            FlowDesignerConfig config = FlowDesignerConfig.defaults();
+            List<FlowDesignerNodeRegistryEntry> nodes = config.getNodes();
+            // 覆盖默认注册表的标准图标与主题色（默认注册表已含全部节点与图标，此处演示按条目覆盖）
+            for (FlowDesignerNodeRegistryEntry entry : nodes) {
+                String[] theme = themes.get(entry.getType());
+                if (theme != null) {
+                    entry.setIcon(theme[0]);
+                    entry.setColor(theme[1]);
+                }
+            }
+            return config;
+        };
     }
 }
