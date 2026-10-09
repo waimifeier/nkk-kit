@@ -392,6 +392,37 @@ public class FlowDesignerProcessService {
     }
 
     /**
+     * 按流程定义 key 分页查询已发起的流程实例记录。
+     *
+     * @param processKey 流程定义 key，必填
+     * @param request    分页查询请求
+     * @return 实例记录分页结果
+     */
+    public PageResult<FlowInstanceRecordVO> pageInstancesByProcessKey(String processKey, FlowInstancePageRequest request) {
+        if (StrUtil.isBlank(processKey)) {
+            throw new IllegalArgumentException("流程定义 key 不能为空");
+        }
+        if (request == null) {
+            throw new IllegalArgumentException("分页查询参数不能为空");
+        }
+        PageResult<org.nkk.flow.entity.FlowHisInstance> page = flowEngine.processService().pageInstancesByProcessKey(
+                request.getCurrent(), request.getSize(), processKey,
+                StrUtil.trimToNull(request.getStarterName()),
+                request.getStartTime(), request.getEndTime(),
+                request.getInstanceState(), request.getInstanceId());
+        // 通过 processKey 反查流程定义，取流程名称
+        List<FlowProcess> versions = flowEngine.processService().getProcessVersions(null, processKey);
+        String processName = (versions == null || versions.isEmpty()) ? null : versions.get(0).getProcessName();
+        return page.map(instance -> {
+            FlowInstanceRecordVO vo = FlowInstanceRecordVO.of(instance);
+            if (vo != null) {
+                vo.setProcessName(processName);
+            }
+            return vo;
+        });
+    }
+
+    /**
      * 按流程分类查询当前流程定义。
      *
      * @param tenantId 租户 ID

@@ -48,6 +48,21 @@ public interface FlowHisInstanceDao {
                                       Date startTime, Date endTime, Integer instanceState, Long instanceId);
 
     /**
+     * 按流程定义 key 分页查询历史实例。
+     *
+     * @param page          分页参数
+     * @param processKey    流程定义 key，必填
+     * @param starterName   发起人名称，模糊匹配，为空不过滤
+     * @param startTime     发起开始时间（createTime 下限，含），为空不过滤
+     * @param endTime       发起结束时间（createTime 上限，含），为空不过滤
+     * @param instanceState 实例状态，精确匹配，为空不过滤
+     * @param instanceId    实例 ID，精确匹配，为空不过滤
+     * @return 分页结果
+     */
+    IPage<FlowHisInstance> selectPageByProcessKey(IPage<FlowHisInstance> page, String processKey, String starterName,
+                                                   Date startTime, Date endTime, Integer instanceState, Long instanceId);
+
+    /**
      * 按发起人 ID 分页查询历史实例（我发起的）。
      *
      * @param page          分页参数

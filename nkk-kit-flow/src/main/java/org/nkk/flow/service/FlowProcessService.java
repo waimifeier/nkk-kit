@@ -100,6 +100,22 @@ public interface FlowProcessService {
                                               Date startTime, Date endTime, Integer instanceState, Long instanceId);
 
     /**
+     * 按流程定义 key 分页查询已发起的流程实例。
+     *
+     * @param current      页码，从 1 开始
+     * @param size         每页条数
+     * @param processKey   流程定义 key，必填
+     * @param starterName  发起人名称，模糊匹配，为空不过滤
+     * @param startTime    发起开始时间（提交时间下限，含），为空不过滤
+     * @param endTime      发起结束时间（提交时间上限，含），为空不过滤
+     * @param instanceState 实例状态，精确匹配，为空不过滤
+     * @param instanceId   实例 ID，精确匹配，为空不过滤
+     * @return 流程实例分页结果
+     */
+    PageResult<FlowHisInstance> pageInstancesByProcessKey(long current, long size, String processKey, String starterName,
+                                                           Date startTime, Date endTime, Integer instanceState, Long instanceId);
+
+    /**
      * 查询流程定义的全部版本记录。
      *
      * @param tenantId 租户 ID

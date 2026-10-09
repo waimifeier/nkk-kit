@@ -41,6 +41,15 @@ public class FlowExecution implements Serializable {
 
     private Integer nextTaskType;
 
+    /**
+     * 当前审批节点是否因 approveSelf=1 且审批人全为发起人而自动通过。
+     *
+     * <p>由 {@link org.nkk.flow.service.impl.FlowTaskServiceImpl#createTask} 在全发起人短路分支置位，
+     * 由 {@link FlowNodeModel#execute} 审批分支读取后决定是否继续流转下一节点。
+     * 每次 createTask 调用前由 service 重置，确保不跨节点泄漏。</p>
+     */
+    private transient boolean approvalAutoCompleted;
+
     public FlowExecution(FlowContext context, FlowProcessModel processModel, FlowCreator flowCreator,
                          FlowInstance flowInstance, Map<String, Object> args) {
         this.context = context;

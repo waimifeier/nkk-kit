@@ -167,6 +167,23 @@ public class FlowDesignerProcessController {
     }
 
     /**
+     * 按流程定义 key 分页查询已发起的流程实例记录。
+     *
+     * <p>请求参数与 {@link #pageInstances(Long, FlowInstancePageRequest)} 完全一致，
+     * 区别仅在于路径参数使用 {@code processKey}（字符串）替代 {@code processId}（数字），
+     * 可跨版本查询同一流程 key 的全部发起记录。</p>
+     *
+     * @param processKey 流程定义 key（路径参数，必填）
+     * @param request   分页查询请求
+     * @return 实例记录分页结果
+     */
+    @GetMapping("/key/{processKey}/instances")
+    public Result<PageResult<FlowInstanceRecordVO>> pageInstancesByKey(@PathVariable String processKey,
+                                                                       @Valid FlowInstancePageRequest request) {
+        return Result.ok(processService.pageInstancesByProcessKey(processKey, request));
+    }
+
+    /**
      * 启用流程定义。
      *
      * @param processId 流程定义 ID；示例值：{@code 1785467714628}

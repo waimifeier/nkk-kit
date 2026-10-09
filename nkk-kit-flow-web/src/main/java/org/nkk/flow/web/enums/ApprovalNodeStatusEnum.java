@@ -30,7 +30,7 @@ public enum ApprovalNodeStatusEnum implements IEnum<Integer> {
     REVOKED(3, "已撤回"),
     /** 已终止 / 已作废。 */
     TERMINATED(4, "已终止"),
-    /** 已跳过（条件跳转、自动通过等未实际到达的节点）。 */
+    /** 已跳过（跳转/自动跳转等未实际到达该节点的任务，或或签节点中未办理的其余参与人）。 */
     SKIPPED(5, "已跳过");
 
     private final Integer value;

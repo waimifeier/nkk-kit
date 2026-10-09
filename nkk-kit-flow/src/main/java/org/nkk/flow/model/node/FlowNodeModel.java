@@ -143,6 +143,11 @@ public abstract class FlowNodeModel implements Serializable {
         }
         if (this instanceof ApprovalNodeModel) {
             context.createTask(execution, (TaskNodeModel) this);
+            if (execution.isApprovalAutoCompleted()) {
+                // approveSelf=1 且审批人全为发起人：任务已自动通过归档，继续推进下一节点
+                return nextNode().map(next -> next.execute(context, execution))
+                        .orElseGet(() -> execution.endInstance(this, InstanceState.COMPLETED));
+            }
             return true;
         }
         if (this instanceof AutoPassNodeModel) {

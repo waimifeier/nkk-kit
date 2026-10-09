@@ -452,7 +452,8 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
         if (targetNode == null) {
             task.setOpinion(opinion);
             task.putAllVariable(args);
-            runtimeService().terminate(task.getInstanceId(), task, actualCreator);
+            // 驳回策略为「终止审批」或无驳回目标时，流程以「审批拒绝」终态结束，而非「强制终止」
+            runtimeService().reject(task.getInstanceId(), task, actualCreator);
             return Optional.empty();
         }
 

@@ -256,6 +256,23 @@ public class FlowProcessServiceImpl implements FlowProcessService {
     }
 
     @Override
+    public PageResult<FlowHisInstance> pageInstancesByProcessKey(long current, long size, String processKey, String starterName,
+                                                                 Date startTime, Date endTime, Integer instanceState, Long instanceId) {
+        if (current < 1) {
+            throw new IllegalArgumentException("页码不能小于 1");
+        }
+        if (size < 1) {
+            throw new IllegalArgumentException("每页条数不能小于 1");
+        }
+        if (StrUtil.isBlank(processKey)) {
+            throw new IllegalArgumentException("流程定义 key 不能为空");
+        }
+        IPage<FlowHisInstance> page = hisInstanceDao.selectPageByProcessKey(new Page<>(current, size), processKey,
+                StrUtil.trimToNull(starterName), startTime, endTime, instanceState, instanceId);
+        return PageResult.of(page.getTotal(), page.getCurrent(), page.getSize(), page.getRecords());
+    }
+
+    @Override
     public List<FlowProcess> getProcessVersions(String tenantId, String processKey) {
         return processDao.selectListByProcessKeyAndVersion(tenantId, processKey, null);
     }

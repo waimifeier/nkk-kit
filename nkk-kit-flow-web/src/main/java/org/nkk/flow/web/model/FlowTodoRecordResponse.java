@@ -107,6 +107,11 @@ public class FlowTodoRecordResponse implements Serializable {
     private Date approveTime;
 
     /**
+     * 流程变量 JSON 字符串（用户表单填写值），为空时为 null。
+     */
+    private String variable;
+
+    /**
      * 当前流程正在执行的活动任务信息；流程已结束时为空。
      */
     private Task task;

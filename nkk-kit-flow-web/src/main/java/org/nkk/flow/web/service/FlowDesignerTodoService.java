@@ -479,6 +479,7 @@ public class FlowDesignerTodoService {
         record.setCurrentNodeKey(instance.getCurrentNodeKey());
         record.setCurrentNodeName(instance.getCurrentNodeName());
         record.setDuration(duration(instance));
+        record.setVariable(instance.getVariable());
         return record;
     }
 

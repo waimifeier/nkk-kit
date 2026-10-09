@@ -68,7 +68,9 @@ public class ApprovalNodeModel extends TaskNodeModel {
     private String actionUrl;
 
     /**
-     * 审批人自审：0=自己审批（默认，提交人自己处理），1=自动跳过，2=转交给上级。
+     * 审批人自审：0=自己审批（默认，提交人自己处理），
+     * 1=自动通过（审批人列表含发起人时，发起人那票按 AUTO_COMPLETED 归档，备注"自审自动通过"），
+     * 2=转交给上级（把发起人替换为发起人部门上一级领导，上级为 null 时保留发起人）。
      */
     private Integer approveSelf = 0;
 

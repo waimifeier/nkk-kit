@@ -49,7 +49,57 @@ public class DefaultFlowTaskActorProvider implements FlowTaskActorProvider {
             boolean saveWeight = nodeModel instanceof ApprovalNodeModel && ((ApprovalNodeModel) nodeModel).saveWeight();
             actors.add(FlowTaskActor.of(assignee, saveWeight));
         }
-        return actors;
+        // approveSelf=2 转交上级：把发起人那一个 actor 替换为发起人的部门上一级领导
+        return applyApproveSelfTransfer(nodeModel, execution, actors);
+    }
+
+    /**
+     * approveSelf=2 转交上级：把审批人列表中等于发起人的 actor 替换为发起人的直接主管。
+     *
+     * <p>上级为 null（已到组织顶层）时保留原发起人 actor，等价于降级 approveSelf=0。
+     * 非审批节点或 approveSelf≠2 时原样返回。supervisor 的 actorId ≠ initiatorId，二次调用幂等。</p>
+     *
+     * @param nodeModel 节点模型
+     * @param execution 执行上下文
+     * @param actors    已解析的参与人列表
+     * @return 替换后的参与人列表
+     */
+    private List<FlowTaskActor> applyApproveSelfTransfer(TaskNodeModel nodeModel, FlowExecution execution,
+                                                         List<FlowTaskActor> actors) {
+        if (!(nodeModel instanceof ApprovalNodeModel)) {
+            return actors;
+        }
+        if (!Integer.valueOf(2).equals(((ApprovalNodeModel) nodeModel).getApproveSelf())) {
+            return actors;
+        }
+        String initiatorId = resolveInitiatorId(execution);
+        if (StrUtil.isBlank(initiatorId)) {
+            return actors;
+        }
+        FlowSupervisorResolver resolver = execution.getContext().getSupervisorResolver();
+        if (resolver == null) {
+            return actors;
+        }
+        boolean saveWeight = ((ApprovalNodeModel) nodeModel).saveWeight();
+        List<FlowTaskActor> replaced = new ArrayList<>(actors.size());
+        for (FlowTaskActor actor : actors) {
+            if (ActorType.USER.value().equals(actor.getActorType())
+                    && StrUtil.equals(initiatorId, actor.getActorId())) {
+                FlowNodeAssignee supervisor = resolver.resolveSupervisor(initiatorId, 1);
+                if (supervisor != null) {
+                    if (supervisor.getActorType() == null) {
+                        supervisor.setActorType(ActorType.USER.value());
+                    }
+                    replaced.add(FlowTaskActor.of(supervisor, saveWeight));
+                } else {
+                    // 上级为 null（已到组织顶层）：保留发起人，降级为 approveSelf=0
+                    replaced.add(actor);
+                }
+            } else {
+                replaced.add(actor);
+            }
+        }
+        return replaced;
     }
 
     @Override

@@ -88,6 +88,21 @@ public class FlowHisInstanceDaoMybatisPlusImpl implements FlowHisInstanceDao {
     }
 
     @Override
+    public IPage<FlowHisInstance> selectPageByProcessKey(IPage<FlowHisInstance> page, String processKey, String starterName,
+                                                          Date startTime, Date endTime, Integer instanceState, Long instanceId) {
+        QueryWrapper<FlowHisInstance> wrapper = new QueryWrapper<>();
+        wrapper.eq("process_key", processKey);
+        wrapper.like(StrUtil.isNotBlank(starterName), "create_by", StrUtil.trim(starterName));
+        wrapper.ge(startTime != null, "create_time", startTime);
+        wrapper.le(endTime != null, "create_time", endTime);
+        wrapper.eq(instanceState != null, "instance_state", instanceState);
+        wrapper.eq(instanceId != null, "id", instanceId);
+        wrapper.orderByDesc("create_time");
+        wrapper.orderByDesc("id");
+        return mapper.selectPage(page, wrapper);
+    }
+
+    @Override
     public IPage<FlowHisInstance> selectPageByCreateId(IPage<FlowHisInstance> page, String createId,
                                                         Integer instanceState, Date startTime, Date endTime) {
         QueryWrapper<FlowHisInstance> wrapper = new QueryWrapper<>();

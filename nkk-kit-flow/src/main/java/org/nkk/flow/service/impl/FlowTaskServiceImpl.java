@@ -61,6 +61,8 @@ public class FlowTaskServiceImpl implements FlowTaskService {
 
     @Override
     public List<FlowTask> createTask(TaskNodeModel nodeModel, FlowExecution execution) {
+        // 每次创建任务前重置自动通过标记，防止前一节点的标记泄漏到本节点
+        execution.setApprovalAutoCompleted(false);
         FlowTask task = createTaskBase(nodeModel, execution);
         PerformType performType = resolvePerformType(nodeModel);
 
@@ -100,6 +102,43 @@ public class FlowTaskServiceImpl implements FlowTaskService {
         }
 
         List<FlowTaskActor> actors = execution.getProviderTaskActors(nodeModel);
+        // approveSelf=1 自审自动通过：审批人列表含发起人时，对该发起人 actor 单独处理
+        if (nodeModel instanceof ApprovalNodeModel) {
+            Integer approveSelf = ((ApprovalNodeModel) nodeModel).getApproveSelf();
+            if (Integer.valueOf(1).equals(approveSelf) && actors != null && !actors.isEmpty()) {
+                String initiatorId = execution.getFlowInstance() != null
+                        ? execution.getFlowInstance().getCreateId()
+                        : (execution.getFlowCreator() != null ? execution.getFlowCreator().getCreateId() : null);
+                List<FlowTaskActor> initiatorActors = new ArrayList<>();
+                List<FlowTaskActor> others = new ArrayList<>();
+                for (FlowTaskActor a : actors) {
+                    if (ActorType.USER.value().equals(a.getActorType())
+                            && initiatorId != null && initiatorId.equals(a.getActorId())) {
+                        initiatorActors.add(a);
+                    } else {
+                        others.add(a);
+                    }
+                }
+                if (!initiatorActors.isEmpty() && others.isEmpty()) {
+                    // 全发起人：自动通过并归档，由 executeInternal 继续流转下一节点
+                    task.setOpinion("自审自动通过");
+                    taskDao.insert(task);
+                    for (FlowTaskActor a : initiatorActors) {
+                        assignTask(task, a);
+                    }
+                    List<FlowTaskActor> archived = moveToHisTask(task, TaskState.AUTO_COMPLETED, execution.getFlowCreator());
+                    notifyTask(FlowEventTypeEnum.TASK_AUTO_COMPLETED, task, archived, nodeModel, execution.getFlowCreator());
+                    execution.setFlowTask(task);
+                    execution.setApprovalAutoCompleted(true);
+                    return Collections.singletonList(task);
+                }
+                if (!initiatorActors.isEmpty()) {
+                    // 多人含发起人：仅移除发起人，剩余审批人正常 dispatch
+                    actors = others;
+                }
+                // initiatorActors 为空（actors 中本就没发起人）：actors 不变，走正常 dispatch
+            }
+        }
         if ((actors == null || actors.isEmpty()) && context.getTaskActorProvider().abnormal(task, actors, execution, nodeModel)) {
             return Collections.emptyList();
         }
