@@ -86,6 +86,11 @@ public class FlowRuntimeResponse implements Serializable {
     private List<Task> task = new ArrayList<>();
 
     /**
+     * 当前请求人对该实例的操作权限（由后端根据当前用户 + 节点模型计算）。
+     */
+    private Permissions permissions;
+
+    /**
      * 流程定义信息。
      */
     @Data
@@ -173,5 +178,41 @@ public class FlowRuntimeResponse implements Serializable {
             test.setActors(actors == null ? new ArrayList<>() : actors);
             return test;
         }
+    }
+
+    /**
+     * 当前请求人对该实例的操作权限标志。
+     *
+     * <p>由后端在 {@link FlowDesignerRuntimeService#detail(Long)} 中统一计算，
+     * 前端直接据此控制按钮显隐，无需前端猜测权限。</p>
+     */
+    @Data
+    public static class Permissions implements Serializable {
+
+        private static final long serialVersionUID = 1L;
+
+        /** 当前用户是否为流程发起人（createId 匹配） */
+        private Boolean isInitiator;
+
+        /** 可撤回：审批中 + 发起人（accessStrategy REVOKE 校验通过） */
+        private Boolean canRevoke;
+
+        /** 可催办：审批中 + 发起人 + 任务已超时 + 催办间隔已过 */
+        private Boolean canUrge;
+
+        /** 可审批：审批中 + 当前用户是活动任务参与人 */
+        private Boolean canApprove;
+
+        /** 可转交：canApprove + 节点 allowTransfer */
+        private Boolean canTransfer;
+
+        /** 可加签/减签：canApprove + 节点 allowAppendNode */
+        private Boolean canAppendNode;
+
+        /** 可回退：canApprove + 节点 allowRollback */
+        private Boolean canRollback;
+
+        /** 可手动抄送：审批中 + 节点 allowCc 不为 false */
+        private Boolean canCc;
     }
 }

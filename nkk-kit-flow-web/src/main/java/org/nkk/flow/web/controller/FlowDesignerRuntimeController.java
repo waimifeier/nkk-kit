@@ -345,6 +345,19 @@ public class FlowDesignerRuntimeController {
     }
 
     /**
+     * 催办任务。
+     *
+     * <p>仅流程发起人可催办，受节点 remindInterval（小时）频率限制。</p>
+     *
+     * @param taskId 任务 ID；示例值：{@code 1785467714628}
+     */
+    @PostMapping("/tasks/{taskId}/urge")
+    public Result<Void> urge(@PathVariable Long taskId) {
+        runtimeService.urge(taskId);
+        return Result.ok(null);
+    }
+
+    /**
      * 终止任务所在流程。
      *
      * <p>请求体示例：{@code {"variables":{"comment":"审批终止"}}}</p>

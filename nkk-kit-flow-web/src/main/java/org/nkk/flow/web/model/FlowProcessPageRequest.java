@@ -5,6 +5,7 @@ import lombok.EqualsAndHashCode;
 import org.nkk.core.beans.common.BaseQuery;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * 流程定义分页查询请求。
@@ -39,9 +40,10 @@ public class FlowProcessPageRequest extends BaseQuery implements Serializable {
     private String processType;
 
     /**
-     * 流程状态，取值见 org.nkk.flow.enums.core.FlowProcessEnum.ProcessState。
+     * 流程状态列表（多值 IN 查询），取值见 {@link org.nkk.flow.enums.core.FlowProcessEnum.ProcessState}。
+     * 请求支持 {@code processState=-1&processState=1} 或逗号分隔 {@code processState=-1,1} 两种传参方式。
      */
-    private Integer processState;
+    private List<Integer> processState;
 
     /**
      * 表单来源类型，精确匹配，例如 {@code form}（自定义表单）、{@code business}（业务表单）。

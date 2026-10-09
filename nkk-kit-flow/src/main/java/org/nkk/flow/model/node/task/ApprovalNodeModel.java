@@ -53,14 +53,14 @@ public class ApprovalNodeModel extends TaskNodeModel {
     private Boolean remind = true;
 
     /**
-     * 超时时间（小时）：开启提醒后，审批提交超过该时长未处理即高亮预警并首次催办。
+     * 超时时间（小时）：开启提醒后，审批提交超过该时长未处理即高亮预警并首次催办。支持小数，如 0.5 表示 30 分钟。
      */
-    private Integer remindTerm;
+    private Double remindTerm;
 
     /**
-     * 催办频率（小时）：超时催办后，该时长内不能再次催办，即两次催办之间的最小间隔。
+     * 催办频率（小时）：超时催办后，该时长内不能再次催办，即两次催办之间的最小间隔。支持小数，如 0.2 表示 12 分钟。
      */
-    private Integer remindInterval;
+    private Double remindInterval;
 
     /**
      * 节点任务办理页地址。

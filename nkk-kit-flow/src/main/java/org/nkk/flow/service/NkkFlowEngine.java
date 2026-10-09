@@ -308,5 +308,29 @@ public interface NkkFlowEngine {
     }
 
     void processTimeoutOrRemind(Date now);
+
+    /**
+     * 催办任务：由发起人触发，向当前待办人发送催办通知。
+     *
+     * @param taskId 任务 ID
+     * @param creator 催办操作人（须为流程发起人）
+     * @return true 表示催办成功
+     */
+    default boolean urgeTask(Long taskId, FlowCreator creator) {
+        return taskService().urgeTask(taskId, resolveCreator(creator));
+    }
+
+    /**
+     * 判断当前任务是否可催办。
+     *
+     * @param taskId 任务 ID
+     * @param creator 当前操作人
+     * @return true 表示可催办
+     */
+    default boolean urgeAble(Long taskId, FlowCreator creator) {
+        return taskService().urgeAble(taskId, resolveCreator(creator));
+    }
+
+    FlowCreator resolveCreator(FlowCreator creator);
 }
 

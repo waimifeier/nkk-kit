@@ -62,6 +62,7 @@ public class FlowHisTask extends FlowTask {
         his.setRemindRepeat(task.getRemindRepeat());
         his.setTermMode(task.getTermMode());
         his.setViewed(task.getViewed());
+        his.setUrgeTime(task.getUrgeTime());
         his.setTaskState(state.value());
         his.setFinishTime(new Date());
         if (task.getCreateTime() != null) {

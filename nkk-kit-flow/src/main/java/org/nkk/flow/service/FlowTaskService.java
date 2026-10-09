@@ -98,6 +98,24 @@ public interface FlowTaskService {
 
     boolean changeTaskActor(Long taskId, FlowTaskActor actor);
 
+    /**
+     * 催办任务：由发起人触发，向当前待办人发送催办通知，受催办频率限制。
+     *
+     * @param taskId 任务 ID
+     * @param creator 催办操作人（须为流程发起人）
+     * @return true 表示催办成功
+     */
+    boolean urgeTask(Long taskId, FlowCreator creator);
+
+    /**
+     * 判断当前任务是否可催办。
+     *
+     * @param taskId 任务 ID
+     * @param creator 当前操作人
+     * @return true 表示可催办
+     */
+    boolean urgeAble(Long taskId, FlowCreator creator);
+
     boolean cascadeRemoveByInstanceIds(List<Long> instanceIds);
 
     FlowTaskActor isAllowed(FlowTask task, FlowCreator creator);

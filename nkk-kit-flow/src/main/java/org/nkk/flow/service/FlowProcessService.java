@@ -71,12 +71,12 @@ public interface FlowProcessService {
      * @param processName 流程名称，模糊匹配，为空不过滤
      * @param processKey  流程 key，精确匹配，为空不过滤
      * @param processType 流程分类，精确匹配，为空不过滤
-     * @param processState 流程状态，精确匹配，为空不过滤
+     * @param processState 流程状态列表（多值 IN 查询），为空不过滤
      * @param formSourceType 表单来源类型（form/business），精确匹配，为空不过滤
      * @return 流程定义分页结果
      */
     PageResult<FlowProcess> pageProcesses(long current, long size, String tenantId, String processName,
-                                          String processKey, String processType, Integer processState,
+                                          String processKey, String processType, List<Integer> processState,
                                           String formSourceType);
 
     /**

@@ -491,6 +491,90 @@ public class FlowTaskServiceImpl implements FlowTaskService {
     }
 
     @Override
+    public boolean urgeTask(Long taskId, FlowCreator creator) {
+        FlowTask task = taskDao.selectById(taskId);
+        if (task == null) {
+            throw new IllegalArgumentException("任务不存在，taskId=" + taskId);
+        }
+        org.nkk.flow.entity.FlowInstance instance = context.getQueryService().getInstance(task.getInstanceId());
+        if (instance == null) {
+            throw new FlowException("流程实例不存在，instanceId=" + task.getInstanceId());
+        }
+        // 仅流程发起人可催办
+        if (context.getInstanceAccessStrategy() != null
+                && !context.getInstanceAccessStrategy().isAllowed(creator, instance, null,
+                        org.nkk.flow.enums.runtime.FlowInstanceOperateEnum.URGE)) {
+            throw new FlowException("当前用户无权催办，仅流程发起人可催办，taskId=" + taskId);
+        }
+        // 催办频率限制：读取节点配置的 remindInterval
+        Double remindInterval = resolveRemindInterval(task.getInstanceId(), task.getTaskKey());
+        if (remindInterval != null && remindInterval > 0 && task.getUrgeTime() != null) {
+            long nextUrgeTime = task.getUrgeTime().getTime() + (long) (remindInterval * 3600_000L);
+            if (System.currentTimeMillis() < nextUrgeTime) {
+                throw new FlowException("催办过于频繁，请 " + remindInterval + " 小时后再催办，taskId=" + taskId);
+            }
+        }
+        task.setUrgeTime(new Date());
+        taskDao.updateById(task);
+        // 发布催办事件
+        List<FlowTaskActor> actors = taskActorDao.selectListByTaskId(taskId);
+        FlowNodeModel nodeModel = context.getRuntimeService()
+                .getProcessModelByInstanceId(task.getInstanceId()).getNode(task.getTaskKey());
+        notifyTask(FlowEventTypeEnum.TASK_URGED, task, actors, nodeModel, creator);
+        return true;
+    }
+
+    @Override
+    public boolean urgeAble(Long taskId, FlowCreator creator) {
+        FlowTask task = taskDao.selectById(taskId);
+        if (task == null) {
+            return false;
+        }
+        org.nkk.flow.entity.FlowInstance instance = context.getQueryService().getInstance(task.getInstanceId());
+        if (instance == null) {
+            return false;
+        }
+        // 仅流程发起人可催办
+        if (context.getInstanceAccessStrategy() != null
+                && !context.getInstanceAccessStrategy().isAllowed(creator, instance, null,
+                        org.nkk.flow.enums.runtime.FlowInstanceOperateEnum.URGE)) {
+            return false;
+        }
+        // 任务必须已超时才可催办：
+        // - remindTime 非空且已到期 → 超时未自动提醒
+        // - remindTime 为空且 remindRepeat=1 → 已自动提醒过，确属超时
+        // - 其他情况（remindTime 未到期或未配置提醒）→ 不可催办
+        boolean overdue;
+        if (task.getRemindTime() != null) {
+            overdue = !task.getRemindTime().after(new java.util.Date());
+        } else {
+            overdue = task.getRemindRepeat() != null && task.getRemindRepeat() == 1;
+        }
+        if (!overdue) {
+            return false;
+        }
+        // 催办频率限制
+        Double remindInterval = resolveRemindInterval(task.getInstanceId(), task.getTaskKey());
+        if (remindInterval != null && remindInterval > 0 && task.getUrgeTime() != null) {
+            long nextUrgeTime = task.getUrgeTime().getTime() + (long) (remindInterval * 3600_000L);
+            return System.currentTimeMillis() >= nextUrgeTime;
+        }
+        return true;
+    }
+
+    private Double resolveRemindInterval(Long instanceId, String taskKey) {
+        try {
+            org.nkk.flow.model.node.FlowNodeModel node = context.getRuntimeService()
+                    .getProcessModelByInstanceId(instanceId).getNode(taskKey);
+            if (node instanceof ApprovalNodeModel) {
+                return ((ApprovalNodeModel) node).getRemindInterval();
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
+    @Override
     public boolean cascadeRemoveByInstanceIds(List<Long> instanceIds) {
         if (instanceIds == null || instanceIds.isEmpty()) {
             return true;
@@ -634,13 +718,11 @@ public class FlowTaskServiceImpl implements FlowTaskService {
             calendar.add(Calendar.HOUR, approval.getTerm());
             task.setExpireTime(calendar.getTime());
         }
-        if (Boolean.TRUE.equals(approval.getRemind()) && approval.getExtendConfig() != null) {
-            Object remindMinutes = approval.getExtendConfig().get("remindMinutes");
-            if (remindMinutes instanceof Number) {
-                Calendar calendar = Calendar.getInstance();
-                calendar.add(Calendar.MINUTE, ((Number) remindMinutes).intValue());
-                task.setRemindTime(calendar.getTime());
-            }
+        // 自动提醒：以 remindTerm（小时）为触发时间点，到达后仅触发一次
+        if (Boolean.TRUE.equals(approval.getRemind()) && approval.getRemindTerm() != null
+                && approval.getRemindTerm() > 0) {
+            long remindMillis = (long) (approval.getRemindTerm() * 3600_000L);
+            task.setRemindTime(new Date(System.currentTimeMillis() + remindMillis));
         }
     }
 
@@ -696,6 +778,11 @@ public class FlowTaskServiceImpl implements FlowTaskService {
         task.setPerformType(source.getPerformType());
         task.setActionUrl(source.getActionUrl());
         task.setVariable(source.getVariable());
+        // 调度配置：提醒时间、重复标记、期限模式、到期时间需随分支任务复制
+        task.setRemindTime(source.getRemindTime());
+        task.setRemindRepeat(source.getRemindRepeat());
+        task.setTermMode(source.getTermMode());
+        task.setExpireTime(source.getExpireTime());
         return task;
     }
 

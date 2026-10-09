@@ -126,6 +126,7 @@ CREATE TABLE flow_task
     remind_repeat   INT          NOT NULL DEFAULT 0,
     term_mode       TINYINT,
     viewed          TINYINT      NOT NULL DEFAULT 0,
+    urge_time       TIMESTAMP,
     PRIMARY KEY (id)
 );
 
@@ -156,6 +157,7 @@ CREATE TABLE flow_his_task
     remind_repeat   INT          NOT NULL DEFAULT 0,
     term_mode       TINYINT,
     viewed          TINYINT      NOT NULL DEFAULT 0,
+    urge_time       TIMESTAMP,
     finish_time     TIMESTAMP,
     task_state      TINYINT      NOT NULL DEFAULT 0,
     duration        BIGINT,

@@ -21,6 +21,7 @@ import org.nkk.flow.enums.core.FlowInstanceEnum.InstanceState;
 import org.nkk.flow.enums.core.FlowTaskEnum.TaskState;
 import org.nkk.flow.exception.FlowException;
 import org.nkk.flow.model.node.FlowNodeModel;
+import org.nkk.flow.model.node.task.ApprovalNodeModel;
 import org.nkk.flow.model.FlowProcessModel;
 import org.nkk.flow.service.FlowRuntimeService;
 import org.nkk.flow.service.FlowTaskService;
@@ -210,7 +211,26 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
     public boolean revoke(Long instanceId, FlowTask currentTask, FlowCreator creator) {
         assertInstanceOperationAllowed(instanceId, creator, FlowInstanceOperateEnum.REVOKE,
                 "当前用户无权撤回流程");
+        assertRevokeAllowedByNode(instanceId);
         return finishInstance(instanceId, currentTask, creator, InstanceState.REVOKED, TaskState.REVOKED);
+    }
+
+    /**
+     * 节点级撤回开关校验：实例任一活动节点为审批节点且 {@code allowRevoke} 显式为 false 时禁止撤回。
+     * allowRevoke 默认 true，仅显式配置 false 时拦截。
+     */
+    private void assertRevokeAllowedByNode(Long instanceId) {
+        List<FlowTask> tasks = taskDao.selectListByInstanceId(instanceId);
+        if (tasks == null || tasks.isEmpty()) {
+            return;
+        }
+        for (FlowTask task : tasks) {
+            FlowNodeModel node = getProcessModelByInstanceId(instanceId).getNode(task.getTaskKey());
+            if (node instanceof ApprovalNodeModel
+                    && Boolean.FALSE.equals(((ApprovalNodeModel) node).getAllowRevoke())) {
+                throw new FlowException("当前节点不允许撤回流程，nodeKey=" + task.getTaskKey());
+            }
+        }
     }
 
     @Override

@@ -69,7 +69,8 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
         return context;
     }
 
-    private FlowCreator resolveCreator(FlowCreator creator) {
+    @Override
+    public FlowCreator resolveCreator(FlowCreator creator) {
         return context.resolveCreator(creator);
     }
 
@@ -294,11 +295,13 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
         Date current = now == null ? new Date() : now;
         List<FlowTask> tasks = queryService().getTimeoutOrRemindTasks(current);
         for (FlowTask task : tasks) {
-            if (task.getRemindTime() != null && !task.getRemindTime().after(current)) {
+            // 自动提醒：仅触发一次（remindTime 非空且已到时间，触发后置空，不再重复）
+            if (task.getRemindTime() != null && !task.getRemindTime().after(current)
+                    && (task.getRemindRepeat() == null || task.getRemindRepeat() == 0)) {
                 if (context.getTaskReminder() != null) {
                     context.getTaskReminder().remind(task);
                 }
-                task.setRemindRepeat(task.getRemindRepeat() == null ? 1 : task.getRemindRepeat() + 1);
+                task.setRemindRepeat(1);
                 task.setRemindTime(null);
                 taskService().updateTask(task);
                 if (context.getTaskListener() != null) {

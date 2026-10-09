@@ -87,8 +87,22 @@ public class FlowDesignerTodoService {
 
         Map<Long, FlowProcess> processMap = batchFetchProcesses(result.getRecords());
         List<FlowTodoRecordResponse> records = new ArrayList<>(result.getRecords().size());
+        // 批量查询活动任务（用于超时标记）
+        List<Long> instanceIds = result.getRecords().stream().map(FlowHisInstance::getId).collect(Collectors.toList());
+        Map<Long, FlowTask> activeTaskMap = new LinkedHashMap<>();
+        for (Long iid : instanceIds) {
+            List<FlowTask> activeTasks = taskDao.selectListByInstanceId(iid);
+            if (CollUtil.isNotEmpty(activeTasks)) {
+                activeTaskMap.put(iid, activeTasks.get(0));
+            }
+        }
         for (FlowHisInstance instance : result.getRecords()) {
-            records.add(baseRecord(instance, processMap));
+            FlowTodoRecordResponse record = baseRecord(instance, processMap);
+            FlowTask activeTask = activeTaskMap.get(instance.getId());
+            if (activeTask != null) {
+                record.setTask(toTaskData(activeTask));
+            }
+            records.add(record);
         }
         return PageResult.of(result.getTotal(), result.getCurrent(), result.getSize(), records);
     }
@@ -405,6 +419,7 @@ public class FlowDesignerTodoService {
         td.setTaskType(task.getTaskType());
         td.setTaskCreateTime(task.getCreateTime());
         td.setViewed(task.getViewed());
+        td.setOverdue(isOverdue(task));
         return td;
     }
 
@@ -416,7 +431,23 @@ public class FlowDesignerTodoService {
         td.setTaskType(task.getTaskType());
         td.setTaskCreateTime(task.getCreateTime());
         td.setViewed(task.getViewed());
+        td.setOverdue(isOverdue(task));
         return td;
+    }
+
+    private boolean isOverdue(FlowTask task) {
+        // remindTime 非空且已到期 → 超时未提醒；remindTime 已置空但 remindRepeat=1 → 已提醒过，确属超时
+        if (task.getRemindTime() != null) {
+            return !task.getRemindTime().after(new Date());
+        }
+        return task.getRemindRepeat() != null && task.getRemindRepeat() == 1;
+    }
+
+    private boolean isOverdue(FlowHisTask task) {
+        if (task.getRemindTime() != null) {
+            return !task.getRemindTime().after(new Date());
+        }
+        return task.getRemindRepeat() != null && task.getRemindRepeat() == 1;
     }
 
     private FlowTodoRecordResponse recordWithTask(FlowHisInstance instance, FlowTask task,

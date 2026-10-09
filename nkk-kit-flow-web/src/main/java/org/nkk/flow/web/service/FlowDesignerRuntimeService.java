@@ -119,7 +119,9 @@ public class FlowDesignerRuntimeService {
         if (instanceId == null) {
             throw new IllegalArgumentException("流程实例 ID 不能为空");
         }
-        return runtimeResponse(instanceId);
+        FlowRuntimeResponse response = runtimeResponse(instanceId);
+        response.setPermissions(buildPermissions(instanceId, response));
+        return response;
     }
 
     public List<FlowTask> tasks(Long instanceId) {
@@ -292,6 +294,24 @@ public class FlowDesignerRuntimeService {
         assertHisInstanceState(task.getInstanceId(), InstanceState.ACTIVE, "只有审批中的流程才能终止");
         flowEngine.terminateByTask(taskId, null, variables(request == null ? null : request.getVariables()));
         return detail(task.getInstanceId());
+    }
+
+    /**
+     * 催办任务（仅流程发起人）。
+     */
+    public void urge(Long taskId) {
+        FlowTask task = task(taskId);
+        if (!flowEngine.urgeAble(taskId, null)) {
+            throw new FlowException("当前任务不可催办（非发起人或催办间隔未到），taskId=" + taskId);
+        }
+        flowEngine.urgeTask(taskId, null);
+    }
+
+    /**
+     * 查询任务是否可催办。
+     */
+    public boolean urgeAble(Long taskId) {
+        return flowEngine.urgeAble(taskId, null);
     }
 
     public FlowRuntimeResponse revoke(Long instanceId) {
@@ -814,6 +834,94 @@ public class FlowDesignerRuntimeService {
         return "sign_" + UUID.randomUUID().toString().replace("-", "");
     }
 
+    /**
+     * 计算当前请求人对该实例的操作权限。
+     *
+     * <p>复用已有 {@link #nodeOperationAllowed} 判断节点级权限，
+     * 复用 {@link NkkFlowEngine#urgeAble} 判断催办权限。
+     * canRevoke 由节点 allowRevoke 开关与发起人身份共同决定。</p>
+     */
+    private FlowRuntimeResponse.Permissions buildPermissions(Long instanceId, FlowRuntimeResponse response) {
+        FlowRuntimeResponse.Permissions perms = new FlowRuntimeResponse.Permissions();
+        // 默认全 false
+        perms.setIsInitiator(false);
+        perms.setCanRevoke(false);
+        perms.setCanUrge(false);
+        perms.setCanApprove(false);
+        perms.setCanTransfer(false);
+        perms.setCanAppendNode(false);
+        perms.setCanRollback(false);
+        perms.setCanCc(false);
+
+        FlowCreator creator;
+        try {
+            creator = flowEngine.resolveCreator(null);
+        } catch (Exception e) {
+            // 未配置 FlowCreatorProvider 或未登录，返回全 false
+            return perms;
+        }
+
+        // isInitiator
+        boolean initiator = creator.getCreateId() != null
+                && creator.getCreateId().equals(response.getCreateId());
+        perms.setIsInitiator(initiator);
+
+        // 非审批中（instanceState != 0）时权限全 false
+        Integer state = response.getInstanceState();
+        boolean inProgress = state != null && state == InstanceState.ACTIVE.value();
+        if (!inProgress) {
+            return perms;
+        }
+
+        // 活动任务 + 参与人
+        List<FlowRuntimeResponse.Task> responseTasks = response.getTask();
+        if (responseTasks == null || responseTasks.isEmpty()) {
+            return perms;
+        }
+        FlowRuntimeResponse.Task firstTask = responseTasks.get(0);
+
+        // canApprove：当前用户是否是活动任务参与人
+        boolean canApprove = false;
+        if (firstTask.getActors() != null) {
+            canApprove = firstTask.getActors().stream()
+                    .anyMatch(a -> a.getActorId() != null
+                            && a.getActorId().equals(creator.getCreateId()));
+        }
+        perms.setCanApprove(canApprove);
+
+        // canUrge：复用引擎 urgeAble（发起人 + 超时 + 催办间隔校验）
+        if (firstTask.getTaskId() != null) {
+            try {
+                perms.setCanUrge(flowEngine.urgeAble(firstTask.getTaskId(), creator));
+            } catch (Exception e) {
+                // urgeAble 内部异常时保持 false
+            }
+        }
+
+        // 节点级权限：取当前任务节点模型
+        FlowTask flowTask = flowEngine.queryService().getTask(firstTask.getTaskId());
+        if (flowTask != null) {
+            try {
+                FlowNodeModel node = currentTaskNode(flowTask);
+                if (node instanceof ApprovalNodeModel) {
+                    perms.setCanTransfer(nodeOperationAllowed(node, NodeOperation.TRANSFER));
+                    perms.setCanAppendNode(nodeOperationAllowed(node, NodeOperation.APPEND_NODE));
+                    perms.setCanRollback(nodeOperationAllowed(node, NodeOperation.ROLLBACK));
+                    // allowCc 默认 true，仅显式 false 时禁止
+                    Boolean ccAllowed = nodeOperationAllowed(node, NodeOperation.CC);
+                    perms.setCanCc(ccAllowed == null ? true : ccAllowed);
+                    // canRevoke：节点 allowRevoke 显式为 true 且当前登录人是流程发起人
+                    Boolean revokeAllowed = nodeOperationAllowed(node, NodeOperation.REVOKE);
+                    perms.setCanRevoke(Boolean.TRUE.equals(revokeAllowed) && initiator);
+                }
+            } catch (Exception e) {
+                // 节点模型获取失败时节点级权限保持 false
+            }
+        }
+
+        return perms;
+    }
+
     private void assertNodeOperationAllowed(FlowTask task, NodeOperation operation) {
         FlowNodeModel node = currentTaskNode(task);
         if (!FlowNodeTypeEnum.APPROVAL.eq(node.getType())) {
@@ -855,6 +963,9 @@ public class FlowDesignerRuntimeService {
         if (operation == NodeOperation.CC) {
             return approvalNode.getAllowCc();
         }
+        if (operation == NodeOperation.REVOKE) {
+            return approvalNode.getAllowRevoke();
+        }
         return null;
     }
 
@@ -862,7 +973,9 @@ public class FlowDesignerRuntimeService {
         TRANSFER("审批转交"),
         APPEND_NODE("审批加签/减签"),
         ROLLBACK("审批回退"),
-        CC("手动抄送");
+        URGE("催办"),
+        CC("手动抄送"),
+        REVOKE("撤回流程");
 
         private final String label;
 

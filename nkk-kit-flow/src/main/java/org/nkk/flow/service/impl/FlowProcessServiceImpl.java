@@ -225,7 +225,7 @@ public class FlowProcessServiceImpl implements FlowProcessService {
 
     @Override
     public PageResult<FlowProcess> pageProcesses(long current, long size, String tenantId, String processName,
-                                                 String processKey, String processType, Integer processState,
+                                                 String processKey, String processType, List<Integer> processState,
                                                  String formSourceType) {
         if (current < 1) {
             throw new IllegalArgumentException("页码不能小于 1");

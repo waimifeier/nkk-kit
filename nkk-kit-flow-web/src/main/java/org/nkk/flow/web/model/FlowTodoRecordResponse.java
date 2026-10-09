@@ -148,5 +148,10 @@ public class FlowTodoRecordResponse implements Serializable {
          * 抄送任务是否已阅，0 未阅，1 已阅。
          */
         private Integer viewed;
+
+        /**
+         * 任务是否已超时（remindTime 已到）。
+         */
+        private Boolean overdue;
     }
 }

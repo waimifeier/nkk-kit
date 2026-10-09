@@ -74,14 +74,14 @@ public class FlowProcessDaoMybatisPlusImpl implements FlowProcessDao {
 
     @Override
     public IPage<FlowProcess> selectPage(IPage<FlowProcess> page, String tenantId, String processName,
-                                         String processKey, String processType, Integer processState,
+                                         String processKey, String processType, List<Integer> processState,
                                          String formSourceType) {
         QueryWrapper<FlowProcess> wrapper = new QueryWrapper<>();
         appendTenantCondition(wrapper, tenantId);
         wrapper.like(StrUtil.isNotBlank(processName), "process_name", StrUtil.trim(processName));
         wrapper.eq(StrUtil.isNotBlank(processKey), "process_key", StrUtil.trim(processKey));
         wrapper.eq(StrUtil.isNotBlank(processType), "process_type", StrUtil.trim(processType));
-        wrapper.eq(processState != null, "process_state", processState);
+        wrapper.in(CollUtil.isNotEmpty(processState), "process_state", processState);
         wrapper.eq(StrUtil.isNotBlank(formSourceType), "form_source_type", StrUtil.trim(formSourceType));
         wrapper.orderByAsc("process_type");
         wrapper.orderByAsc("sort");

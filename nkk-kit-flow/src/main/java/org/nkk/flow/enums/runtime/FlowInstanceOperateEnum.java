@@ -19,7 +19,8 @@ public enum FlowInstanceOperateEnum implements IEnum<Integer> {
     ACTIVE(4, "激活流程"),
     DESTROY(5, "作废流程"),
     TIMEOUT(6, "超时结束流程"),
-    REJECT(7, "拒绝结束流程");
+    REJECT(7, "拒绝结束流程"),
+    URGE(8, "催办流程");
 
     private final Integer value;
     private final String label;

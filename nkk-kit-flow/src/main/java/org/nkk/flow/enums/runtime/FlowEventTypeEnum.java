@@ -36,6 +36,7 @@ public enum FlowEventTypeEnum implements IEnum<Integer> {
     TASK_TIMEOUT(23, "任务已超时"),
     TASK_TRIGGERED(24, "任务已触发"),
     TASK_JUMPED(25, "任务已跳转"),
+    TASK_URGED(26, "任务已催办"),
     TASK_TRIGGER_JUMPED(27, "任务已触发跳转"),
     TASK_AUTO_COMPLETED(28, "任务已自动完成"),
     TASK_AUTO_REJECTED(29, "任务已自动拒绝"),

@@ -67,7 +67,8 @@ public class FlowDesignerProcessController {
      *     <li>{@code processName}：流程名称，模糊匹配，可选</li>
      *     <li>{@code processKey}：流程 key，精确匹配，可选</li>
      *     <li>{@code processType}：流程分类，精确匹配，可选</li>
-     *     <li>{@code processState}：流程状态，可选；示例值：{@code 1}（启用）</li>
+     *     <li>{@code processState}：流程状态，支持多值（{@code processState=-1&processState=1} 或逗号分隔
+     *          {@code processState=-1,1}），可选；示例值：{@code -1,1}（草稿+启用）</li>
      *     <li>{@code formSourceType}：表单来源类型，可选；示例值：{@code form}（自定义表单）、{@code business}（业务表单）</li>
      * </ul>
      *

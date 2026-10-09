@@ -103,6 +103,11 @@ public class FlowTask extends FlowEntity {
     private Integer viewed = 0;
 
     /**
+     * 最近一次催办时间。
+     */
+    private java.util.Date urgeTime;
+
+    /**
      * 将任务变量 JSON 转换为 Map。
      *
      * @return 任务变量 Map
