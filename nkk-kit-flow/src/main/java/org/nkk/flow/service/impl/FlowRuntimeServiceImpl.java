@@ -116,9 +116,6 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
         boolean updated = extInstanceDao.updateById(ext);
         processModel.buildParentNode();
         context.cacheProcessModel(modelCacheKey(instanceId), processModel);
-        if (updated) {
-            notifyInstance(FlowEventTypeEnum.INSTANCE_MODEL_UPDATED, instanceId, null, context.getSystemCreator());
-        }
         return updated;
     }
 
@@ -134,7 +131,6 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
                 : model.getNodeConfig().insertAfter(task.getTaskKey(), nodeModel);
         if (changed) {
             updateInstanceModelById(task.getInstanceId(), model);
-            notifyInstance(FlowEventTypeEnum.INSTANCE_NODE_APPENDED, task.getInstanceId(), nodeModel, context.getSystemCreator());
         }
     }
 
@@ -150,9 +146,6 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
         }
         boolean removed = model.getNodeConfig().removeNode(nodeKey);
         boolean updated = removed && updateInstanceModelById(instanceId, model);
-        if (updated) {
-            notifyInstance(FlowEventTypeEnum.INSTANCE_NODE_REMOVED, instanceId, node, context.getSystemCreator());
-        }
         return updated;
     }
 
@@ -285,9 +278,6 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
         his.setId(instanceId);
         his.setVariable(update.getVariable());
         hisInstanceDao.updateById(his);
-        if (updated) {
-            notifyInstance(FlowEventTypeEnum.INSTANCE_VARIABLE_UPDATED, instanceId, null, context.getSystemCreator());
-        }
         return updated;
     }
 

@@ -38,7 +38,7 @@ public class FlowInstanceRecordVO implements Serializable {
 
     /**
      * 审批状态，取值见 {@link org.nkk.flow.enums.core.FlowInstanceEnum.InstanceState}：
-     * {@code 0}=审批中、{@code 1}=审批通过、{@code 2}=审批驳回、{@code 3}=已撤销 等。
+     * {@code 0}=审批中、{@code 1}=审批通过、{@code 2}=审批驳回、{@code 3}=已撤回 等。
      */
     private Integer instanceState;
 

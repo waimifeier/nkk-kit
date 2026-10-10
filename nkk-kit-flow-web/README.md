@@ -627,16 +627,14 @@ public class OrderApprovalCallback implements FlowApprovalCallbackHandler {
 | `return "purchase-order".equals(processKey) \|\| "leave".equals(processKey);` | 处理多个流程 | 一个 Service 管理多种业务单据 |
 | `return true;`（默认） | 接收所有回调 | 单 Handler 内部按 processKey 分发 |
 
-回调方法列表：
+回调方法列表（仅实例状态回写，任务级/过程级事件请直接监听引擎 Spring 事件 `NkkFlowInstanceEvent` / `NkkFlowTaskEvent`）：
 
-| 方法 | 触发时机 |
-| --- | --- |
-| `onInstanceStart(instance, variables)` | 流程实例发起后 |
-| `onInstanceComplete(instance)` | 审批通过 |
-| `onInstanceReject(instance)` | 审批拒绝 |
-| `onInstanceRevoke(instance)` | 发起人撤回 |
-| `onInstanceTerminate(instance)` | 超时/强制终止 |
-| `onTaskComplete(task, actors)` | 任务完成（通过/拒绝/转交等） |
-| `onTaskCreate(task, actors)` | 任务创建 |
+| 方法 | 触发时机 | 对标飞书 |
+| --- | --- | --- |
+| `onInstanceStart(instance, variables)` | 流程实例发起后 | START |
+| `onInstanceComplete(instance)` | 审批通过 | APPROVED |
+| `onInstanceReject(instance)` | 审批拒绝 | REJECTED |
+| `onInstanceRevoke(instance)` | 发起人撤回 | CANCELED |
+| `onInstanceTerminate(instance)` | 强制终止/超时/作废/级联删除 | TERMINATED/DELETED |
 
 可以有多个 Handler Bean，适配器会按 order 值从小到大逐个触发。某个 Handler 抛异常只会打印 ERROR 日志，不影响其他 Handler 和主流程。

@@ -148,8 +148,8 @@ public class NkkFlowAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(prefix = "flow.eventing", name = "task", havingValue = "true")
-    public FlowTaskListener springFlowTaskListener(ApplicationEventPublisher publisher) {
-        return new SpringFlowTaskListener(publisher);
+    public FlowTaskListener springFlowTaskListener(ApplicationEventPublisher publisher, FlowQueryService queryService) {
+        return new SpringFlowTaskListener(publisher, queryService);
     }
 
     @Bean

@@ -9,6 +9,7 @@ import org.nkk.flow.web.extension.annotation.FlowApproval;
 import org.nkk.flow.web.extension.annotation.FlowApproval.ReturnCondition;
 import org.nkk.flow.web.extension.annotation.FlowBusinessKey;
 import org.nkk.flow.web.extension.annotation.FlowVariables;
+import org.nkk.flow.exception.FlowException;
 import org.nkk.flow.web.model.FlowRuntimeResponse;
 import org.nkk.flow.web.model.FlowStartProcessRequest;
 import org.nkk.flow.web.service.FlowDesignerRuntimeService;
@@ -23,6 +24,7 @@ import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * {@link FlowApproval} 自动发起审批切面。
@@ -135,15 +137,28 @@ public class FlowApprovalAutoStartAspect {
         // 1. 优先取 @FlowVariables 标注的 Map 参数
         Object variablesArg = findAnnotatedArg(pjp, FlowVariables.class);
         if (variablesArg instanceof Map) {
-            return new LinkedHashMap<>((Map<String, Object>) variablesArg);
+            return filterNullValues(new LinkedHashMap<>((Map<String, Object>) variablesArg));
         }
 
-        // 2. 从返回值的 JavaBean 属性中收集
-        if (result != null && !(result instanceof Map)) {
+        // 2. 返回值为 Map 时直接作为流程变量（业务 Service 转 Map 返回的常见场景）
+        if (result instanceof Map) {
+            return filterNullValues(new LinkedHashMap<>((Map<String, Object>) result));
+        }
+
+        // 3. 从返回值的 JavaBean 属性中收集（collectProperties 已过滤 null）
+        if (result != null) {
             return collectProperties(result);
         }
 
         return Collections.emptyMap();
+    }
+
+    /**
+     * 过滤 Map 中的 null 值，只保留有值的字段作为流程变量。
+     */
+    private Map<String, Object> filterNullValues(Map<String, Object> map) {
+        map.values().removeIf(Objects::isNull);
+        return map;
     }
 
     private Object findAnnotatedArg(ProceedingJoinPoint pjp, Class<? extends java.lang.annotation.Annotation> annotationType) {
@@ -192,7 +207,13 @@ public class FlowApprovalAutoStartAspect {
                 }
                 Object value = pd.getReadMethod().invoke(target);
                 if (value != null) {
-                    result.put(pd.getName(), value);
+                    String name = pd.getName();
+                    result.put(name, value);
+                    // 同时注册下划线格式别名（orderCode → order_code），兼容数据库字段名写法
+                    String snake = toSnakeCase(name);
+                    if (!snake.equals(name)) {
+                        result.put(snake, value);
+                    }
                 }
             }
         } catch (Exception ignored) {
@@ -201,11 +222,54 @@ public class FlowApprovalAutoStartAspect {
         if (target instanceof Map) {
             for (Map.Entry<?, ?> entry : ((Map<?, ?>) target).entrySet()) {
                 if (entry.getKey() != null && entry.getValue() != null) {
-                    result.put(String.valueOf(entry.getKey()), entry.getValue());
+                    String key = String.valueOf(entry.getKey());
+                    result.put(key, entry.getValue());
+                    // Map 也注册驼峰别名（order_code → orderCode），兼容实体类属性名写法
+                    String camel = toCamelCase(key);
+                    if (!camel.equals(key)) {
+                        result.put(camel, entry.getValue());
+                    }
                 }
             }
         }
         return result;
+    }
+
+    /**
+     * 驼峰转下划线：orderCode → order_code
+     */
+    private static String toSnakeCase(String camel) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < camel.length(); i++) {
+            char c = camel.charAt(i);
+            if (Character.isUpperCase(c)) {
+                if (i > 0) sb.append('_');
+                sb.append(Character.toLowerCase(c));
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
+     * 下划线转驼峰：order_code → orderCode
+     */
+    private static String toCamelCase(String snake) {
+        StringBuilder sb = new StringBuilder();
+        boolean upper = false;
+        for (int i = 0; i < snake.length(); i++) {
+            char c = snake.charAt(i);
+            if (c == '_') {
+                upper = true;
+            } else if (upper) {
+                sb.append(Character.toUpperCase(c));
+                upper = false;
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
     }
 
     private FlowStartProcessRequest buildStartRequest(FlowApproval annotation, String businessKey,
@@ -233,7 +297,12 @@ public class FlowApprovalAutoStartAspect {
         } catch (Exception e) {
             log.error("[FlowApproval] ❌ 自动发起审批失败，method={}, processKey={}, businessKey={}",
                     methodSignature, request.getProcessKey(), request.getBusinessKey(), e);
-            // 不重新抛出，避免影响业务方法的正常返回
+            // 发起失败必须向上抛出，让调用方同步感知，避免「业务已保存、审批未发起」的静默不一致：
+            // - 事务内同步发起（afterCommit=false）：异常传播导致业务事务回滚，业务与审批强一致；
+            // - 事务提交后发起（afterCommit=true）：业务数据已提交无法回滚，但接口报错可驱动业务侧补偿重试。
+            throw new FlowException("[FlowApproval] 自动发起审批失败, method=" + methodSignature
+                    + ", processKey=" + request.getProcessKey()
+                    + ", businessKey=" + request.getBusinessKey(), e);
         }
     }
 }

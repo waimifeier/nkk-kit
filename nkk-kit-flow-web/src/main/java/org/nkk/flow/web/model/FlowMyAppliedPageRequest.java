@@ -20,7 +20,7 @@ public class FlowMyAppliedPageRequest extends BaseQuery implements Serializable 
 
     /**
      * 审批状态，可选；取值见 {@link org.nkk.flow.enums.core.FlowInstanceEnum.InstanceState}：
-     * 0-审批中、1-审批通过、2-审批拒绝、3-已撤销；不传表示查询全部状态。
+     * 0-审批中、1-审批通过、2-审批拒绝、3-已撤回；不传表示查询全部状态。
      */
     private Integer instanceState;
 

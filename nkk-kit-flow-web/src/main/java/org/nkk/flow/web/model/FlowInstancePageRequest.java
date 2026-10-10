@@ -36,7 +36,7 @@ public class FlowInstancePageRequest extends BaseQuery implements Serializable {
 
     /**
      * 实例状态，精确匹配，取值见 {@link org.nkk.flow.enums.core.FlowInstanceEnum.InstanceState}：
-     * 0-审批中、1-审批通过、2-审批驳回、3-已撤销。为空时不过滤。
+     * 0-审批中、1-审批通过、2-审批驳回、3-已撤回。为空时不过滤。
      */
     private Integer instanceState;
 

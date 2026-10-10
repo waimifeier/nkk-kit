@@ -2,8 +2,6 @@ package org.nkk.flow.example.support.form;
 
 import cn.hutool.core.util.IdUtil;
 import org.nkk.flow.entity.FlowHisInstance;
-import org.nkk.flow.entity.FlowHisTask;
-import org.nkk.flow.entity.FlowHisTaskActor;
 import org.nkk.flow.web.extension.FlowApprovalCallbackHandler;
 import org.nkk.flow.web.extension.annotation.FlowApproval;
 import org.nkk.flow.web.extension.annotation.FlowApproval.ReturnCondition;
@@ -15,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -157,11 +154,6 @@ public class DemoOrderService implements FlowApprovalCallbackHandler {
         updateFlowInfo(instance.getBusinessKey(), null, "TERMINATED");
         log.info("🛑 [审批回调] 终止/超时: processKey={}, businessKey={}, state={}",
                 instance.getProcessKey(), instance.getBusinessKey(), instance.getInstanceState());
-    }
-
-    @Override
-    public void onTaskComplete(FlowHisTask task, List<FlowHisTaskActor> actors) {
-        log.info("📝 [审批回调] 任务完成: taskName={}, opinion={}", task.getTaskName(), task.getOpinion());
     }
 
     /**

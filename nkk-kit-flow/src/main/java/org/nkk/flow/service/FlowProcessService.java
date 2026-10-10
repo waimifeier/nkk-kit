@@ -92,7 +92,7 @@ public interface FlowProcessService {
      * @param endTime      发起结束时间（提交时间上限，含），为空不过滤
      * @param instanceState 实例状态，精确匹配，为空不过滤；取值见
      *                      {@link org.nkk.flow.enums.core.FlowInstanceEnum.InstanceState}：
-     *                      0-审批中、1-审批通过、2-审批驳回、3-已撤销
+     *                      0-审批中、1-审批通过、2-审批驳回、3-已撤回
      * @param instanceId   实例 ID，精确匹配，为空不过滤
      * @return 流程实例分页结果，每条记录含流程名称
      */

@@ -24,7 +24,7 @@ public final class FlowInstanceEnum {
         ACTIVE(0, "审批中"),
         COMPLETED(1, "审批通过"),
         REJECTED(2, "审批拒绝"),
-        REVOKED(3, "已撤销"),
+        REVOKED(3, "已撤回"),
         TIMEOUT(4, "超时结束"),
         TERMINATED(5, "强制终止"),
         AUTO_PASS(6, "自动通过"),

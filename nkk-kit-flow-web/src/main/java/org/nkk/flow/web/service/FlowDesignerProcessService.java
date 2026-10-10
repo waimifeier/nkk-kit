@@ -2,6 +2,7 @@ package org.nkk.flow.web.service;
 
 import cn.hutool.core.util.StrUtil;
 import org.nkk.core.beans.common.PageResult;
+import org.nkk.flow.autoconfigure.NkkFlowProperties;
 import org.nkk.flow.core.context.FlowContext;
 import org.nkk.flow.core.context.FlowCreator;
 import org.nkk.flow.core.extension.identity.FlowCreatorProvider;
@@ -44,9 +45,13 @@ public class FlowDesignerProcessService {
 
     private final FlowCreatorProvider creatorProvider;
 
-    public FlowDesignerProcessService(NkkFlowEngine flowEngine, FlowCreatorProvider creatorProvider) {
+    private final NkkFlowProperties properties;
+
+    public FlowDesignerProcessService(NkkFlowEngine flowEngine, FlowCreatorProvider creatorProvider,
+                                      NkkFlowProperties properties) {
         this.flowEngine = flowEngine;
         this.creatorProvider = creatorProvider;
+        this.properties = properties;
     }
 
     /**
@@ -65,7 +70,7 @@ public class FlowDesignerProcessService {
         }
         model.setKey(StrUtil.trim(request.getProcessKey()));
         model.setName(StrUtil.trim(request.getProcessName()));
-        model.setInstanceUrl(StrUtil.trimToNull(request.getInstanceUrl()));
+        model.setInstanceUrl(resolveInstanceUrl(request));
 
         FlowCreator creator = currentCreator();
         Long processId = flowEngine.processService().deploy(
@@ -80,7 +85,7 @@ public class FlowDesignerProcessService {
         update.setProcessIcon(StrUtil.trimToNull(request.getProcessIcon()));
         update.setProcessType(StrUtil.trimToNull(request.getProcessType()));
         update.setRemark(StrUtil.trimToNull(request.getRemark()));
-        update.setInstanceUrl(StrUtil.trimToNull(request.getInstanceUrl()));
+        update.setInstanceUrl(resolveInstanceUrl(request));
         update.setFormSourceType(StrUtil.trimToNull(request.getFormSourceType()));
         update.setFormId(request.getFormId());
         update.setFormKey(StrUtil.trimToNull(request.getFormKey()));
@@ -90,6 +95,24 @@ public class FlowDesignerProcessService {
         flowEngine.processService().updateProcessInfo(update);
 
         return flowEngine.processService().getProcessById(processId);
+    }
+
+    /**
+     * 解析实例详情页地址。
+     *
+     * <p>优先使用请求中显式传入的 instanceUrl（业务表单场景，前端从 bizForm.detailUrlTemplate 透传）；
+     * 当 formSourceType=form（自定义表单）且未传入 instanceUrl 时，回退到 yml 配置
+     * {@code flow.instance.form-url}；配置也未设置则返回 null。</p>
+     */
+    private String resolveInstanceUrl(FlowProcessPublishRequest request) {
+        String explicit = StrUtil.trimToNull(request.getInstanceUrl());
+        if (explicit != null) {
+            return explicit;
+        }
+        if ("form".equalsIgnoreCase(StrUtil.trim(request.getFormSourceType()))) {
+            return StrUtil.trimToNull(properties.getInstance().getFormUrl());
+        }
+        return null;
     }
 
     /**

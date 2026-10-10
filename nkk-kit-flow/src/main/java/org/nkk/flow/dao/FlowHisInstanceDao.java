@@ -40,7 +40,7 @@ public interface FlowHisInstanceDao {
      * @param endTime        发起结束时间（createTime 上限，含），为空不过滤
      * @param instanceState  实例状态，精确匹配，为空不过滤；取值见
      *                      {@link org.nkk.flow.enums.core.FlowInstanceEnum.InstanceState}：
-     *                      0-审批中、1-审批通过、2-审批驳回、3-已撤销
+     *                      0-审批中、1-审批通过、2-审批驳回、3-已撤回
      * @param instanceId     实例 ID，精确匹配，为空不过滤
      * @return 分页结果
      */
@@ -67,7 +67,7 @@ public interface FlowHisInstanceDao {
      *
      * @param page          分页参数
      * @param createId      发起人 ID（create_id），必填
-     * @param instanceState 审批状态，为空不过滤；0-审批中、1-审批通过、2-审批拒绝、3-已撤销
+     * @param instanceState 审批状态，为空不过滤；0-审批中、1-审批通过、2-审批拒绝、3-已撤回
      * @param startTime     发起时间下限（create_time，含），为空不过滤
      * @param endTime       发起时间上限（create_time，含），为空不过滤
      * @return 分页结果

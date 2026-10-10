@@ -1,5 +1,6 @@
 package org.nkk.flow.web.autoconfigure;
 
+import org.nkk.flow.autoconfigure.NkkFlowProperties;
 import org.nkk.flow.web.controller.FlowDesignerCategoryController;
 import org.nkk.flow.web.controller.FlowDesignerConfigController;
 import org.nkk.flow.web.controller.FlowDesignerOrgController;
@@ -114,8 +115,9 @@ public class NkkFlowWebAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public FlowDesignerProcessService flowDesignerProcessService(NkkFlowEngine flowEngine,
-                                                                 ObjectProvider<FlowCreatorProvider> creatorProvider) {
-        return new FlowDesignerProcessService(flowEngine, creatorProvider.getIfAvailable());
+                                                                 ObjectProvider<FlowCreatorProvider> creatorProvider,
+                                                                 NkkFlowProperties properties) {
+        return new FlowDesignerProcessService(flowEngine, creatorProvider.getIfAvailable(), properties);
     }
 
     @Bean

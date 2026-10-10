@@ -43,7 +43,7 @@ public class FlowDesignerTodoController {
      * <ul>
      *     <li>{@code current}：页码，从 1 开始，必填</li>
      *     <li>{@code size}：每页条数，必填</li>
-     *     <li>{@code instanceState}：审批状态，可选；0-审批中、1-审批通过、2-审批拒绝、3-已撤销；不传查全部</li>
+     *     <li>{@code instanceState}：审批状态，可选；0-审批中、1-审批通过、2-审批拒绝、3-已撤回；不传查全部</li>
      *     <li>{@code startTime}：发起时间下限（含），格式 yyyy-MM-dd HH:mm:ss，可选</li>
      *     <li>{@code endTime}：发起时间上限（含），格式 yyyy-MM-dd HH:mm:ss，可选</li>
      * </ul>

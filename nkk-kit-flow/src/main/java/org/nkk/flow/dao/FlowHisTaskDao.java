@@ -33,7 +33,7 @@ public interface FlowHisTaskDao {
     /**
      * 按审批人 ID 分页查询历史任务（审批记录）。
      *
-     * <p>本表（flow_his_task）不携带实例状态，需排除"实例已撤销/作废"等场景时，
+     * <p>本表（flow_his_task）不携带实例状态，需排除"实例已撤回/作废"等场景时，
      * 通过 {@code excludeInstanceStates} 触发对 flow_his_instance 的子查询过滤。
      *
      * @param page                  分页参数

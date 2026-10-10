@@ -1,18 +1,25 @@
 package org.nkk.flow.web.extension;
 
 import org.nkk.flow.entity.FlowHisInstance;
-import org.nkk.flow.entity.FlowHisTask;
-import org.nkk.flow.entity.FlowHisTaskActor;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 /**
- * 审批结果回调处理器 SPI。
+ * 审批结果回调处理器 SPI（仅实例状态回写）。
  *
- * <p>审批引擎在流程实例/任务的关键生命周期节点触发回调，
- * 业务系统可以通过实现此接口同步自己的状态。</p>
+ * <p>审批引擎在流程实例的关键生命周期节点触发回调，业务系统通过实现此接口
+ * 同步自己的单据状态（通过、拒绝、撤回、终止等）。</p>
+ *
+ * <h3>职责边界（与 Spring 事件通道分离）</h3>
+ * <p>本接口只承载<b>实例状态</b>回调，对标钉钉 {@code bpms_instance_change}
+ * （agree/refuse/terminate/cancel）与飞书审批实例事件
+ * （START/APPROVED/REJECTED/CANCELED/DELETED）的业务语义。</p>
+ * <ul>
+ *   <li><b>实例状态回写</b> → 实现本接口（业务系统更新业务单据状态）。</li>
+ *   <li><b>任务级/过程级事件</b>（任务创建、完成、催办、提醒、转办等）→ 不进本接口，
+ *       统一走引擎发布的 Spring 事件（{@code NkkFlowInstanceEvent}/{@code NkkFlowTaskEvent}），
+ *       由宿主公共监听器处理（消息通知、日志、待办等）。</li>
+ * </ul>
  *
  * <h3>多流程多 Handler 路由</h3>
  * <p>业务系统有 N 条不同流程时，可以注册 N 个 Handler Bean，每个 Handler 只处理自己关心的流程。
@@ -111,31 +118,11 @@ public interface FlowApprovalCallbackHandler {
     }
 
     /**
-     * 流程实例终止回调（超时、强制终止等）。
+     * 流程实例终止回调（强制终止、超时、作废、级联删除等非正常通过/拒绝的终态）。
      *
-     * @param instance 流程实例，此时 {@code instanceState} 可能是 5 或 6
+     * @param instance 流程实例，此时 {@code instanceState} 可能是 5、6 或 7
      */
     default void onInstanceTerminate(FlowHisInstance instance) {
-    }
-
-    /**
-     * 任务完成回调。
-     *
-     * <p>包含审批通过、拒绝、驳回、转交等所有任务结束场景。</p>
-     *
-     * @param task 历史任务
-     * @param actors 任务参与者（审批人/抄送人等）
-     */
-    default void onTaskComplete(FlowHisTask task, List<FlowHisTaskActor> actors) {
-    }
-
-    /**
-     * 任务创建回调。
-     *
-     * @param task 历史任务（刚从活动表转入历史表，任务已创建）
-     * @param actors 任务参与者
-     */
-    default void onTaskCreate(FlowHisTask task, List<FlowHisTaskActor> actors) {
     }
 
     /**
@@ -167,14 +154,6 @@ public interface FlowApprovalCallbackHandler {
 
         @Override
         public void onInstanceTerminate(FlowHisInstance instance) {
-        }
-
-        @Override
-        public void onTaskComplete(FlowHisTask task, List<FlowHisTaskActor> actors) {
-        }
-
-        @Override
-        public void onTaskCreate(FlowHisTask task, List<FlowHisTaskActor> actors) {
         }
     };
 }

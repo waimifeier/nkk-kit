@@ -148,7 +148,7 @@ public class FlowDesignerProcessController {
      *     <li>{@code startTime}：发起开始时间（提交时间下限，含），格式 {@code yyyy-MM-dd HH:mm:ss}，可选</li>
      *     <li>{@code endTime}：发起结束时间（提交时间上限，含），格式 {@code yyyy-MM-dd HH:mm:ss}，可选</li>
      *     <li>{@code instanceState}：实例状态，可选；取值见 {@link org.nkk.flow.enums.core.FlowInstanceEnum.InstanceState}：
-     *          0-审批中、1-审批通过、2-审批驳回、3-已撤销</li>
+     *          0-审批中、1-审批通过、2-审批驳回、3-已撤回</li>
      *     <li>{@code instanceId}：实例 ID，精确匹配，可选</li>
      * </ul>
      *

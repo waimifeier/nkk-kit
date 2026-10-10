@@ -20,6 +20,11 @@ public class NkkFlowProperties {
      */
     private Eventing eventing = new Eventing();
 
+    /**
+     * 流程实例相关配置。
+     */
+    private Instance instance = new Instance();
+
     @Data
     public static class Eventing {
 
@@ -32,6 +37,17 @@ public class NkkFlowProperties {
          * 是否发布实例事件。
          */
         private boolean instance = false;
+    }
+
+    @Data
+    public static class Instance {
+
+        /**
+         * 自定义表单的默认实例详情页地址模板。
+         * <p>当发布的流程 {@code formSourceType=form} 且未显式传入 instanceUrl 时，
+         * 引擎自动用此值填充。支持 {instanceId} 占位符。
+         */
+        private String formUrl;
     }
 }
 
