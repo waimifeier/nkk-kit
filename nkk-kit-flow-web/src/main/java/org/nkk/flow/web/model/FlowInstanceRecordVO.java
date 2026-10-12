@@ -43,7 +43,7 @@ public class FlowInstanceRecordVO implements Serializable {
     private Integer instanceState;
 
     /**
-     * 摘要：预留字段，当前版本固定返回空值。
+     * 摘要：取自流程实例的 variable（流程变量 JSON 字符串），前端按 key:value 摘要展示。
      */
     private String summary;
 
@@ -62,7 +62,8 @@ public class FlowInstanceRecordVO implements Serializable {
         vo.setStarterName(instance.getCreateBy());
         vo.setSubmitTime(instance.getCreateTime());
         vo.setInstanceState(instance.getInstanceState());
-        // summary 为预留字段，固定空值
+        // summary 取自实例流程变量（JSON），前端解析后展示前 N 个 key:value
+        vo.setSummary(instance.getVariable());
         return vo;
     }
 }
