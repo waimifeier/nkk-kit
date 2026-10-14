@@ -222,7 +222,7 @@ public class FlowApprovalAutoStartAspect {
         if (target instanceof Map) {
             for (Map.Entry<?, ?> entry : ((Map<?, ?>) target).entrySet()) {
                 if (entry.getKey() != null && entry.getValue() != null) {
-                    String key = String.valueOf(entry.getKey());
+                    String key = String.valueOf(entry.getKey());  
                     result.put(key, entry.getValue());
                     // Map 也注册驼峰别名（order_code → orderCode），兼容实体类属性名写法
                     String camel = toCamelCase(key);

@@ -35,11 +35,6 @@ public class FlowBusinessLaunchRequest implements Serializable {
     private String businessType;
 
     /**
-     * 租户 ID。
-     */
-    private String tenantId;
-
-    /**
      * 发起人 ID。为空时引擎从 FlowCreatorProvider 获取。
      */
     private String startUserId;

@@ -20,11 +20,6 @@ public class FlowProcessPageRequest extends BaseQuery implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 租户 ID，为空时只查询无租户数据。
-     */
-    private String tenantId;
-
-    /**
      * 流程名称，模糊匹配。
      */
     private String processName;

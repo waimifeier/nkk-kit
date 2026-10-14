@@ -1043,7 +1043,6 @@ public class FlowDesignerRuntimeService {
         FlowRuntimeResponse response = new FlowRuntimeResponse();
         response.setInstanceId(instanceId);
         // source 已通过上方 throw 保证非 null，直接取值
-        response.setTenantId(source.getTenantId());
         response.setBusinessKey(source.getBusinessKey());
         response.setCreateId(source.getCreateId());
         response.setCreateBy(source.getCreateBy());

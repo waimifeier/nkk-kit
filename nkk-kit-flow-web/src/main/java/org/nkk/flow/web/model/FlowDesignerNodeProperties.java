@@ -1,5 +1,6 @@
 package org.nkk.flow.web.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -17,8 +18,11 @@ import java.util.List;
  *   <li>{@code permissionOps} 为权限操作白名单（allowTransfer / allowAppendNode /
  *       allowRollback / allowCc / allowRevoke），未声明时全部展示，空数组隐藏整个权限区块</li>
  * </ul>
+ *
+ * <p>仅非 null 字段参与 JSON 序列化，避免前端把 Java null 当成"已声明值"走到校验逻辑。</p>
  */
 @Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class FlowDesignerNodeProperties implements Serializable {
 
     private static final long serialVersionUID = 1L;

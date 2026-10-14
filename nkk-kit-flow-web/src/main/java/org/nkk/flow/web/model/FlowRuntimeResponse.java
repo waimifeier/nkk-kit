@@ -22,11 +22,6 @@ public class FlowRuntimeResponse implements Serializable {
     private Long instanceId;
 
     /**
-     * 租户 ID。
-     */
-    private String tenantId;
-
-    /**
      * 流程定义信息。
      */
     private Process process;

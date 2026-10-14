@@ -56,7 +56,7 @@ public class FlowDesignerConfig implements Serializable {
         FlowDesignerConfig config = new FlowDesignerConfig();
 
         FlowDesignerNodeRegistryEntry initiator = FlowDesignerNodeRegistryEntry.of(0, "发起人", "配置发起人",
-                lucide("users"), "#64748b");
+                lucide("users"), "#10B981");
         initiator.setProperties(initiatorProperties());
 
         FlowDesignerNodeRegistryEntry approval = FlowDesignerNodeRegistryEntry.of(1, "审批节点", "人工审批",
@@ -65,6 +65,7 @@ public class FlowDesignerConfig implements Serializable {
 
         FlowDesignerNodeRegistryEntry cc = FlowDesignerNodeRegistryEntry.of(2, "抄送节点", "通知抄送",
                 lucide("send"), "#2563eb");
+        cc.setProperties(ccProperties());
 
         config.setNodes(new ArrayList<>(Arrays.asList(
                 FlowDesignerNodeRegistryEntry.of(-1, "结束节点", "流程结束", lucide("flag-triangle-right"), "#9ca3af"),

@@ -63,7 +63,6 @@ public class FlowDesignerProcessController {
      * <ul>
      *     <li>{@code current}：页码，从 1 开始，必填</li>
      *     <li>{@code size}：每页条数，必填</li>
-     *     <li>{@code tenantId}：租户 ID，可选，为空只查无租户数据</li>
      *     <li>{@code processName}：流程名称，模糊匹配，可选</li>
      *     <li>{@code processKey}：流程 key，精确匹配，可选</li>
      *     <li>{@code processType}：流程分类，精确匹配，可选</li>
@@ -86,14 +85,12 @@ public class FlowDesignerProcessController {
      * <p>该接口不分页，返回每个 {@code processType} 下的流程定义。</p>
      * <p>{@code mode=latest} 表示按流程 key 返回最新编辑版本；{@code mode=published} 表示只返回已发布版本。</p>
      *
-     * @param tenantId 租户 ID；示例值：{@code tenant-001}
      * @param mode 查询模式；示例值：{@code latest}、{@code published}
      * @return 分类分组流程列表
      */
     @GetMapping("/categories")
-    public Result<List<FlowProcessCategoryResponse>> categories(@RequestParam(required = false) String tenantId,
-                                                                @RequestParam(defaultValue = "latest") String mode) {
-        return Result.ok(processService.listByCategory(tenantId, mode));
+    public Result<List<FlowProcessCategoryResponse>> categories(@RequestParam(defaultValue = "latest") String mode) {
+        return Result.ok(processService.listByCategory(mode));
     }
 
     /**
@@ -245,25 +242,21 @@ public class FlowDesignerProcessController {
      * 复制操作不做任何状态校验。</p>
      *
      * @param processKey 流程 key；示例值：{@code leave}
-     * @param tenantId 租户 ID；示例值：{@code tenant-001}
      * @return 复制后的草稿流程定义
      */
     @PostMapping("/key/{processKey}/copy")
-    public Result<FlowProcess> copy(@PathVariable String processKey,
-                                    @RequestParam(required = false) String tenantId) {
-        return Result.ok(processService.copyProcess(tenantId, processKey));
+    public Result<FlowProcess> copy(@PathVariable String processKey) {
+        return Result.ok(processService.copyProcess(processKey));
     }
 
     /**
      * 查询流程定义版本记录。
      *
      * @param processKey 流程 key；示例值：{@code leave}
-     * @param tenantId 租户 ID；示例值：{@code tenant-001}
      * @return 版本记录，按版本倒序返回
      */
     @GetMapping("/key/{processKey}/versions")
-    public Result<List<FlowProcessVO>> versions(@PathVariable String processKey,
-                                                @RequestParam(required = false) String tenantId) {
-        return Result.ok(processService.listVersions(tenantId, processKey));
+    public Result<List<FlowProcessVO>> versions(@PathVariable String processKey) {
+        return Result.ok(processService.listVersions(processKey));
     }
 }

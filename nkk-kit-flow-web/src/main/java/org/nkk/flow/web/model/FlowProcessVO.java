@@ -25,11 +25,6 @@ public class FlowProcessVO implements Serializable {
     private Long id;
 
     /**
-     * 租户 ID。
-     */
-    private String tenantId;
-
-    /**
      * 创建人 ID。
      */
     private String createId;
@@ -105,7 +100,6 @@ public class FlowProcessVO implements Serializable {
         }
         FlowProcessVO vo = new FlowProcessVO();
         vo.setId(process.getId());
-        vo.setTenantId(process.getTenantId());
         vo.setCreateId(process.getCreateId());
         vo.setCreateBy(process.getCreateBy());
         vo.setCreateTime(process.getCreateTime());

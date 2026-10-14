@@ -375,7 +375,7 @@ public class FlowDesignerProcessService {
         }
         PageResult<FlowProcess> page = flowEngine.processService().pageProcesses(
                 request.getCurrent(), request.getSize(),
-                StrUtil.trimToNull(request.getTenantId()),
+                resolveTenantId(),
                 request.getProcessName(), request.getProcessKey(),
                 request.getProcessType(), request.getProcessState(), request.getFormSourceType());
         return page.map(FlowProcessVO::of);
@@ -448,12 +448,11 @@ public class FlowDesignerProcessService {
     /**
      * 按流程分类查询当前流程定义。
      *
-     * @param tenantId 租户 ID
      * @param mode 查询模式，latest 表示最新编辑版本，published 表示已发布版本
      * @return 分类分组流程列表
      */
-    public List<FlowProcessCategoryResponse> listByCategory(String tenantId, String mode) {
-        List<FlowProcess> processes = flowEngine.processService().listCurrentProcesses(StrUtil.trimToNull(tenantId));
+    public List<FlowProcessCategoryResponse> listByCategory(String mode) {
+        List<FlowProcess> processes = flowEngine.processService().listCurrentProcesses(resolveTenantId());
         processes = filterProcesses(processes, mode);
         Map<String, List<FlowProcessVO>> groupMap = new LinkedHashMap<>();
         if (processes != null) {
@@ -543,17 +542,15 @@ public class FlowDesignerProcessService {
      * 流程名称追加" 复制N"，状态固定为草稿。其余参数（模型 JSON、表单元数据、分类、图标等）保持不变。
      * 复制操作不做任何状态校验。</p>
      *
-     * @param tenantId 租户 ID
      * @param processKey 流程 key
      * @return 复制后的草稿流程定义
      */
-    public FlowProcess copyProcess(String tenantId, String processKey) {
+    public FlowProcess copyProcess(String processKey) {
         if (StrUtil.isBlank(processKey)) {
             throw new IllegalArgumentException("流程 key 不能为空");
         }
-        String trimmedTenantId = StrUtil.trimToNull(tenantId);
         String key = StrUtil.trim(processKey);
-        List<FlowProcess> versions = flowEngine.processService().getProcessVersions(trimmedTenantId, key);
+        List<FlowProcess> versions = flowEngine.processService().getProcessVersions(resolveTenantId(), key);
         if (versions == null || versions.isEmpty()) {
             throw new IllegalArgumentException("流程定义不存在，processKey=" + key);
         }
@@ -564,7 +561,7 @@ public class FlowDesignerProcessService {
         int suffix = 1;
         while (true) {
             String candidateKey = baseKey + "_copy" + suffix;
-            List<FlowProcess> existing = flowEngine.processService().getProcessVersions(trimmedTenantId, candidateKey);
+            List<FlowProcess> existing = flowEngine.processService().getProcessVersions(resolveTenantId(), candidateKey);
             if (existing == null || existing.isEmpty()) {
                 break;
             }
@@ -592,16 +589,15 @@ public class FlowDesignerProcessService {
     /**
      * 查询流程定义版本记录。
      *
-     * @param tenantId 租户 ID
      * @param processKey 流程 key
      * @return 版本记录
      */
-    public List<FlowProcessVO> listVersions(String tenantId, String processKey) {
+    public List<FlowProcessVO> listVersions(String processKey) {
         if (StrUtil.isBlank(processKey)) {
             throw new IllegalArgumentException("流程 key 不能为空");
         }
         List<FlowProcess> processes = flowEngine.processService()
-                .getProcessVersions(StrUtil.trimToNull(tenantId), StrUtil.trim(processKey));
+                .getProcessVersions(resolveTenantId(), StrUtil.trim(processKey));
         List<FlowProcessVO> records = new ArrayList<>();
         if (processes != null) {
             for (FlowProcess process : processes) {
@@ -691,6 +687,20 @@ public class FlowDesignerProcessService {
      * 解析流程模型。发布体固定为完整模型结构（{@link FlowProcessModel}），
      * 不再支持裸节点 JSON。
      */
+    /**
+     * 从当前认证上下文的 {@link FlowCreator} 解析租户 ID。
+     * 租户隔离由后端统一管控，前端不传租户参数。
+     *
+     * @return 当前租户 ID；creator 未初始化或无租户时返回 {@code null}
+     */
+    private String resolveTenantId() {
+        FlowCreator creator = creatorProvider == null ? null : creatorProvider.getCurrentCreator();
+        if (creator == null) {
+            return null;
+        }
+        return StrUtil.trimToNull(creator.getTenantId());
+    }
+
     private FlowProcessModel resolveProcessModel(String modelContent) {
         return FlowContext.fromJson(modelContent, FlowProcessModel.class);
     }
