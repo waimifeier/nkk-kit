@@ -36,6 +36,7 @@ import java.util.Objects;
  * <ul>
  *   <li><b>businessKey</b>：{@code @FlowBusinessKey} 参数 → 返回值的 {@code businessKeyFrom} 属性 → 返回值 toString()</li>
  *   <li><b>variables</b>：{@code @FlowVariables} Map 参数 → 返回值的所有可序列化属性</li>
+ *   <li><b>summary</b>：{@code summaryTemplate} 模板串原样透传，由 {@code FlowDesignerRuntimeService} 按 variables 渲染</li>
  * </ul>
  *
  * <h3>返回值成功判定</h3>
@@ -74,9 +75,10 @@ public class FlowApprovalAutoStartAspect {
         }
 
         String businessKey = resolveBusinessKey(pjp, result, annotation);
+        String summaryTemplate = resolveSummaryTemplate(annotation);
         Map<String, Object> variables = resolveVariables(pjp, result);
 
-        FlowStartProcessRequest request = buildStartRequest(annotation, businessKey, variables);
+        FlowStartProcessRequest request = buildStartRequest(annotation, businessKey, summaryTemplate, variables);
         Runnable starter = () -> doStart(request, pjp.getSignature().toShortString());
 
         if (annotation.afterCommit() && TransactionSynchronizationManager.isSynchronizationActive()) {
@@ -130,6 +132,14 @@ public class FlowApprovalAutoStartAspect {
         }
 
         return null;
+    }
+
+    /**
+     * 解析摘要模板：把注解上配置的模板串原样透传，渲染交由
+     * {@code FlowDesignerRuntimeService#start} 统一按流程变量完成；未配置时返回 null。
+     */
+    private String resolveSummaryTemplate(FlowApproval annotation) {
+        return StrUtil.isBlank(annotation.summaryTemplate()) ? null : annotation.summaryTemplate();
     }
 
     @SuppressWarnings("unchecked")
@@ -272,13 +282,14 @@ public class FlowApprovalAutoStartAspect {
         return sb.toString();
     }
 
-    private FlowStartProcessRequest buildStartRequest(FlowApproval annotation, String businessKey,
+    private FlowStartProcessRequest buildStartRequest(FlowApproval annotation, String businessKey, String summaryTemplate,
                                                       Map<String, Object> variables) {
         FlowStartProcessRequest request = new FlowStartProcessRequest();
         request.setProcessId(annotation.processId() > 0 ? annotation.processId() : null);
         request.setProcessKey(StrUtil.isNotBlank(annotation.processKey()) ? annotation.processKey() : null);
         request.setProcessVersion(annotation.processVersion() > 0 ? annotation.processVersion() : null);
         request.setBusinessKey(businessKey);
+        request.setSummary(summaryTemplate);
         request.setVariables(variables);
         return request;
     }

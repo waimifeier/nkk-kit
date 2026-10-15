@@ -116,8 +116,9 @@ public class NkkFlowWebAutoConfiguration {
     @ConditionalOnMissingBean
     public FlowDesignerProcessService flowDesignerProcessService(NkkFlowEngine flowEngine,
                                                                  ObjectProvider<FlowCreatorProvider> creatorProvider,
-                                                                 NkkFlowProperties properties) {
-        return new FlowDesignerProcessService(flowEngine, creatorProvider.getIfAvailable(), properties);
+                                                                 NkkFlowProperties properties,
+                                                                 FlowDesignerCategoryService categoryService) {
+        return new FlowDesignerProcessService(flowEngine, creatorProvider.getIfAvailable(), properties, categoryService);
     }
 
     @Bean
@@ -128,8 +129,9 @@ public class NkkFlowWebAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public FlowDesignerRuntimeService flowDesignerRuntimeService(NkkFlowEngine flowEngine) {
-        return new FlowDesignerRuntimeService(flowEngine);
+    public FlowDesignerRuntimeService flowDesignerRuntimeService(NkkFlowEngine flowEngine,
+                                                                 FlowDesignerCategoryService categoryService) {
+        return new FlowDesignerRuntimeService(flowEngine, categoryService);
     }
 
     @Bean
@@ -147,9 +149,10 @@ public class NkkFlowWebAutoConfiguration {
                                                            FlowTaskDao taskDao,
                                                            FlowTaskActorDao taskActorDao,
                                                            FlowHisTaskDao hisTaskDao,
-                                                           FlowHisTaskActorDao hisTaskActorDao) {
+                                                           FlowHisTaskActorDao hisTaskActorDao,
+                                                           FlowDesignerCategoryService categoryService) {
         return new FlowDesignerTodoService(flowEngine, creatorProvider.getIfAvailable(), processDao, hisInstanceDao,
-                taskDao, taskActorDao, hisTaskDao, hisTaskActorDao);
+                taskDao, taskActorDao, hisTaskDao, hisTaskActorDao, categoryService);
     }
 
     @Bean

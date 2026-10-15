@@ -20,8 +20,9 @@ import java.lang.annotation.Target;
  *     return order;
  * }
  *
- * // 方式二：businessKey 从返回值中提取
- * @FlowApproval(processKey = "purchase-order", businessKeyFrom = "id")
+ * // 方式二：businessKey 从返回值中提取，摘要按模板渲染
+ * @FlowApproval(processKey = "purchase-order", businessKeyFrom = "id",
+ *         summaryTemplate = "订单号：{orderNo},时间：{createTime}")
  * public PurchaseOrder submitPurchase(PurchaseOrder order) {
  *     return purchaseRepository.save(order);
  * }
@@ -38,6 +39,7 @@ import java.lang.annotation.Target;
  *       都没有时返回值的 {@code toString()} 作为兜底。</li>
  *   <li>{@code variables}：优先取 {@code @FlowVariables} 标注的 {@code Map<String,Object>} 参数；
  *       否则把返回值的可序列化属性全部收集为变量。</li>
+ *   <li>{@code summary}：{@link #summaryTemplate()} 作为模板串，由发起服务按 {@code variables} 渲染。</li>
  * </ul>
  *
  * <h3>事务安全</h3>
@@ -70,6 +72,19 @@ public @interface FlowApproval {
      * 留空时优先取 {@link #processKey()}，再兜底用返回值的 toString()。
      */
     String businessKeyFrom() default "";
+
+    /**
+     * 流程摘要模板，使用 {@code {变量名}} 占位符，例如
+     * {@code "订单号：{orderNo},时间：{createTime}"}。
+     *
+     * <p>占位符从流程变量中取值（业务表单场景即业务方法的返回值属性，
+     * 同时注册驼峰与下划线两种写法的别名）；渲染由发起服务统一完成，
+     * 无占位符的普通字符串原样保留。</p>
+     *
+     * <p>留空时不设置摘要，实例摘要为空（自定义表单发起场景由发起请求的
+     * {@code summary} 字段提供）。</p>
+     */
+    String summaryTemplate() default "";
 
     /**
      * 是否在事务提交后再发起流程。

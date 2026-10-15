@@ -39,7 +39,8 @@ public class FlowDesignerRuntimeController {
     /**
      * 发起流程实例。
      *
-     * <p>请求体示例：{@code {"processId":1785467714628,"businessKey":"leave-001","variables":{"day":3}}}</p>
+     * <p>请求体示例：{@code {"processId":1785467714628,"businessKey":"leave-001","summary":"请假 3 天","variables":{"day":3}}}</p>
+     * <p>{@code summary} 为流程摘要，发起时写入 {@code flow_his_instance.summary}，随实例全生命周期保留。</p>
      *
      * @param request 发起流程请求
      * @return 发起结果，包含实例和当前活动任务

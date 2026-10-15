@@ -59,7 +59,8 @@ public class DemoOrderService implements FlowApprovalCallbackHandler {
      * 提交采购订单 → 自动发起采购审批流程。
      */
     @Transactional(rollbackFor = Exception.class)
-    @FlowApproval(processKey = "purchase-order", businessKeyFrom = "orderNo")
+    @FlowApproval(processKey = "purchase-order", businessKeyFrom = "orderNo",
+            summaryTemplate = "订单号：{orderNo},金额：{amount}")
     public DemoOrder submitPurchase(DemoOrder order) {
         if (order == null || order.getAmount() == null || order.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("订单金额必须大于 0");

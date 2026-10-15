@@ -59,7 +59,7 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
 
     @Override
     public FlowInstance createInstance(FlowProcess process, FlowCreator creator, Map<String, Object> args,
-                                       FlowNodeModel startNode, boolean saveAsDraft,
+                                       FlowNodeModel startNode, String summary, boolean saveAsDraft,
                                        Supplier<FlowInstance> supplier) {
         FlowInstance instance = new FlowInstance();
         if (supplier != null) {
@@ -83,6 +83,7 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
         instanceDao.insert(instance);
 
         FlowHisInstance his = FlowHisInstance.of(instance, saveAsDraft ? InstanceState.DRAFT : InstanceState.ACTIVE);
+        his.setSummary(summary);
         hisInstanceDao.insert(his);
         extInstanceDao.insert(FlowExtInstance.of(instance, process));
         notifyInstance(FlowEventTypeEnum.INSTANCE_STARTED, his, startNode, creator);
@@ -431,8 +432,6 @@ public class FlowRuntimeServiceImpl implements FlowRuntimeService {
         instance.setCreateBy(his.getCreateBy());
         instance.setCreateTime(his.getCreateTime());
         instance.setProcessId(his.getProcessId());
-        instance.setPriority(his.getPriority());
-        instance.setInstanceNo(his.getInstanceNo());
         instance.setBusinessKey(his.getBusinessKey());
         instance.setVariable(his.getVariable());
         instance.putAllVariable(args);

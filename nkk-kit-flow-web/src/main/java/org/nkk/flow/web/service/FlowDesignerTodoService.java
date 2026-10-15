@@ -53,11 +53,13 @@ public class FlowDesignerTodoService {
     private final FlowTaskActorDao taskActorDao;
     private final FlowHisTaskDao hisTaskDao;
     private final FlowHisTaskActorDao hisTaskActorDao;
+    private final FlowDesignerCategoryService categoryService;
 
     public FlowDesignerTodoService(NkkFlowEngine flowEngine, FlowCreatorProvider creatorProvider,
                                    FlowProcessDao processDao, FlowHisInstanceDao hisInstanceDao,
                                    FlowTaskDao taskDao, FlowTaskActorDao taskActorDao,
-                                   FlowHisTaskDao hisTaskDao, FlowHisTaskActorDao hisTaskActorDao) {
+                                   FlowHisTaskDao hisTaskDao, FlowHisTaskActorDao hisTaskActorDao,
+                                   FlowDesignerCategoryService categoryService) {
         this.flowEngine = flowEngine;
         this.creatorProvider = creatorProvider;
         this.processDao = processDao;
@@ -66,6 +68,7 @@ public class FlowDesignerTodoService {
         this.taskActorDao = taskActorDao;
         this.hisTaskDao = hisTaskDao;
         this.hisTaskActorDao = hisTaskActorDao;
+        this.categoryService = categoryService;
     }
 
     // ==================== 1. 我发起的 ====================
@@ -84,6 +87,8 @@ public class FlowDesignerTodoService {
         }
 
         Map<Long, FlowProcess> processMap = batchFetchProcesses(result.getRecords());
+        // 分类 id → 中文名称映射，整页只构建一次
+        Map<String, String> categoryNames = categoryService.categoryNameMap();
         List<FlowTodoRecordResponse> records = new ArrayList<>(result.getRecords().size());
         // 批量查询活动任务（用于超时标记）
         List<Long> instanceIds = result.getRecords().stream().map(FlowHisInstance::getId).collect(Collectors.toList());
@@ -95,7 +100,7 @@ public class FlowDesignerTodoService {
             }
         }
         for (FlowHisInstance instance : result.getRecords()) {
-            FlowTodoRecordResponse record = baseRecord(instance, processMap);
+            FlowTodoRecordResponse record = baseRecord(instance, processMap, categoryNames);
             FlowTask activeTask = activeTaskMap.get(instance.getId());
             if (activeTask != null) {
                 record.setTask(toTaskData(activeTask));
@@ -156,10 +161,12 @@ public class FlowDesignerTodoService {
         }
 
         Map<Long, FlowProcess> processMap = batchFetchProcesses(result.getRecords());
+        // 分类 id → 中文名称映射，整页只构建一次
+        Map<String, String> categoryNames = categoryService.categoryNameMap();
         List<FlowTodoRecordResponse> records = new ArrayList<>(result.getRecords().size());
         for (FlowHisInstance instance : result.getRecords()) {
             FlowTask task = instanceToTask.get(instance.getId());
-            records.add(recordWithTask(instance, task, processMap));
+            records.add(recordWithTask(instance, task, processMap, categoryNames));
         }
         return PageResult.of(result.getTotal(), result.getCurrent(), result.getSize(), records);
     }
@@ -246,9 +253,11 @@ public class FlowDesignerTodoService {
         }
 
         Map<Long, FlowProcess> processMap = batchFetchProcesses(result.getRecords());
+        // 分类 id → 中文名称映射，整页只构建一次
+        Map<String, String> categoryNames = categoryService.categoryNameMap();
         List<FlowTodoRecordResponse> records = new ArrayList<>(result.getRecords().size());
         for (FlowHisInstance instance : result.getRecords()) {
-            FlowTodoRecordResponse record = baseRecord(instance, processMap);
+            FlowTodoRecordResponse record = baseRecord(instance, processMap, categoryNames);
             record.setTask(instanceToTask.get(instance.getId()));
             records.add(record);
         }
@@ -314,6 +323,8 @@ public class FlowDesignerTodoService {
         }
 
         Map<Long, FlowProcess> processMap = batchFetchProcesses(new ArrayList<>(instanceMap.values()));
+        // 分类 id → 中文名称映射，整页只构建一次
+        Map<String, String> categoryNames = categoryService.categoryNameMap();
 
         // Step4: 构建 response
         List<FlowTodoRecordResponse> records = new ArrayList<>(result.getRecords().size());
@@ -322,7 +333,7 @@ public class FlowDesignerTodoService {
             if (instance == null) {
                 continue;
             }
-            FlowTodoRecordResponse record = baseRecord(instance, processMap);
+            FlowTodoRecordResponse record = baseRecord(instance, processMap, categoryNames);
             record.setTask(toTaskData(task));
             record.setApproveTime(task.getFinishTime());
             records.add(record);
@@ -449,15 +460,17 @@ public class FlowDesignerTodoService {
     }
 
     private FlowTodoRecordResponse recordWithTask(FlowHisInstance instance, FlowTask task,
-                                                  Map<Long, FlowProcess> processMap) {
-        FlowTodoRecordResponse record = baseRecord(instance, processMap);
+                                                  Map<Long, FlowProcess> processMap,
+                                                  Map<String, String> categoryNames) {
+        FlowTodoRecordResponse record = baseRecord(instance, processMap, categoryNames);
         if (task != null) {
             record.setTask(toTaskData(task));
         }
         return record;
     }
 
-    private FlowTodoRecordResponse baseRecord(FlowHisInstance instance, Map<Long, FlowProcess> processMap) {
+    private FlowTodoRecordResponse baseRecord(FlowHisInstance instance, Map<Long, FlowProcess> processMap,
+                                              Map<String, String> categoryNames) {
         FlowProcess process = instance.getProcessId() == null ? null : processMap.get(instance.getProcessId());
         FlowTodoRecordResponse record = new FlowTodoRecordResponse();
         record.setInstanceId(instance.getId());
@@ -466,6 +479,7 @@ public class FlowDesignerTodoService {
         record.setProcessKey(process == null ? instance.getProcessKey() : process.getProcessKey());
         record.setProcessName(process == null ? null : process.getProcessName());
         record.setProcessType(process == null ? null : process.getProcessType());
+        record.setProcessTypeName(process == null ? null : categoryNames.get(process.getProcessType()));
         record.setInstanceUrl(process == null ? null : process.getInstanceUrl());
         record.setSourceType(process == null ? null : process.getFormSourceType());
         record.setProcessVersion(process == null ? null : process.getProcessVersion());
@@ -477,7 +491,7 @@ public class FlowDesignerTodoService {
         record.setCurrentNodeKey(instance.getCurrentNodeKey());
         record.setCurrentNodeName(instance.getCurrentNodeName());
         record.setDuration(duration(instance));
-        record.setVariable(instance.getVariable());
+        record.setSummary(instance.getSummary());
         return record;
     }
 

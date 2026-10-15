@@ -33,7 +33,7 @@ CREATE TABLE flow_process
     PRIMARY KEY (id)
 );
 
-CREATE INDEX idx_flow_process_key_version ON flow_process (tenant_id, process_key, process_version);
+CREATE UNIQUE INDEX uk_flow_process_key_version ON flow_process (tenant_id, process_key, process_version);
 CREATE INDEX idx_flow_process_form_source ON flow_process (form_source_type);
 CREATE INDEX idx_flow_process_form_key ON flow_process (form_key);
 
@@ -46,10 +46,9 @@ CREATE TABLE flow_his_instance
     create_time       TIMESTAMP    NOT NULL,
     process_id        BIGINT       NOT NULL,
     process_key       VARCHAR(100),
-    priority          TINYINT,
-    instance_no       VARCHAR(50),
     business_key      VARCHAR(100),
     variable          CLOB,
+    summary           VARCHAR(255),
     current_node_name VARCHAR(100) NOT NULL,
     current_node_key  VARCHAR(100) NOT NULL,
     expire_time       TIMESTAMP,
@@ -74,8 +73,6 @@ CREATE TABLE flow_instance
     create_time       TIMESTAMP    NOT NULL,
     process_id        BIGINT       NOT NULL,
     process_key       VARCHAR(100),
-    priority          TINYINT,
-    instance_no       VARCHAR(50),
     business_key      VARCHAR(100),
     variable          CLOB,
     current_node_name VARCHAR(100) NOT NULL,

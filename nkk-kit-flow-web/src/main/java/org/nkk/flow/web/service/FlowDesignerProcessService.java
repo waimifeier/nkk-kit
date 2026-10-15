@@ -47,11 +47,14 @@ public class FlowDesignerProcessService {
 
     private final NkkFlowProperties properties;
 
+    private final FlowDesignerCategoryService categoryService;
+
     public FlowDesignerProcessService(NkkFlowEngine flowEngine, FlowCreatorProvider creatorProvider,
-                                      NkkFlowProperties properties) {
+                                      NkkFlowProperties properties, FlowDesignerCategoryService categoryService) {
         this.flowEngine = flowEngine;
         this.creatorProvider = creatorProvider;
         this.properties = properties;
+        this.categoryService = categoryService;
     }
 
     /**
@@ -446,79 +449,59 @@ public class FlowDesignerProcessService {
     }
 
     /**
-     * 按流程分类查询当前流程定义。
+     * 按流程分类查询已启用流程。
      *
-     * @param mode 查询模式，latest 表示最新编辑版本，published 表示已发布版本
+     * <p>只返回状态为「启用」的流程定义（每个 processKey 仅当前启用版本），按流程分类分组。</p>
+     *
+     * @param processName    流程名称，模糊匹配，可为空
+     * @param formSourceType 表单来源类型（form/business），精确匹配，可为空
      * @return 分类分组流程列表
      */
-    public List<FlowProcessCategoryResponse> listByCategory(String mode) {
-        List<FlowProcess> processes = flowEngine.processService().listCurrentProcesses(resolveTenantId());
-        processes = filterProcesses(processes, mode);
+    public List<FlowProcessCategoryResponse> listByCategory(String processName, String formSourceType) {
+        List<FlowProcess> processes = filterEnabledProcesses(
+                flowEngine.processService().listCurrentProcesses(resolveTenantId()), processName, formSourceType);
+        Map<String, String> categoryNames = categoryService.categoryNameMap();
         Map<String, List<FlowProcessVO>> groupMap = new LinkedHashMap<>();
-        if (processes != null) {
-            for (FlowProcess process : processes) {
-                String processType = StrUtil.trimToNull(process.getProcessType());
-                groupMap.computeIfAbsent(processType, key -> new ArrayList<>())
-                        .add(FlowProcessVO.of(process));
-            }
+        for (FlowProcess process : processes) {
+            String processType = StrUtil.trimToNull(process.getProcessType());
+            groupMap.computeIfAbsent(processType, key -> new ArrayList<>())
+                    .add(FlowProcessVO.of(process));
         }
         List<FlowProcessCategoryResponse> groups = new ArrayList<>();
         for (Map.Entry<String, List<FlowProcessVO>> entry : groupMap.entrySet()) {
-            groups.add(FlowProcessCategoryResponse.of(entry.getKey(), entry.getValue()));
+            groups.add(FlowProcessCategoryResponse.of(entry.getKey(), categoryNames.get(entry.getKey()), entry.getValue()));
         }
         return groups;
     }
 
-    private List<FlowProcess> filterProcesses(List<FlowProcess> processes, String mode) {
-        if (processes == null || processes.isEmpty()) {
-            return new ArrayList<>();
-        }
-        String actualMode = StrUtil.blankToDefault(StrUtil.trim(mode), "latest");
-        if ("published".equalsIgnoreCase(actualMode)) {
-            return publishedProcesses(processes);
-        }
-        if ("latest".equalsIgnoreCase(actualMode)) {
-            return latestProcesses(processes);
-        }
-        throw new IllegalArgumentException("流程列表查询模式不支持，mode=" + mode);
-    }
-
-    private List<FlowProcess> publishedProcesses(List<FlowProcess> processes) {
+    /**
+     * 过滤出已启用流程，并按流程名称（模糊）、表单来源类型（精确）筛选。
+     *
+     * @param processes      当前流程定义列表（已排除历史版本）
+     * @param processName    流程名称关键字，为空不过滤
+     * @param formSourceType 表单来源类型，为空不过滤
+     * @return 符合条件的已启用流程列表
+     */
+    private List<FlowProcess> filterEnabledProcesses(List<FlowProcess> processes, String processName, String formSourceType) {
         List<FlowProcess> records = new ArrayList<>();
+        if (processes == null || processes.isEmpty()) {
+            return records;
+        }
+        String nameKeyword = StrUtil.trimToNull(processName);
+        String sourceType = StrUtil.trimToNull(formSourceType);
         for (FlowProcess process : processes) {
-            if (ProcessState.DRAFT.value().equals(process.getProcessState())
-                    || ProcessState.HISTORY.value().equals(process.getProcessState())) {
+            if (!ProcessState.ENABLED.value().equals(process.getProcessState())) {
+                continue;
+            }
+            if (nameKeyword != null && !StrUtil.containsIgnoreCase(process.getProcessName(), nameKeyword)) {
+                continue;
+            }
+            if (sourceType != null && !sourceType.equalsIgnoreCase(process.getFormSourceType())) {
                 continue;
             }
             records.add(process);
         }
         return records;
-    }
-
-    private List<FlowProcess> latestProcesses(List<FlowProcess> processes) {
-        Map<String, FlowProcess> latestMap = new LinkedHashMap<>();
-        for (FlowProcess process : processes) {
-            if (ProcessState.HISTORY.value().equals(process.getProcessState())) {
-                continue;
-            }
-            String processKey = process.getProcessKey();
-            FlowProcess exists = latestMap.get(processKey);
-            if (exists == null || compareProcessVersion(process, exists) > 0) {
-                latestMap.put(processKey, process);
-            }
-        }
-        return new ArrayList<>(latestMap.values());
-    }
-
-    private int compareProcessVersion(FlowProcess left, FlowProcess right) {
-        int leftVersion = left.getProcessVersion() == null ? 0 : left.getProcessVersion();
-        int rightVersion = right.getProcessVersion() == null ? 0 : right.getProcessVersion();
-        if (leftVersion != rightVersion) {
-            return leftVersion - rightVersion;
-        }
-        long leftId = left.getId() == null ? 0L : left.getId();
-        long rightId = right.getId() == null ? 0L : right.getId();
-        return Long.compare(leftId, rightId);
     }
 
     /**

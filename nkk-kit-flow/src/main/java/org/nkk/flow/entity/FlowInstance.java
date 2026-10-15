@@ -32,16 +32,6 @@ public class FlowInstance extends FlowEntity implements Cloneable {
     private String processKey;
 
     /**
-     * 实例优先级，值越大优先级越高。
-     */
-    private Integer priority;
-
-    /**
-     * 流程实例编号。
-     */
-    private String instanceNo;
-
-    /**
      * 业务主键，用于关联业务单据或业务数据。
      */
     private String businessKey;

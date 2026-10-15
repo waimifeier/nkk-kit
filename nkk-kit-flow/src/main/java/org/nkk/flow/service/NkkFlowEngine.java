@@ -54,14 +54,16 @@ public interface NkkFlowEngine {
 
     /**
      * 发起流程实例（按流程 key，完整参数）。empty 语义同 {@link #startInstanceByProcessKey(String, Integer, FlowCreator, Map)}。
+     *
+     * @param summary 流程摘要，写入 {@code flow_his_instance.summary}，随实例全生命周期保留
      */
     Optional<FlowInstance> startInstanceByProcessKey(String processKey, Integer version, FlowCreator creator,
-                                                     Map<String, Object> args, boolean saveAsDraft,
+                                                     Map<String, Object> args, String summary, boolean saveAsDraft,
                                                      Consumer<FlowNodeModel> checkNodeModel,
                                                      Supplier<FlowInstance> supplier);
 
     default Optional<FlowInstance> startInstanceByProcessKey(String processKey, Integer version, FlowCreator creator, String businessKey) {
-        return startInstanceByProcessKey(processKey, version, creator, null, false, null, () -> FlowInstance.of(businessKey));
+        return startInstanceByProcessKey(processKey, version, creator, null, null, false, null, () -> FlowInstance.of(businessKey));
     }
 
     /**
@@ -75,14 +77,16 @@ public interface NkkFlowEngine {
 
     /**
      * 发起流程实例（按流程定义 ID，完整参数）。empty 语义同 {@link #startInstanceByProcessKey(String, Integer, FlowCreator, Map)}。
+     *
+     * @param summary 流程摘要，写入 {@code flow_his_instance.summary}，随实例全生命周期保留
      */
     Optional<FlowInstance> startInstanceById(Long processId, FlowCreator creator, Map<String, Object> args,
-                                             boolean saveAsDraft,
+                                             String summary, boolean saveAsDraft,
                                              Consumer<FlowNodeModel> checkNodeModel,
                                              Supplier<FlowInstance> supplier);
 
     default Optional<FlowInstance> startInstanceById(Long processId, FlowCreator creator, String businessKey) {
-        return startInstanceById(processId, creator, null, false, null, () -> FlowInstance.of(businessKey));
+        return startInstanceById(processId, creator, null, null, false, null, () -> FlowInstance.of(businessKey));
     }
 
     boolean executeTask(Long taskId, FlowCreator creator, Map<String, Object> args);

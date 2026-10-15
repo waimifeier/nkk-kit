@@ -35,6 +35,12 @@ public class FlowBusinessLaunchRequest implements Serializable {
     private String businessType;
 
     /**
+     * 流程摘要。写入 {@code flow_his_instance.summary}，随实例全生命周期保留，
+     * 由业务系统在发起时自行组织（如单据名称、单号 + 金额）。
+     */
+    private String summary;
+
+    /**
      * 发起人 ID。为空时引擎从 FlowCreatorProvider 获取。
      */
     private String startUserId;

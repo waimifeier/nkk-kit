@@ -80,17 +80,18 @@ public class FlowDesignerProcessController {
     }
 
     /**
-     * 按流程分类查询当前流程定义列表。
+     * 按流程分类查询已启用流程列表。
      *
-     * <p>该接口不分页，返回每个 {@code processType} 下的流程定义。</p>
-     * <p>{@code mode=latest} 表示按流程 key 返回最新编辑版本；{@code mode=published} 表示只返回已发布版本。</p>
+     * <p>该接口不分页，只返回状态为「启用」的流程定义，按 {@code processType} 分组。</p>
      *
-     * @param mode 查询模式；示例值：{@code latest}、{@code published}
+     * @param processName    流程名称，模糊匹配，可选
+     * @param formSourceType 表单来源类型，默认 {@code form}（自定义表单），可选 {@code business}（业务表单）
      * @return 分类分组流程列表
      */
     @GetMapping("/categories")
-    public Result<List<FlowProcessCategoryResponse>> categories(@RequestParam(defaultValue = "latest") String mode) {
-        return Result.ok(processService.listByCategory(mode));
+    public Result<List<FlowProcessCategoryResponse>> categories(@RequestParam(required = false) String processName,
+                                                                @RequestParam(defaultValue = "form") String formSourceType) {
+        return Result.ok(processService.listByCategory(processName, formSourceType));
     }
 
     /**
@@ -151,7 +152,7 @@ public class FlowDesignerProcessController {
      *
      * <p>返回字段：{@code instanceId}(实例ID)、{@code starterName}(发起人名字)、
      * {@code processName}(流程名称)、{@code submitTime}(提交时间)、
-     * {@code instanceState}(审批状态)、{@code summary}(摘要，预留字段固定返回空值)。</p>
+     * {@code instanceState}(审批状态)、{@code summary}(摘要，发起时写入的流程摘要)。</p>
      *
      * @param processId 流程定义 ID（路径参数，必填）；示例值：{@code 1785467714628}
      * @param request   分页查询请求

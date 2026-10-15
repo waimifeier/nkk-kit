@@ -46,6 +46,11 @@ public class FlowTodoRecordResponse implements Serializable {
     private String processType;
 
     /**
+     * 流程分类中文名称，由 FlowDesignerCategoryProvider 的分类树匹配；未匹配到为空。
+     */
+    private String processTypeName;
+
+    /**
      * 流程详情页路由模板（flow_process.instance_url），宿主可直接使用或自行替换 {instanceId}。
      */
     private String instanceUrl;
@@ -107,9 +112,9 @@ public class FlowTodoRecordResponse implements Serializable {
     private Date approveTime;
 
     /**
-     * 流程变量 JSON 字符串（用户表单填写值），为空时为 null。
+     * 流程摘要（flow_his_instance.summary），发起时写入，随实例全生命周期保留。
      */
-    private String variable;
+    private String summary;
 
     /**
      * 当前流程正在执行的活动任务信息；流程已结束时为空。

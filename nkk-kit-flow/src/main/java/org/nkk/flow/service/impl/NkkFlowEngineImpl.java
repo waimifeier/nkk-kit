@@ -76,35 +76,36 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
 
     @Override
     public Optional<FlowInstance> startInstanceByProcessKey(String processKey, Integer version, FlowCreator creator, Map<String, Object> args) {
-        return startInstanceByProcessKey(processKey, version, creator, args, false, null, null);
+        return startInstanceByProcessKey(processKey, version, creator, args, null, false, null, null);
     }
 
     @Override
     public Optional<FlowInstance> startInstanceByProcessKey(String processKey, Integer version, FlowCreator creator,
-                                                             Map<String, Object> args, boolean saveAsDraft,
+                                                             Map<String, Object> args, String summary, boolean saveAsDraft,
                                                             Consumer<FlowNodeModel> checkNodeModel,
                                                             Supplier<FlowInstance> supplier) {
         FlowCreator actualCreator = resolveCreator(creator);
         FlowProcess process = processService().getProcessByVersion(actualCreator.getTenantId(), processKey, version).checkState();
-        return startProcessInstance(process, actualCreator, args, saveAsDraft, checkNodeModel, supplier);
+        return startProcessInstance(process, actualCreator, args, summary, saveAsDraft, checkNodeModel, supplier);
     }
 
     @Override
     public Optional<FlowInstance> startInstanceById(Long processId, FlowCreator creator, Map<String, Object> args) {
-        return startInstanceById(processId, creator, args, false, null, null);
+        return startInstanceById(processId, creator, args, null, false, null, null);
     }
 
     @Override
     public Optional<FlowInstance> startInstanceById(Long processId, FlowCreator creator, Map<String, Object> args,
-                                                    boolean saveAsDraft, Consumer<FlowNodeModel> checkNodeModel,
+                                                    String summary, boolean saveAsDraft, Consumer<FlowNodeModel> checkNodeModel,
                                                     Supplier<FlowInstance> supplier) {
         FlowCreator actualCreator = resolveCreator(creator);
         FlowProcess process = processService().getProcessById(processId).checkState();
-        return startProcessInstance(process, actualCreator, args, saveAsDraft, checkNodeModel, supplier);
+        return startProcessInstance(process, actualCreator, args, summary, saveAsDraft, checkNodeModel, supplier);
     }
 
     private Optional<FlowInstance> startProcessInstance(FlowProcess process, FlowCreator creator, Map<String, Object> args,
-                                                        boolean saveAsDraft, Consumer<FlowNodeModel> checkNodeModel,
+                                                        String summary, boolean saveAsDraft,
+                                                        Consumer<FlowNodeModel> checkNodeModel,
                                                         Supplier<FlowInstance> supplier) {
         FlowProcessModel model = process.model();
         FlowNodeModel startNode = model.getNodeConfig();
@@ -125,7 +126,7 @@ public class NkkFlowEngineImpl implements NkkFlowEngine {
             notifyTriggerAutoApproved(process, creator, args, businessKey);
             return Optional.empty();
         }
-        FlowInstance instance = runtimeService().createInstance(process, creator, args, startNode, saveAsDraft, supplier);
+        FlowInstance instance = runtimeService().createInstance(process, creator, args, startNode, summary, saveAsDraft, supplier);
         if (saveAsDraft) {
             return Optional.of(instance);
         }

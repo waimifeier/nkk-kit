@@ -19,11 +19,11 @@ import java.util.function.Supplier;
 public interface FlowRuntimeService {
 
     default FlowInstance createInstance(FlowProcess process, FlowCreator creator, Map<String, Object> args, FlowNodeModel startNode) {
-        return createInstance(process, creator, args, startNode, false, null);
+        return createInstance(process, creator, args, startNode, null, false, null);
     }
 
     FlowInstance createInstance(FlowProcess process, FlowCreator creator, Map<String, Object> args,
-                                FlowNodeModel startNode, boolean saveAsDraft,
+                                FlowNodeModel startNode, String summary, boolean saveAsDraft,
                                 Supplier<FlowInstance> supplier);
 
     FlowProcessModel getProcessModelByInstanceId(Long instanceId);

@@ -18,6 +18,15 @@ public class FlowHisInstance extends FlowInstance {
     private static final long serialVersionUID = 1L;
 
     /**
+     * 流程摘要，发起时由调用方传入，随实例全生命周期保留。
+     *
+     * <p>仅落库到历史实例表：活动实例表在实例终态即被物理删除，摘要必须存于历史实例表才能在
+     * 流程结束后继续展示。活动实例表无此列，因此该字段不在 {@link FlowInstance} 基类上声明，
+     * 由 {@code createInstance} 显式写入。</p>
+     */
+    private String summary;
+
+    /**
      * 流程实例最终状态，取值见 {@link InstanceState}。
      */
     private Integer instanceState;
@@ -48,8 +57,6 @@ public class FlowHisInstance extends FlowInstance {
         his.setCreateTime(instance.getCreateTime());
         his.setProcessId(instance.getProcessId());
         his.setProcessKey(instance.getProcessKey());
-        his.setPriority(instance.getPriority());
-        his.setInstanceNo(instance.getInstanceNo());
         his.setBusinessKey(instance.getBusinessKey());
         his.setVariable(instance.getVariable());
         his.setCurrentNodeName(instance.getCurrentNodeName());

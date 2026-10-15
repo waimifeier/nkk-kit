@@ -58,8 +58,11 @@ public class FlowDesignerRuntimeService {
 
     private final NkkFlowEngine flowEngine;
 
-    public FlowDesignerRuntimeService(NkkFlowEngine flowEngine) {
+    private final FlowDesignerCategoryService categoryService;
+
+    public FlowDesignerRuntimeService(NkkFlowEngine flowEngine, FlowDesignerCategoryService categoryService) {
         this.flowEngine = flowEngine;
+        this.categoryService = categoryService;
     }
 
     /**
@@ -70,6 +73,11 @@ public class FlowDesignerRuntimeService {
      * 未解析到具体主管），{@code abnormal} 抛出 {@link org.nkk.flow.exception.FlowException}，
      * 事务整体回滚，避免出现"已报错但实例仍创建"的脏数据。</p>
      *
+     * <p>摘要 {@code summary} 在此统一渲染：支持 {@code {变量名}} 模板语法，按本次发起
+     * 的流程变量取值替换后写入 {@code flow_his_instance.summary}；无占位符的普通字符串
+     * 原样保留。业务表单（{@code @FlowApproval}）与自定义表单（前端直传）两条发起路径
+     * 共用这一处渲染逻辑。</p>
+     *
      * @param request 发起请求
      * @return 发起结果
      */
@@ -77,15 +85,16 @@ public class FlowDesignerRuntimeService {
     public FlowRuntimeResponse start(FlowStartProcessRequest request) {
         assertStartRequest(request);
         Map<String, Object> variables = variables(request.getVariables());
+        String summary = renderSummary(request.getSummary(), variables);
         boolean saveAsDraft = Boolean.TRUE.equals(request.getSaveAsDraft());
         Optional<FlowInstance> optional;
         if (request.getProcessId() != null) {
-            optional = flowEngine.startInstanceById(request.getProcessId(), null, variables, saveAsDraft,
-                    null, instanceSupplier(request.getBusinessKey()));
+            optional = flowEngine.startInstanceById(request.getProcessId(), null, variables, summary,
+                    saveAsDraft, null, instanceSupplier(request.getBusinessKey()));
         } else {
             optional = flowEngine.startInstanceByProcessKey(StrUtil.trim(request.getProcessKey()),
-                    request.getProcessVersion(), null, variables, saveAsDraft,
-                null, instanceSupplier(request.getBusinessKey()));
+                    request.getProcessVersion(), null, variables, summary, saveAsDraft,
+                    null, instanceSupplier(request.getBusinessKey()));
         }
         // 业务审批触发条件不满足时引擎返回 empty：未创建实例，引擎已直接派发「审批通过」业务回调
         if (!optional.isPresent()) {
@@ -737,6 +746,24 @@ public class FlowDesignerRuntimeService {
         return CollUtil.isEmpty(variables) ? Collections.emptyMap() : variables;
     }
 
+    /**
+     * 渲染摘要模板。
+     *
+     * <p>模板支持 {@code {变量名}} 占位符，按本次发起的流程变量取值替换；变量中不存在的
+     * 键保留原占位符，无占位符的普通字符串原样返回。模板为空白时返回 {@code null}，
+     * 避免向 {@code flow_his_instance.summary} 写入空串。</p>
+     *
+     * @param summary 摘要模板
+     * @param variables 流程变量
+     * @return 渲染后的摘要，模板为空白时为 null
+     */
+    private String renderSummary(String summary, Map<String, Object> variables) {
+        if (StrUtil.isBlank(summary)) {
+            return null;
+        }
+        return StrUtil.format(summary, variables);
+    }
+
     private FlowHisTask hisTask(Long hisTaskId) {
         if (hisTaskId == null) {
             throw new IllegalArgumentException("历史任务 ID 不能为空");
@@ -1065,6 +1092,8 @@ public class FlowDesignerRuntimeService {
                         process.setProcessName(p.getProcessName());
                         process.setProcessIcon(p.getProcessIcon());
                         process.setProcessType(p.getProcessType());
+                        // 分类中文名称：由 FlowDesignerCategoryProvider 的分类树匹配，未匹配到为空
+                        process.setProcessTypeName(categoryService.categoryNameMap().get(p.getProcessType()));
                         process.setProcessVersion(p.getProcessVersion());
                         process.setInstanceUrl(p.getInstanceUrl());
                         process.setRemark(p.getRemark());

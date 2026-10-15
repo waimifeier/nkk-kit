@@ -102,8 +102,11 @@ public class FlowRuntimeResponse implements Serializable {
         /** 流程图标。 */
         private String processIcon;
 
-        /** 流程类型。 */
+        /** 流程类型（流程分类 id）。 */
         private String processType;
+
+        /** 流程分类中文名称，由 FlowDesignerCategoryProvider 的分类树匹配；未匹配到为空。 */
+        private String processTypeName;
 
         /** 流程版本。 */
         private Integer processVersion;
